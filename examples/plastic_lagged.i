@@ -194,20 +194,13 @@ start_x = 0
     block = 1
   []
 
+  # lag the effective plastic strain rate
   [effective_plastic_strain_rate]
     type = ParsedMaterial
     property_name = ep_dot
     expression = 'if(dt=0, 1, (ep-ep_old)/dt)'
     material_property_names = 'ep:=effective_plastic_strain ep_old:=Old[effective_plastic_strain]'
     extra_symbols = dt
-    outputs = exodus
-  []
-
-  [effective_plastic_strain_old]
-    type = ParsedMaterial
-    property_name = effective_plastic_strain_old
-    expression = 'ep_old'
-    material_property_names = 'ep_old:=Old[effective_plastic_strain]'
     outputs = exodus
   []
 
@@ -220,12 +213,11 @@ start_x = 0
     # Pure Al (https://hal.science/hal-03434373/file/PIMM_EJM_2021_SEDDIK.pdf) 10.1016/j.euromechsol.2021.104432
     # expression = '1e8'
     expression = 'sy:=90e6; K:=200e6; C:=0.035; n:=0.3; m:=1; ep_dot_0:=0.01;
-                  ep_dot:=if(dt=0, 1, (ep-ep_old)/dt); T_r:=20; T_m:=660.3; T_star:=(T-T_r)/(T_m-T_r); ep_dot_star:=max(1e-5,ep_dot/ep_dot_0);
+                  T_r:=20; T_m:=660.3; T_star:=(T-T_r)/(T_m-T_r); ep_dot_star:=max(1,ep_dot_old/ep_dot_0);
                   (sy+K*if(ep>0, ep^n, 0))*(1+C*log(ep_dot_star))*(1-T_star^m)'
-    material_property_names = 'ep:=effective_plastic_strain ep_old:=Old[effective_plastic_strain]'
+    material_property_names = 'ep:=Old[effective_plastic_strain] ep_dot_old:=Old[ep_dot]'
     coupled_variables = T
     additional_derivative_symbols = 'ep'
-    extra_symbols = dt
     derivative_order = 2
     compute = false
     evalerror_behavior = error
@@ -237,7 +229,7 @@ start_x = 0
     flow_stress_material = slug_flow_stress
     block = 1
     outputs = exodus
-    relative_tolerance = 1e-06
+    # relative_tolerance = 1e-06
     output_properties = effective_plastic_strain
   []
   [elasticity_slug]
