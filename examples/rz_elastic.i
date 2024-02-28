@@ -1,19 +1,17 @@
-start_y = 0
-
 [Mesh]
-  coord_type = RZ
+  # coord_type = RZ
 
   [slug]
     type = GeneratedMeshGenerator
     dim = 2
     nx = 10
-    ny = 40
+    ny = 80
     # nx = 20
     # ny = 10
     xmin = 0
-    xmax = ${units 0.25 in -> cm}
-    ymin = ${fparse -1 - start_y}
-    ymax = ${fparse -start_y}
+    xmax = ${units 0.25 in -> m}
+    ymin = ${units -3 in -> m}
+    ymax = 0
   []
   [slug_block]
     type = SubdomainIDGenerator
@@ -32,11 +30,11 @@ start_y = 0
     type = GeneratedMeshGenerator
     dim = 2
     nx = 5
-    ny = 3
+    ny = 5
     xmin = 0
-    xmax = ${units 2 in -> cm}
+    xmax = ${units 1 in -> m}
     ymin = 0
-    ymax = 3
+    ymax = ${units 1 in -> m}
   []
   [anvil_block]
     type = SubdomainIDGenerator
@@ -101,13 +99,15 @@ start_y = 0
 
 [Kernels]
   [sdx]
-    type = TotalLagrangianStressDivergenceAxisymmetricCylindrical
+    # type = TotalLagrangianStressDivergenceAxisymmetricCylindrical
+    type = TotalLagrangianStressDivergence
     variable = disp_x
     component = 0
     block = 1
   []
   [sdy]
-    type = TotalLagrangianStressDivergenceAxisymmetricCylindrical
+    # type = TotalLagrangianStressDivergenceAxisymmetricCylindrical
+    type = TotalLagrangianStressDivergence
     variable = disp_y
     component = 1
     block = 1
@@ -173,7 +173,7 @@ start_y = 0
   [anvil]
     strain = SMALL
     block = 2
-    generate_output = stress_xx
+    generate_output = stress_yy
   []
 []
 
@@ -186,13 +186,14 @@ start_y = 0
     formulation = mortar_penalty
     # al_penetration_tolerance = 1e-6
     # c_normal = 1e+2
-    penalty = ${units 1e+12 Pa -> N/cm^2}
+    penalty = ${units 1000 GPa -> Pa}
   []
 []
 
 [Materials]
   [slug_strain]
-    type = ComputeLagrangianStrainAxisymmetricCylindrical
+    # type = ComputeLagrangianStrainAxisymmetricCylindrical
+    type = ComputeLagrangianStrain
     block = 1
   []
   [slug_stress]
@@ -201,13 +202,13 @@ start_y = 0
   []
   [elasticity_slug]
     type = ComputeIsotropicElasticityTensor
-    youngs_modulus = ${units 70 GPa -> N/cm^2}
+    youngs_modulus = ${units 70 GPa -> Pa}
     poissons_ratio = 0.28
     block = 1
   []
   [slug_density]
     type = Density
-    density = ${units 2700 kg/m^3 -> g/cm^3}
+    density = ${units 2700 kg/m^3}
   []
 
   [anvil_stress]
@@ -216,7 +217,7 @@ start_y = 0
   []
   [elasticity_anvil]
     type = ComputeIsotropicElasticityTensor
-    youngs_modulus = ${units 215 GPa -> N/cm^2}
+    youngs_modulus = ${units 215 GPa -> Pa}
     poissons_ratio = 0.28
     block = 2
   []
@@ -226,7 +227,7 @@ start_y = 0
   [vel_y]
     type = ConstantIC
     variable = vel_y
-    value = ${units 100 m/s -> cm/ms}
+    value = ${units 100 m/s}
     block = 1
   []
 []
@@ -236,7 +237,7 @@ start_y = 0
     type = DirichletBC
     variable = disp_x
     value = 0
-    boundary = 'left 30'
+    boundary = '30'
   []
   [fix_anvil_y]
     type = DirichletBC
@@ -263,7 +264,7 @@ start_y = 0
 [Executioner]
   type = Transient
   solve_type = NEWTON
-  dt = ${units 1e-6 s -> ms}
+  dt = ${units 1e-8 s}
   num_steps = 2000
 []
 

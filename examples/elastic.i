@@ -106,7 +106,7 @@ start_x = 0
     formulation = mortar_penalty
     # al_penetration_tolerance = 1e-6
     # c_normal = 1e+2
-    penalty = 1e+12
+    penalty = ${units 1000 GPa -> Pa}
   []
 []
 
