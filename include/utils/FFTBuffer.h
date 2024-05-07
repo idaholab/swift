@@ -10,8 +10,11 @@
 #pragma once
 
 #include "NEML2Utils.h"
+#include "neml2/tensors/Scalar.h"
 
 #ifdef NEML2_ENABLED
+
+using neml2::TorchShapeRef;
 
 template <typename T>
 class FFTBuffer
