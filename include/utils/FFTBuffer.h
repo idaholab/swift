@@ -164,13 +164,12 @@ FFTBuffer<T, D>::getFrequency(int dim) const
 
   const auto n = _data.batch_sizes()[dim];
   const auto a = (_max[dim] - _min[dim]) / Real(n);
-  const auto freq = (dim == 0 && _rfft)
+  const auto freq = (dim == D - 1 && _rfft)
                         ? torch::fft::rfftfreq(n, a, neml2::default_tensor_options())
                         : torch::fft::fftfreq(n, a, neml2::default_tensor_options());
 
-  return torch::unsqueeze(freq, dim);
+  return torch::unsqueeze(freq, D - dim - 1);
 }
-
 }
 
 #endif
