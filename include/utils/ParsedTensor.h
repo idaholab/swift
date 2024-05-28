@@ -20,7 +20,9 @@ public:
   ParsedTensor() : FunctionParserAD(), _data(*getParserData()) {}
 
   void setupTensors();
-  neml2::Scalar customEval(const neml2::Scalar * params);
+
+  /// overload for torch tensors
+  neml2::Scalar Eval(const neml2::Scalar * params);
 
 protected:
   // we'll need a stack pool to make this thread safe

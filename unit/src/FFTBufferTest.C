@@ -14,10 +14,7 @@
 
 TEST(FFTBufferTest, Gradient)
 {
-  auto a = MooseFFT::create2DBuffer(20, 100);
-  const auto pi = libMesh::pi;
-  a.min() = {-pi, -pi};
-  a.max() = {pi, 3 * pi};
+  auto a = MooseFFT::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
 
   auto & A = a.data();
   auto [x, y] = a.getAxis();
@@ -40,7 +37,7 @@ TEST(FFTBufferTest, Gradient)
 
 TEST(FFTBufferTest, 2DAxis)
 {
-  auto a = MooseFFT::create2DBuffer(3, 4);
+  auto a = MooseFFT::createBuffer({3, 4});
   a.min() = {0.0, 0.0};
   a.max() = {3.0 * 4.0 * 5.0, 4.0 * 5.0 * 6.0};
 
@@ -71,9 +68,7 @@ TEST(FFTBufferTest, 2DAxis)
 
 TEST(FFTBufferTest, 1DAxis)
 {
-  auto a = MooseFFT::create1DBuffer(4);
-  a.min() = {0.0};
-  a.max() = {4.0 * 5.0 * 6.0};
+  auto a = MooseFFT::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
 
   const auto xCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
   {

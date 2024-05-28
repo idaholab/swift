@@ -23,25 +23,26 @@ TEST(ParsedTensorTest, Parse)
 
   F.Parse("a * b + c", variables);
   F.Optimize();
+  F.setupTensors();
 
-  auto a = MooseFFT::create2DBuffer(5, 5);
-  auto b = MooseFFT::create2DBuffer(5, 5);
-  auto c = MooseFFT::create2DBuffer(5, 5);
+  auto a = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  auto b = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  auto c = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
 
   auto & A = a.data();
   auto & B = b.data();
-  auto & C = b.data();
+  auto & C = c.data();
 
   auto [x, y] = a.getAxis();
 
   // function
   A = x;
   B = y;
-  C = -x * x;
+  C = -x * y;
 
-  std::vector<neml2::Scalar> params;
+  std::vector<neml2::Scalar> params{A, B, C};
 
-  std::cout << F.customEval(params.data()) << '\n';
+  std::cout << F.Eval(params.data()) << '\n';
 }
 
 #else

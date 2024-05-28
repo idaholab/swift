@@ -19,33 +19,48 @@ using neml2::TorchShapeRef;
 namespace MooseFFT
 {
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 class FFTBuffer;
 
-template <typename T = neml2::Scalar>
-FFTBuffer<T, 1>
-create1DBuffer(int nx, const torch::TensorOptions & options = neml2::default_tensor_options())
+template <typename T = neml2::Scalar, std::size_t D>
+FFTBuffer<T, D>
+createBuffer(long int const (&n)[D],
+             Real const (&min)[D],
+             Real const (&max)[D],
+             const torch::TensorOptions & options = neml2::default_tensor_options())
 {
-  return FFTBuffer<T, 1>(TorchShapeRef({nx}), options);
+  TorchShapeRef nn(n);
+  std::array<Real, D> amin, amax;
+  for (std::size_t i = 0; i < D; ++i)
+  {
+    amin[i] = min[i];
+    amax[i] = max[i];
+  }
+
+  return FFTBuffer<T, D>(nn, amin, amax, options);
 }
 
-template <typename T = neml2::Scalar>
-FFTBuffer<T, 2>
-create2DBuffer(int nx,
-               int ny,
-               const torch::TensorOptions & options = neml2::default_tensor_options())
+template <typename T = neml2::Scalar, std::size_t D>
+FFTBuffer<T, D>
+createBuffer(long int const (&n)[D],
+             Real const (&max)[D],
+             const torch::TensorOptions & options = neml2::default_tensor_options())
 {
-  return FFTBuffer<T, 2>(TorchShapeRef({nx, ny}), options);
+  Real min[D];
+  for (std::size_t i = 0; i < D; ++i)
+    min[i] = 0.0;
+  return createBuffer(n, min, max, options);
 }
 
-template <typename T = neml2::Scalar>
-FFTBuffer<T, 3>
-create3DBuffer(int nx,
-               int ny,
-               int nz,
-               const torch::TensorOptions & options = neml2::default_tensor_options())
+template <typename T = neml2::Scalar, std::size_t D>
+FFTBuffer<T, D>
+createBuffer(long int const (&n)[D],
+             const torch::TensorOptions & options = neml2::default_tensor_options())
 {
-  return FFTBuffer<T, 3>(TorchShapeRef({nx, ny, nz}), options);
+  Real max[D];
+  for (std::size_t i = 0; i < D; ++i)
+    max[i] = 1.0;
+  return createBuffer(n, max, options);
 }
 
 enum class Interval
@@ -56,10 +71,13 @@ enum class Interval
   RIGHT_OPEN
 };
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 class FFTBuffer
 {
-  FFTBuffer(const TorchShapeRef & batch_shape, const torch::TensorOptions & options);
+  FFTBuffer(const TorchShapeRef & batch_shape,
+            const std::array<Real, D> & min,
+            const std::array<Real, D> & max,
+            const torch::TensorOptions & options);
 
 public:
   T & data() { return _data; }
@@ -68,22 +86,25 @@ public:
   std::array<neml2::Real, D> & min() { return _min; }
   std::array<neml2::Real, D> & max() { return _max; }
 
-  neml2::Scalar getAxis(int dim, Interval interval = Interval::LEFT_OPEN) const;
-  neml2::Scalar getFrequency(int dim) const;
-  neml2::Scalar grad(int dim, T * fft = nullptr) const;
+  neml2::Scalar getAxis(std::size_t dim, Interval interval = Interval::RIGHT_OPEN) const;
+  neml2::Scalar getFrequency(std::size_t dim) const;
+  neml2::Scalar grad(std::size_t dim, T * fft = nullptr) const;
 
-  auto getAxis() const { return getAxisHelper(std::make_integer_sequence<int, D>{}); }
-  auto getFrequency() const { return getFrequencyHelper(std::make_integer_sequence<int, D>{}); }
-  auto grad() const { return gradHelper(std::make_integer_sequence<int, D>{}); }
+  auto getAxis() const { return getAxisHelper(std::make_integer_sequence<std::size_t, D>{}); }
+  auto getFrequency() const
+  {
+    return getFrequencyHelper(std::make_integer_sequence<std::size_t, D>{});
+  }
+  auto grad() const { return gradHelper(std::make_integer_sequence<std::size_t, D>{}); }
 
   neml2::Scalar laplace() const;
 
   // stream in gnuplot readable format
 
-  friend FFTBuffer<T, 1> create1DBuffer<T>(int nx, const torch::TensorOptions & options);
-  friend FFTBuffer<T, 2> create2DBuffer<T>(int nx, int ny, const torch::TensorOptions & options);
-  friend FFTBuffer<T, 3>
-  create3DBuffer<T>(int nx, int ny, int nz, const torch::TensorOptions & options);
+  friend FFTBuffer<T, D> createBuffer<T, D>(long int const (&n)[D],
+                                            Real const (&min)[D],
+                                            Real const (&max)[D],
+                                            const torch::TensorOptions & options);
 
   const neml2::Scalar _two_pi_i;
 
@@ -91,20 +112,20 @@ protected:
   T fft() const;
   T ifft(const T & Abar) const;
 
-  template <int... dims>
-  auto getAxisHelper(std::integer_sequence<int, dims...>) const
+  template <std::size_t... dims>
+  auto getAxisHelper(std::integer_sequence<std::size_t, dims...>) const
   {
     return std::make_tuple(getAxis(dims)...);
   }
 
-  template <int... dims>
-  auto getFrequencyHelper(std::integer_sequence<int, dims...>) const
+  template <std::size_t... dims>
+  auto getFrequencyHelper(std::integer_sequence<std::size_t, dims...>) const
   {
     return std::make_tuple(getFrequency(dims)...);
   }
 
-  template <int... dims>
-  auto gradHelper(std::integer_sequence<int, dims...>) const
+  template <std::size_t... dims>
+  auto gradHelper(std::integer_sequence<std::size_t, dims...>) const
   {
     return std::make_tuple(grad(dims)...);
   }
@@ -116,21 +137,26 @@ private:
   std::array<neml2::Real, D> _max;
 };
 
-template <typename T, int D>
-FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape, const torch::TensorOptions & options)
+template <typename T, std::size_t D>
+FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape,
+                           const std::array<Real, D> & min,
+                           const std::array<Real, D> & max,
+                           const torch::TensorOptions & options)
   : _two_pi_i(at::tensor(c10::complex<double>(0.0, 2.0 * pi), at::dtype(at::kComplexDouble))),
     _data(T::zeros(batch_shape, options)),
-    _rfft(true)
+    _rfft(true),
+    _min(min),
+    _max(max)
 {
   if (batch_shape.size() != D)
     throw std::domain_error("Invalid dimension");
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::getAxis(int dim, Interval interval) const
+FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 {
-  if (dim < 0 || dim >= D)
+  if (dim >= D)
     throw std::domain_error("Invalid dimension");
 
   const auto n = _data.batch_sizes()[dim];
@@ -179,11 +205,11 @@ FFTBuffer<T, D>::getAxis(int dim, Interval interval) const
   }
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::getFrequency(int dim) const
+FFTBuffer<T, D>::getFrequency(std::size_t dim) const
 {
-  if (dim < 0 || dim >= D)
+  if (dim >= D)
     throw std::domain_error("Invalid dimension");
 
   const auto n = _data.batch_sizes()[dim];
@@ -195,11 +221,11 @@ FFTBuffer<T, D>::getFrequency(int dim) const
   return torch::unsqueeze(freq, D - dim - 1);
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::grad(int dim, T * cached_fft) const
+FFTBuffer<T, D>::grad(std::size_t dim, T * cached_fft) const
 {
-  if (dim < 0 || dim >= D)
+  if (dim >= D)
     throw std::domain_error("Invalid dimension");
 
   if (cached_fft)
@@ -208,7 +234,7 @@ FFTBuffer<T, D>::grad(int dim, T * cached_fft) const
     return ifft(fft() * getFrequency(dim) * _two_pi_i);
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 T
 FFTBuffer<T, D>::fft() const
 {
@@ -223,7 +249,7 @@ FFTBuffer<T, D>::fft() const
     throw std::domain_error("3D not implemented yet");
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 T
 FFTBuffer<T, D>::ifft(const T & Abar) const
 {
@@ -238,7 +264,7 @@ FFTBuffer<T, D>::ifft(const T & Abar) const
     throw std::domain_error("3D not implemented yet");
 }
 
-template <typename T, int D>
+template <typename T, std::size_t D>
 neml2::Scalar
 FFTBuffer<T, D>::laplace() const
 {
@@ -246,7 +272,7 @@ FFTBuffer<T, D>::laplace() const
   auto ret = grad(0, &cached_fft);
   ret *= ret;
 
-  for (int dim = 1; dim < D; ++dim)
+  for (std::size_t dim = 1; dim < D; ++dim)
   {
     auto g = grad(dim, &cached_fft);
     ret += g * g;
