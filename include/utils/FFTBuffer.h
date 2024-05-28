@@ -70,8 +70,13 @@ public:
 
   neml2::Scalar getAxis(int dim, Interval interval = Interval::LEFT_OPEN) const;
   neml2::Scalar getFrequency(int dim) const;
+  neml2::Scalar grad(int dim, T * fft = nullptr) const;
 
-  auto getFrequencies() const { return getFrequenciesHelper(std::make_integer_sequence<int, D>{}); }
+  auto getAxis() const { return getAxisHelper(std::make_integer_sequence<int, D>{}); }
+  auto getFrequency() const { return getFrequencyHelper(std::make_integer_sequence<int, D>{}); }
+  auto grad() const { return gradHelper(std::make_integer_sequence<int, D>{}); }
+
+  neml2::Scalar laplace() const;
 
   // stream in gnuplot readable format
 
@@ -80,11 +85,28 @@ public:
   friend FFTBuffer<T, 3>
   create3DBuffer<T>(int nx, int ny, int nz, const torch::TensorOptions & options);
 
+  const neml2::Scalar _two_pi_i;
+
 protected:
+  T fft() const;
+  T ifft(const T & Abar) const;
+
   template <int... dims>
-  auto getFrequenciesHelper(std::integer_sequence<int, dims...>) const
+  auto getAxisHelper(std::integer_sequence<int, dims...>) const
+  {
+    return std::make_tuple(getAxis(dims)...);
+  }
+
+  template <int... dims>
+  auto getFrequencyHelper(std::integer_sequence<int, dims...>) const
   {
     return std::make_tuple(getFrequency(dims)...);
+  }
+
+  template <int... dims>
+  auto gradHelper(std::integer_sequence<int, dims...>) const
+  {
+    return std::make_tuple(grad(dims)...);
   }
 
 private:
@@ -96,7 +118,9 @@ private:
 
 template <typename T, int D>
 FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape, const torch::TensorOptions & options)
-  : _data(T::zeros(batch_shape, options)), _rfft(true)
+  : _two_pi_i(at::tensor(c10::complex<double>(0.0, 2.0 * pi), at::dtype(at::kComplexDouble))),
+    _data(T::zeros(batch_shape, options)),
+    _rfft(true)
 {
   if (batch_shape.size() != D)
     throw std::domain_error("Invalid dimension");
@@ -169,6 +193,65 @@ FFTBuffer<T, D>::getFrequency(int dim) const
                         : torch::fft::fftfreq(n, a, neml2::default_tensor_options());
 
   return torch::unsqueeze(freq, D - dim - 1);
+}
+
+template <typename T, int D>
+neml2::Scalar
+FFTBuffer<T, D>::grad(int dim, T * cached_fft) const
+{
+  if (dim < 0 || dim >= D)
+    throw std::domain_error("Invalid dimension");
+
+  if (cached_fft)
+    return ifft(*cached_fft * getFrequency(dim) * _two_pi_i);
+  else
+    return ifft(fft() * getFrequency(dim) * _two_pi_i);
+}
+
+template <typename T, int D>
+T
+FFTBuffer<T, D>::fft() const
+{
+  if constexpr (D == 1)
+
+    return torch::fft::rfft2(_data);
+
+  if constexpr (D == 2)
+    return torch::fft::rfft2(_data);
+
+  if constexpr (D == 2)
+    throw std::domain_error("3D not implemented yet");
+}
+
+template <typename T, int D>
+T
+FFTBuffer<T, D>::ifft(const T & Abar) const
+{
+  if constexpr (D == 1)
+
+    return torch::fft::irfft(Abar);
+
+  if constexpr (D == 2)
+    return torch::fft::irfft2(Abar);
+
+  if constexpr (D == 2)
+    throw std::domain_error("3D not implemented yet");
+}
+
+template <typename T, int D>
+neml2::Scalar
+FFTBuffer<T, D>::laplace() const
+{
+  neml2::Scalar cached_fft = fft();
+  auto ret = grad(0, &cached_fft);
+  ret *= ret;
+
+  for (int dim = 1; dim < D; ++dim)
+  {
+    auto g = grad(dim, &cached_fft);
+    ret += g * g;
+  }
+  return ret;
 }
 }
 
