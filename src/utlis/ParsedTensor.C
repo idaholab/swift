@@ -10,16 +10,17 @@
 #pragma once
 
 #include "ParsedTensor.h"
+#include "libmesh/fptypes.hh"
 
 void
 ParsedTensor::setupTensors()
 {
   // allocate stack
-  s.resize(this->mData->mStackSize);
+  s.resize(getParserData()->mStackSize);
 
   // convert immediate data
   tensor_immed.clear();
-  for (const auto & i : this->mData->mImmed)
+  for (const auto & i : getParserData()->mImmed)
     tensor_immed.push_back(neml2::Scalar(i, neml2::default_tensor_options()));
 }
 
@@ -27,7 +28,7 @@ neml2::Scalar
 ParsedTensor::CustomEval(const neml2::Scalar * Vars)
 {
   // get a reference to the stored bytecode
-  const auto & ByteCode = this->mData->mByteCode;
+  const auto & ByteCode = getParserData()->mByteCode;
 
   int nImmed = 0, sp = -1, op;
   for (unsigned int i = 0; i < ByteCode.size(); ++i)

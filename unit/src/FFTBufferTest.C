@@ -12,7 +12,7 @@
 #include "FFTBuffer.h"
 #include "gtest/gtest.h"
 
-TEST(FFTBuffer, Gradient)
+TEST(FFTBufferTest, Gradient)
 {
   auto a = MooseFFT::create2DBuffer(20, 100);
   const auto pi = libMesh::pi;
@@ -37,7 +37,7 @@ TEST(FFTBuffer, Gradient)
   EXPECT_NEAR(torch::linalg::norm(grad_y - dAdy, "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
 }
 
-TEST(FFTBuffer, 2DAxis)
+TEST(FFTBufferTest, 2DAxis)
 {
   auto a = MooseFFT::create2DBuffer(3, 4);
   a.min() = {0.0, 0.0};
@@ -68,7 +68,7 @@ TEST(FFTBuffer, 2DAxis)
   yCompare(MooseFFT::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
 
-TEST(FFTBuffer, 1DAxis)
+TEST(FFTBufferTest, 1DAxis)
 {
   auto a = MooseFFT::create1DBuffer(4);
   a.min() = {0.0};

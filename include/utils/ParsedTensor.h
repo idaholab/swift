@@ -12,6 +12,8 @@
 #include "NEML2Utils.h"
 #include "neml2/tensors/Scalar.h"
 
+#include "libmesh/fparser_ad.hh"
+
 class ParsedTensor : public FunctionParserAD
 {
 public:
