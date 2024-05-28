@@ -17,10 +17,17 @@
 class ParsedTensor : public FunctionParserAD
 {
 public:
+  ParsedTensor() : FunctionParserAD(), _data(*getParserData()) {}
+
   void setupTensors();
-  neml2::Scalar customEval(const neml2::Scalar * Vars);
+  neml2::Scalar customEval(const neml2::Scalar * params);
 
 protected:
+  // we'll need a stack pool to make this thread safe
   std::vector<neml2::Scalar> s;
+
+  // immediate values converted to tensors
   std::vector<neml2::Scalar> tensor_immed;
+
+  const Data & _data;
 };

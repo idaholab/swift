@@ -33,6 +33,7 @@ TEST(FFTBufferTest, Gradient)
   // spectral derivatives
   auto [grad_x, grad_y] = a.grad();
 
+  // compute Frobenius norm of the difference of spectral and analytic derivatives
   EXPECT_NEAR(torch::linalg::norm(grad_x - dAdx, "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
   EXPECT_NEAR(torch::linalg::norm(grad_y - dAdy, "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
 }
