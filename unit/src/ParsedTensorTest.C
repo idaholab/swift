@@ -42,7 +42,9 @@ TEST(ParsedTensorTest, Parse)
 
   std::vector<neml2::Scalar> params{A, B, C};
 
-  std::cout << F.Eval(params.data()) << '\n';
+  // Frobenius norm of the result tensor
+  EXPECT_NEAR(
+      torch::linalg::norm(F.Eval(params.data()), "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
 }
 
 #else

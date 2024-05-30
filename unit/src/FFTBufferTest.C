@@ -41,6 +41,8 @@ TEST(FFTBufferTest, 2DAxis)
   a.min() = {0.0, 0.0};
   a.max() = {3.0 * 4.0 * 5.0, 4.0 * 5.0 * 6.0};
 
+  std::cout << "2D size " << a.data().dim() << '\n';
+
   const auto xCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
   {
     auto xt = a.getAxis(0, interval);
@@ -69,6 +71,8 @@ TEST(FFTBufferTest, 2DAxis)
 TEST(FFTBufferTest, 1DAxis)
 {
   auto a = MooseFFT::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
+
+  std::cout << "1D size " << a.data().dim() << '\n';
 
   const auto xCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
   {

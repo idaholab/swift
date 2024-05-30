@@ -14,10 +14,19 @@
 
 #include "libmesh/fparser_ad.hh"
 
-class ParsedTensor : public FunctionParserAD
+namespace torch
+{
+namespace jit
+{
+struct Graph;
+struct Value;
+}
+}
+
+class ParsedJITTensor : public FunctionParserAD
 {
 public:
-  ParsedTensor();
+  ParsedJITTensor();
 
   void setupTensors();
 
@@ -25,18 +34,14 @@ public:
   neml2::Scalar Eval(const neml2::Scalar * params);
 
 protected:
-  /// dummy function for fourier transforms (those are executed in
-  /// the custom bytecode interpreter instead)
-  static Real fp_dummy(const Real *);
-
-  /// we'll need a stack pool to make this thread safe
-  std::vector<neml2::Scalar> s;
+  /// immediate values converted to tensors
+  std::vector<torch::jit::Value *> _input;
 
   /// immediate values converted to tensors
-  std::vector<neml2::Scalar> tensor_immed;
+  std::vector<torch::jit::Value *> _constant_immed;
+
+  /// compute graph
+  std::shared_ptr<torch::jit::Graph> _graph;
 
   const Data & _data;
-
-  std::size_t _mFFT;
-  std::size_t _miFFT;
 };
