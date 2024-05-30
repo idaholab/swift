@@ -31,11 +31,17 @@ public:
   void setupTensors();
 
   /// overload for torch tensors
-  neml2::Scalar Eval(const neml2::Scalar * params);
+  neml2::Scalar Eval(at::ArrayRef<at::Tensor> params);
+
+  /// print IR for debugging
+  void print() { _graph->dump(); }
 
 protected:
-  /// immediate values converted to tensors
+  /// graph input nodes
   std::vector<torch::jit::Value *> _input;
+
+  /// output node
+  torch::jit::Value * _output;
 
   /// immediate values converted to tensors
   std::vector<torch::jit::Value *> _constant_immed;

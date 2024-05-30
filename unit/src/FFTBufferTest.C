@@ -14,45 +14,43 @@
 
 TEST(FFTBufferTest, Gradient)
 {
-  auto a = MooseFFT::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
+  auto A = MooseFFT::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
 
-  auto & A = a.data();
-  auto [x, y] = a.getAxis();
-  auto [i, j] = a.getFrequency();
+  auto & a = A.data();
+  auto [x, y] = A.getAxis();
+  auto [i, j] = A.getFrequency();
 
   // function
-  A = sin(2.0 * x) * sin(3.0 * y);
+  a = sin(2.0 * x) * sin(3.0 * y);
 
   // analytic derivatives
-  auto dAdx = 2.0 * cos(2.0 * x) * sin(3.0 * y);
-  auto dAdy = sin(2.0 * x) * 3.0 * cos(3.0 * y);
+  auto dadx = 2.0 * cos(2.0 * x) * sin(3.0 * y);
+  auto dady = sin(2.0 * x) * 3.0 * cos(3.0 * y);
 
   // spectral derivatives
-  auto [grad_x, grad_y] = a.grad();
+  auto [grad_x, grad_y] = A.grad();
 
-  // compute Frobenius norm of the difference of spectral and analytic derivatives
-  EXPECT_NEAR(torch::linalg::norm(grad_x - dAdx, "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
-  EXPECT_NEAR(torch::linalg::norm(grad_y - dAdy, "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
+  // compute max difference of spectral and analytic derivatives
+  EXPECT_NEAR((grad_x - dadx).abs().max().item<double>(), 0.0, 1e-12);
+  EXPECT_NEAR((grad_y - dady).abs().max().item<double>(), 0.0, 1e-12);
 }
 
 TEST(FFTBufferTest, 2DAxis)
 {
-  auto a = MooseFFT::createBuffer({3, 4});
-  a.min() = {0.0, 0.0};
-  a.max() = {3.0 * 4.0 * 5.0, 4.0 * 5.0 * 6.0};
+  auto A = MooseFFT::createBuffer({3, 4});
+  A.min() = {0.0, 0.0};
+  A.max() = {3.0 * 4.0 * 5.0, 4.0 * 5.0 * 6.0};
 
-  std::cout << "2D size " << a.data().dim() << '\n';
-
-  const auto xCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
+  const auto xCompare = [&A](auto interval, torch::detail::TensorDataContainer gold)
   {
-    auto xt = a.getAxis(0, interval);
+    auto xt = A.getAxis(0, interval);
     auto xg = torch::unsqueeze(torch::tensor(gold), 1);
     EXPECT_TRUE(torch::equal(xt, xg));
   };
 
-  const auto yCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
+  const auto yCompare = [&A](auto interval, torch::detail::TensorDataContainer gold)
   {
-    auto yt = a.getAxis(1, interval);
+    auto yt = A.getAxis(1, interval);
     auto yg = torch::unsqueeze(torch::tensor(gold), 0);
     EXPECT_TRUE(torch::equal(yt, yg));
   };
@@ -70,13 +68,11 @@ TEST(FFTBufferTest, 2DAxis)
 
 TEST(FFTBufferTest, 1DAxis)
 {
-  auto a = MooseFFT::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
+  auto A = MooseFFT::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
 
-  std::cout << "1D size " << a.data().dim() << '\n';
-
-  const auto xCompare = [&a](auto interval, torch::detail::TensorDataContainer gold)
+  const auto xCompare = [&A](auto interval, torch::detail::TensorDataContainer gold)
   {
-    auto xt = a.getAxis(0, interval);
+    auto xt = A.getAxis(0, interval);
     auto xg = torch::unsqueeze(torch::tensor(gold), 0);
     EXPECT_TRUE(torch::equal(xt, xg));
   };

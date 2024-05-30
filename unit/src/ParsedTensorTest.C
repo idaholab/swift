@@ -21,30 +21,30 @@ TEST(ParsedTensorTest, Parse)
   ParsedTensor F;
   std::string variables = "a, b, c";
 
+  auto A = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  auto B = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  auto C = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+
+  auto & a = A.data();
+  auto & b = B.data();
+  auto & c = C.data();
+
+  auto [x, y] = A.getAxis();
+
+  // function
+  a = x;
+  b = y;
+  c = 2.0 * x * y;
+
   F.Parse("a * b + c", variables);
   F.Optimize();
   F.setupTensors();
 
-  auto a = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
-  auto b = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
-  auto c = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  std::vector<neml2::Scalar> params{a, b, c};
+  auto gold = a * b + c;
 
-  auto & A = a.data();
-  auto & B = b.data();
-  auto & C = c.data();
-
-  auto [x, y] = a.getAxis();
-
-  // function
-  A = x;
-  B = y;
-  C = -x * y;
-
-  std::vector<neml2::Scalar> params{A, B, C};
-
-  // Frobenius norm of the result tensor
-  EXPECT_NEAR(
-      torch::linalg::norm(F.Eval(params.data()), "fro", {}, false, {}).item<double>(), 0.0, 1e-12);
+  // compare parsed result tensor to compiled expression
+  EXPECT_NEAR((F.Eval(params) - gold).abs().max().item<double>(), 0.0, 1e-12);
 }
 
 #else

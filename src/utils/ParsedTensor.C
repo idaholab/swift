@@ -39,7 +39,7 @@ ParsedTensor::setupTensors()
 }
 
 neml2::Scalar
-ParsedTensor::Eval(const neml2::Scalar * params)
+ParsedTensor::Eval(const std::vector<neml2::Scalar> & params)
 {
   using namespace FUNCTIONPARSERTYPES;
 
@@ -361,7 +361,6 @@ ParsedTensor::Eval(const neml2::Scalar * params)
           // load variable
           ++sp;
           s[sp] = params[op - VarBegin];
-          std::cout << "VAR @sp=" << sp << " = " << s[sp] << "\n\n";
         }
         else
         {

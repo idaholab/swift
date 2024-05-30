@@ -21,6 +21,9 @@
 #include <torch/csrc/jit/runtime/custom_operator.h>
 #include <torch/csrc/jit/runtime/graph_iterator.h>
 
+#include <torch/csrc/jit/passes/graph_fuser.h>
+// #include <torch/csrc/jit/codegen/fuser/interface.h>
+
 #include <ATen/TensorOperators.h>
 
 ParsedJITTensor::ParsedJITTensor() : FunctionParserAD(), _data(*getParserData()) {}
@@ -45,6 +48,9 @@ ParsedJITTensor::setupTensors()
   _input.clear();
   for (unsigned i = 0; i < _data.mVariablesAmount; ++i)
     _input.push_back(_graph->addInput());
+
+  // create output node
+  // _output = _graph->addOutput();
 
   // build graph
   using namespace FUNCTIONPARSERTYPES;
@@ -98,14 +104,40 @@ ParsedJITTensor::setupTensors()
     }
   }
 
+  auto outputs = s[sp]->node()->outputs();
+  for (auto output : outputs)
+    _graph->registerOutput(output);
+
   // make sure graph is well formed
   _graph->lint();
+}
 
-  _graph->dump();
+namespace
+{
+template <class... Inputs>
+inline std::vector<c10::IValue>
+makeStack(Inputs &&... inputs)
+{
+  return {std::forward<Inputs>(inputs)...};
+}
 }
 
 neml2::Scalar
-ParsedJITTensor::Eval(const neml2::Scalar * params)
+ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
 {
-  return params[0];
+  if (_input.size() != params.size())
+    throw std::runtime_error("Unexpected number of inputs in ParsedJITTensor::Eval.");
+
+  torch::jit::GraphExecutor exec(_graph, "test");
+
+  // copy stuff around (not ideal)
+  torch::jit::Stack stack;
+  for (const auto & i : params)
+    stack.push_back(i);
+
+  exec.run(stack);
+  if (stack.size() != 1)
+    throw std::runtime_error("Unexpected number vof outputs in ParsedJITTensor::Eval.");
+
+  return stack[0].toTensor();
 }
