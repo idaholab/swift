@@ -45,3 +45,9 @@ protected:
 
   const Data & _data;
 };
+
+/*
+https://github.com/pytorch/pytorch/blob/main/torch/csrc/jit/codegen/fuser/interface.h
+https://github.com/pytorch/pytorch/blob/main/test/cpp/jit/test_fuser.cpp#L272
+https://github.com/pytorch/pytorch/blob/main/test/cpp/jit/test_graph_executor.cpp
+*/
