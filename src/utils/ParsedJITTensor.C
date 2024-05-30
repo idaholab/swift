@@ -22,7 +22,11 @@
 #include <torch/csrc/jit/runtime/graph_iterator.h>
 
 #include <torch/csrc/jit/passes/graph_fuser.h>
-// #include <torch/csrc/jit/codegen/fuser/interface.h>
+#include <torch/csrc/jit/passes/constant_propagation.h>
+#include <torch/csrc/jit/passes/dead_code_elimination.h>
+#include <torch/csrc/jit/passes/common_subexpression_elimination.h>
+
+#include <torch/csrc/autograd/grad_mode.h>
 
 #include <ATen/TensorOperators.h>
 
@@ -48,6 +52,9 @@ ParsedJITTensor::setupTensors()
   _input.clear();
   for (unsigned i = 0; i < _data.mVariablesAmount; ++i)
     _input.push_back(_graph->addInput());
+
+  for (const auto & i : _input)
+    std::cout << "Input requires grad = " << i->requires_grad() << '\n';
 
   // create output node
   // _output = _graph->addOutput();
@@ -110,6 +117,12 @@ ParsedJITTensor::setupTensors()
 
   // make sure graph is well formed
   _graph->lint();
+
+  // optimization
+  EliminateDeadCode(_graph); // Tracing of some ops depends on the DCE trick
+  ConstantPropagation(_graph);
+  EliminateCommonSubexpression(_graph);
+  FuseGraph(_graph, true);
 }
 
 namespace
@@ -125,19 +138,31 @@ makeStack(Inputs &&... inputs)
 neml2::Scalar
 ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
 {
-  if (_input.size() != params.size())
-    throw std::runtime_error("Unexpected number of inputs in ParsedJITTensor::Eval.");
+  using namespace torch::jit;
 
-  torch::jit::GraphExecutor exec(_graph, "test");
-
-  // copy stuff around (not ideal)
-  torch::jit::Stack stack;
+  // copy stuff around (actshually... this should reference the same storage )
+  Stack stack;
   for (const auto & i : params)
     stack.push_back(i);
 
-  exec.run(stack);
+  if (_input.size() != params.size())
+    throw std::runtime_error("Unexpected number of inputs in ParsedJITTensor::Eval.");
+
+  // disable autograd
+  const auto ad = torch::autograd::GradMode::is_enabled();
+  torch::autograd::GradMode::set_enabled(false);
+
+  GraphExecutor exec(_graph, "F");
+  auto plan = exec.getPlanFor(stack, 10);
+  InterpreterState(plan.code).run(stack);
+
+  print();
+
+  // exec.run(stack);
   if (stack.size() != 1)
     throw std::runtime_error("Unexpected number vof outputs in ParsedJITTensor::Eval.");
+
+  torch::autograd::GradMode::set_enabled(ad);
 
   return stack[0].toTensor();
 }
