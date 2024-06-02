@@ -10,6 +10,7 @@
 #ifdef NEML2_ENABLED
 
 #include "FFTBuffer.h"
+#include "SwiftUtils.h"
 #include "gtest/gtest.h"
 
 TEST(FFTBufferTest, Gradient)
@@ -19,6 +20,10 @@ TEST(FFTBufferTest, Gradient)
   auto & a = A.data();
   auto [x, y] = A.getAxis();
   auto [i, j] = A.getFrequency();
+
+  MooseFFT::printTensorInfo(a);
+  MooseFFT::printTensorInfo(x);
+  MooseFFT::printTensorInfo(i);
 
   // function
   a = sin(2.0 * x) * sin(3.0 * y);
@@ -45,6 +50,8 @@ TEST(FFTBufferTest, 2DAxis)
   {
     auto xt = A.getAxis(0, interval);
     auto xg = torch::unsqueeze(torch::tensor(gold), 1);
+    xg = xg.to(xt.device());
+
     EXPECT_TRUE(torch::equal(xt, xg));
   };
 
@@ -52,6 +59,8 @@ TEST(FFTBufferTest, 2DAxis)
   {
     auto yt = A.getAxis(1, interval);
     auto yg = torch::unsqueeze(torch::tensor(gold), 0);
+    yg = yg.to(yt.device());
+
     EXPECT_TRUE(torch::equal(yt, yg));
   };
 
@@ -74,6 +83,7 @@ TEST(FFTBufferTest, 1DAxis)
   {
     auto xt = A.getAxis(0, interval);
     auto xg = torch::unsqueeze(torch::tensor(gold), 0);
+    xg = xg.to(xt.device());
     EXPECT_TRUE(torch::equal(xt, xg));
   };
 

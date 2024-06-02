@@ -10,6 +10,7 @@
 #pragma once
 
 #include "NEML2Utils.h"
+#include "SwiftUtils.h"
 #include "neml2/tensors/Scalar.h"
 
 #ifdef NEML2_ENABLED
@@ -79,7 +80,7 @@ public:
   std::array<neml2::Real, D> & min() { return _min; }
   std::array<neml2::Real, D> & max() { return _max; }
 
-  neml2::Scalar getAxis(std::size_t dim, Interval interval = Interval::RIGHT_OPEN) const;
+  neml2::Scalar getAxis(std::size_t dim, Interval interval = Interval::LEFT_OPEN) const;
   neml2::Scalar getFrequency(std::size_t dim) const;
   neml2::Scalar grad(std::size_t dim, T * fft = nullptr) const;
 
@@ -96,8 +97,6 @@ public:
 
   friend FFTBuffer<T, D>
   createBuffer<T, D>(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D]);
-
-  const neml2::Scalar _two_pi_i;
 
 protected:
   T fft() const;
@@ -122,7 +121,8 @@ protected:
   }
 
 private:
-  torch::Device _device;
+  torch::TensorOptions _options;
+  const neml2::Scalar _two_pi_i;
   T _data;
   const bool _rfft;
   std::array<neml2::Real, D> _min;
@@ -133,9 +133,12 @@ template <typename T, std::size_t D>
 FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape,
                            const std::array<Real, D> & min,
                            const std::array<Real, D> & max)
-  : _two_pi_i(at::tensor(c10::complex<double>(0.0, 2.0 * pi), at::dtype(at::kComplexDouble))),
-    _device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU),
-    _data(T::zeros(batch_shape, _device)),
+  : _options(floatTensorOptions()),
+    //   _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
+    //                           _options.dtype(torch::kComplex64))),
+    _two_pi_i(
+        at::tensor(c10::complex<double>(0.0, 2.0 * libMesh::pi), at::dtype(at::kComplexDouble))),
+    _data(T::zeros(batch_shape, _options)),
     _rfft(true),
     _min(min),
     _max(max)
@@ -157,17 +160,17 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
   {
     case Interval::OPEN:
       return torch::unsqueeze(
-          torch::narrow(torch::linspace(
-                            c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 2, _device),
-                        0,
-                        1,
-                        n),
+          torch::narrow(
+              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 2, _options),
+              0,
+              1,
+              n),
           D - dim - 1);
 
     case Interval::LEFT_OPEN:
       return torch::unsqueeze(
           torch::narrow(
-              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _device),
+              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _options),
               0,
               1,
               n),
@@ -176,7 +179,7 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
     case Interval::RIGHT_OPEN:
       return torch::unsqueeze(
           torch::narrow(
-              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _device),
+              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _options),
               0,
               0,
               n),
@@ -184,7 +187,8 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 
     default: // case CLOSED:
       return torch::unsqueeze(
-          torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n, _device), D - dim - 1);
+          torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n, _options),
+          D - dim - 1);
   }
 }
 
@@ -197,8 +201,8 @@ FFTBuffer<T, D>::getFrequency(std::size_t dim) const
 
   const auto n = _data.batch_sizes()[dim];
   const auto a = (_max[dim] - _min[dim]) / Real(n);
-  const auto freq = (dim == D - 1 && _rfft) ? torch::fft::rfftfreq(n, a, _device)
-                                            : torch::fft::fftfreq(n, a, _device);
+  const auto freq = (dim == D - 1 && _rfft) ? torch::fft::rfftfreq(n, a, _options)
+                                            : torch::fft::fftfreq(n, a, _options);
 
   return torch::unsqueeze(freq, D - dim - 1);
 }
