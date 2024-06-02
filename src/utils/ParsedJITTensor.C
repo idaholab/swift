@@ -26,11 +26,16 @@
 #include <torch/csrc/jit/passes/dead_code_elimination.h>
 #include <torch/csrc/jit/passes/common_subexpression_elimination.h>
 
+#include <torch/csrc/jit/passes/tensorexpr_fuser.h>
+
 #include <torch/csrc/autograd/grad_mode.h>
 
 #include <ATen/TensorOperators.h>
 
-ParsedJITTensor::ParsedJITTensor() : FunctionParserAD(), _data(*getParserData()) {}
+ParsedJITTensor::ParsedJITTensor()
+  : FunctionParserAD(), _graph_executor(nullptr), _execution_plan(nullptr), _data(*getParserData())
+{
+}
 
 void
 ParsedJITTensor::setupTensors()
@@ -48,16 +53,18 @@ ParsedJITTensor::setupTensors()
   for (const auto & immed : _data.mImmed)
     _constant_immed.push_back(_graph->insertConstant(immed));
 
+  // math constants
+  const auto const_log10 = _graph->insertConstant(std::log(10.0));
+  const auto const_pi = _graph->insertConstant(libMesh::pi);
+  const auto const_minus_one = _graph->insertConstant(-1.0);
+  const auto const_minus_one_half = _graph->insertConstant(-0.5);
+  const auto const_one_third = _graph->insertConstant(1.0 / 3.0);
+  const auto const_two = _graph->insertConstant(2.0);
+
   // create input nodes
   _input.clear();
   for (unsigned i = 0; i < _data.mVariablesAmount; ++i)
     _input.push_back(_graph->addInput());
-
-  for (const auto & i : _input)
-    std::cout << "Input requires grad = " << i->requires_grad() << '\n';
-
-  // create output node
-  // _output = _graph->addOutput();
 
   // build graph
   using namespace FUNCTIONPARSERTYPES;
@@ -76,6 +83,7 @@ ParsedJITTensor::setupTensors()
         std::cout << "Added immed " << _data.mImmed[nImmed] << '\n';
         s[sp] = _constant_immed[nImmed++];
         break;
+
       case cAdd:
         --sp;
         s[sp] = _graph->insert(aten::add, {s[sp], s[sp + 1]});
@@ -88,6 +96,7 @@ ParsedJITTensor::setupTensors()
         --sp;
         s[sp] = _graph->insert(aten::sub, {s[sp + 1], s[sp]});
         break;
+
       case cMul:
         --sp;
         s[sp] = _graph->insert(aten::mul, {s[sp], s[sp + 1]});
@@ -95,6 +104,86 @@ ParsedJITTensor::setupTensors()
       case cDiv:
         --sp;
         s[sp] = _graph->insert(aten::div, {s[sp], s[sp + 1]});
+        break;
+
+      case cMod:
+        --sp;
+        s[sp] = _graph->insert(aten::fmod, {s[sp], s[sp + 1]});
+        break;
+      case cRDiv:
+        --sp;
+        s[sp] = _graph->insert(aten::div, {s[sp + 1], s[sp]});
+        break;
+
+      case cSin:
+        s[sp] = _graph->insert(aten::sin, {s[sp]});
+        break;
+      case cCos:
+        s[sp] = _graph->insert(aten::cos, {s[sp]});
+        break;
+      case cTan:
+        // no native a10 tan operator?
+        s[sp] = _graph->insert(
+            aten::div, {_graph->insert(aten::sin, {s[sp]}), _graph->insert(aten::cos, {s[sp]})});
+        break;
+
+      case cSinCos:
+        s[sp + 1] = _graph->insert(aten::cos, {s[sp]});
+        s[sp] = _graph->insert(aten::sin, {s[sp]});
+        ++sp;
+        break;
+
+      case cAbs:
+        s[sp] = _graph->insert(aten::abs, {s[sp]});
+        break;
+      case cMax:
+        --sp;
+        s[sp] = _graph->insert(aten::max, {s[sp], s[sp + 1]});
+        break;
+      case cMin:
+        --sp;
+        s[sp] = _graph->insert(aten::min, {s[sp], s[sp + 1]});
+        break;
+
+      case cInt:
+        s[sp] = _graph->insert(aten::round, {s[sp]});
+        break;
+
+      case cLog:
+        s[sp] = _graph->insert(aten::log, {s[sp]});
+        break;
+      case cLog2:
+        s[sp] = _graph->insert(aten::log2, {s[sp]});
+        break;
+      case cLog10:
+        s[sp] = _graph->insert(aten::div, {_graph->insert(aten::log, {s[sp]}), const_log10});
+        break;
+
+      case cNeg:
+        s[sp] = _graph->insert(aten::mul, {s[sp], const_minus_one});
+        break;
+
+      case cSqr:
+        s[sp] = _graph->insert(aten::mul, {s[sp], s[sp]});
+        break;
+      case cSqrt:
+        s[sp] = _graph->insert(aten::sqrt, {s[sp]});
+        break;
+      case cRSqrt:
+        s[sp] = _graph->insert(aten::pow, {s[sp], const_minus_one_half});
+        break;
+      case cPow:
+        --sp;
+        s[sp] = _graph->insert(aten::pow, {s[sp], s[sp + 1]});
+        break;
+      case cExp:
+        s[sp] = _graph->insert(aten::exp, {s[sp]});
+        break;
+      case cExp2:
+        s[sp] = _graph->insert(aten::pow, {const_two, s[sp]});
+        break;
+      case cCbrt:
+        s[sp] = _graph->insert(aten::pow, {s[sp], const_one_third});
         break;
 
       default:
@@ -106,7 +195,7 @@ ParsedJITTensor::setupTensors()
         }
         else
         {
-          throw std::runtime_error("Opcode not supported for libtorch tensors.");
+          throw std::runtime_error("JIT Opcode not supported for libtorch tensors.");
         }
     }
   }
@@ -140,6 +229,7 @@ ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
 {
   using namespace torch::jit;
 
+  // std::cout << "tensorExprFuserEnabled = " << tensorExprFuserEnabled() << '\n';
   // copy stuff around (actshually... this should reference the same storage )
   Stack stack;
   for (const auto & i : params)
@@ -152,11 +242,14 @@ ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
   const auto ad = torch::autograd::GradMode::is_enabled();
   torch::autograd::GradMode::set_enabled(false);
 
-  GraphExecutor exec(_graph, "F");
-  auto plan = exec.getPlanFor(stack, 10);
-  InterpreterState(plan.code).run(stack);
+  if (!_graph_executor)
+    _graph_executor = std::make_shared<GraphExecutor>(_graph, "F");
 
-  print();
+  // if (!_execution_plan)
+  //   _execution_plan = std::make_shared<ExecutionPlan>(_graph_executor->getPlanFor(stack, 10));
+
+  // InterpreterState(_execution_plan->code).run(stack);
+  _graph_executor->run(stack);
 
   // exec.run(stack);
   if (stack.size() != 1)

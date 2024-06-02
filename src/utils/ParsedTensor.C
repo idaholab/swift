@@ -58,11 +58,17 @@ ParsedTensor::Eval(const std::vector<neml2::Scalar> & params)
         break;
       case cAdd:
         --sp;
-        s[sp] += s[sp + 1];
+        if (s[sp].sizes() == s[sp + 1].sizes())
+          s[sp] += s[sp + 1];
+        else
+          s[sp] = s[sp] + s[sp + 1];
         break;
       case cSub:
         --sp;
-        s[sp] -= s[sp + 1];
+        if (s[sp].sizes() == s[sp + 1].sizes())
+          s[sp] -= s[sp + 1];
+        else
+          s[sp] = s[sp] - s[sp + 1];
         break;
       case cRSub:
         --sp;
@@ -70,14 +76,17 @@ ParsedTensor::Eval(const std::vector<neml2::Scalar> & params)
         break;
       case cMul:
         --sp;
-        s[sp] = s[sp] * s[sp + 1];
-        // s[sp] *= s[sp + 1];
+        if (s[sp].sizes() == s[sp + 1].sizes())
+          s[sp] *= s[sp + 1];
+        else
+          s[sp] = s[sp] * s[sp + 1];
         break;
       case cDiv:
         --sp;
-        // check shapes
-        s[sp] = s[sp] / s[sp + 1];
-        // s[sp] /= s[sp + 1];
+        if (s[sp].sizes() == s[sp + 1].sizes())
+          s[sp] /= s[sp + 1];
+        else
+          s[sp] = s[sp] / s[sp + 1];
         break;
       case cMod:
         --sp;

@@ -24,10 +24,7 @@ class FFTBuffer;
 
 template <typename T = neml2::Scalar, std::size_t D>
 FFTBuffer<T, D>
-createBuffer(long int const (&n)[D],
-             Real const (&min)[D],
-             Real const (&max)[D],
-             const torch::TensorOptions & options = neml2::default_tensor_options())
+createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
 {
   TorchShapeRef nn(n);
   std::array<Real, D> amin, amax;
@@ -37,30 +34,27 @@ createBuffer(long int const (&n)[D],
     amax[i] = max[i];
   }
 
-  return FFTBuffer<T, D>(nn, amin, amax, options);
+  return FFTBuffer<T, D>(nn, amin, amax);
 }
 
 template <typename T = neml2::Scalar, std::size_t D>
 FFTBuffer<T, D>
-createBuffer(long int const (&n)[D],
-             Real const (&max)[D],
-             const torch::TensorOptions & options = neml2::default_tensor_options())
+createBuffer(long int const (&n)[D], Real const (&max)[D])
 {
   Real min[D];
   for (std::size_t i = 0; i < D; ++i)
     min[i] = 0.0;
-  return createBuffer(n, min, max, options);
+  return createBuffer(n, min, max);
 }
 
 template <typename T = neml2::Scalar, std::size_t D>
 FFTBuffer<T, D>
-createBuffer(long int const (&n)[D],
-             const torch::TensorOptions & options = neml2::default_tensor_options())
+createBuffer(long int const (&n)[D])
 {
   Real max[D];
   for (std::size_t i = 0; i < D; ++i)
     max[i] = 1.0;
-  return createBuffer(n, max, options);
+  return createBuffer(n, max);
 }
 
 enum class Interval
@@ -76,8 +70,7 @@ class FFTBuffer
 {
   FFTBuffer(const TorchShapeRef & batch_shape,
             const std::array<Real, D> & min,
-            const std::array<Real, D> & max,
-            const torch::TensorOptions & options);
+            const std::array<Real, D> & max);
 
 public:
   T & data() { return _data; }
@@ -101,10 +94,8 @@ public:
 
   // stream in gnuplot readable format
 
-  friend FFTBuffer<T, D> createBuffer<T, D>(long int const (&n)[D],
-                                            Real const (&min)[D],
-                                            Real const (&max)[D],
-                                            const torch::TensorOptions & options);
+  friend FFTBuffer<T, D>
+  createBuffer<T, D>(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D]);
 
   const neml2::Scalar _two_pi_i;
 
@@ -131,6 +122,7 @@ protected:
   }
 
 private:
+  torch::Device _device;
   T _data;
   const bool _rfft;
   std::array<neml2::Real, D> _min;
@@ -140,10 +132,10 @@ private:
 template <typename T, std::size_t D>
 FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape,
                            const std::array<Real, D> & min,
-                           const std::array<Real, D> & max,
-                           const torch::TensorOptions & options)
+                           const std::array<Real, D> & max)
   : _two_pi_i(at::tensor(c10::complex<double>(0.0, 2.0 * pi), at::dtype(at::kComplexDouble))),
-    _data(T::zeros(batch_shape, options)),
+    _device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU),
+    _data(T::zeros(batch_shape, _device)),
     _rfft(true),
     _min(min),
     _max(max)
@@ -165,21 +157,17 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
   {
     case Interval::OPEN:
       return torch::unsqueeze(
-          torch::narrow(
-              neml2::Scalar::linspace(neml2::Scalar(_min[dim], neml2::default_tensor_options()),
-                                      neml2::Scalar(_max[dim], neml2::default_tensor_options()),
-                                      n + 2),
-              0,
-              1,
-              n),
+          torch::narrow(torch::linspace(
+                            c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 2, _device),
+                        0,
+                        1,
+                        n),
           D - dim - 1);
 
     case Interval::LEFT_OPEN:
       return torch::unsqueeze(
           torch::narrow(
-              neml2::Scalar::linspace(neml2::Scalar(_min[dim], neml2::default_tensor_options()),
-                                      neml2::Scalar(_max[dim], neml2::default_tensor_options()),
-                                      n + 1),
+              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _device),
               0,
               1,
               n),
@@ -188,9 +176,7 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
     case Interval::RIGHT_OPEN:
       return torch::unsqueeze(
           torch::narrow(
-              neml2::Scalar::linspace(neml2::Scalar(_min[dim], neml2::default_tensor_options()),
-                                      neml2::Scalar(_max[dim], neml2::default_tensor_options()),
-                                      n + 1),
+              torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n + 1, _device),
               0,
               0,
               n),
@@ -198,10 +184,7 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 
     default: // case CLOSED:
       return torch::unsqueeze(
-          neml2::Scalar::linspace(neml2::Scalar(_min[dim], neml2::default_tensor_options()),
-                                  neml2::Scalar(_max[dim], neml2::default_tensor_options()),
-                                  n),
-          D - dim - 1);
+          torch::linspace(c10::Scalar(_min[dim]), c10::Scalar(_max[dim]), n, _device), D - dim - 1);
   }
 }
 
@@ -214,9 +197,8 @@ FFTBuffer<T, D>::getFrequency(std::size_t dim) const
 
   const auto n = _data.batch_sizes()[dim];
   const auto a = (_max[dim] - _min[dim]) / Real(n);
-  const auto freq = (dim == D - 1 && _rfft)
-                        ? torch::fft::rfftfreq(n, a, neml2::default_tensor_options())
-                        : torch::fft::fftfreq(n, a, neml2::default_tensor_options());
+  const auto freq = (dim == D - 1 && _rfft) ? torch::fft::rfftfreq(n, a, _device)
+                                            : torch::fft::fftfreq(n, a, _device);
 
   return torch::unsqueeze(freq, D - dim - 1);
 }

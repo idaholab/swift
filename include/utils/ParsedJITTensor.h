@@ -19,7 +19,9 @@ namespace torch
 namespace jit
 {
 struct Graph;
+struct GraphExecutor;
 struct Value;
+struct ExecutionPlan;
 }
 }
 
@@ -40,14 +42,13 @@ protected:
   /// graph input nodes
   std::vector<torch::jit::Value *> _input;
 
-  /// output node
-  torch::jit::Value * _output;
-
   /// immediate values converted to tensors
   std::vector<torch::jit::Value *> _constant_immed;
 
   /// compute graph
   std::shared_ptr<torch::jit::Graph> _graph;
+  std::shared_ptr<torch::jit::GraphExecutor> _graph_executor;
+  std::shared_ptr<torch::jit::ExecutionPlan> _execution_plan;
 
   const Data & _data;
 };
