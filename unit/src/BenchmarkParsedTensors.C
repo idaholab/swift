@@ -75,16 +75,19 @@ TEST(BenchmarkParsedTensors, Time)
 
   {
     std::vector<neml2::Scalar> params{a, b, c};
+    if (!F1.Eval(params).is_cuda())
+      mooseError("non-JIT result is not CUDA");
     auto t1 = high_resolution_clock::now();
 
-    for (int i = 0; i < 100; i++)
-      if (!F1.Eval(params).is_cuda())
-      {
-        mooseInfo("non-JIT result is not CUDA");
-        break;
-      }
+    for (int i = 0; i < 1000; i++)
+      F1.Eval(params);
 
     auto t2 = high_resolution_clock::now();
+
+    const auto sizes = F1.Eval(params).sizes();
+    for (auto i : sizes)
+      std::cout << i << ' ';
+    std::cout << " is output size\n";
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
@@ -93,16 +96,19 @@ TEST(BenchmarkParsedTensors, Time)
 
   {
     std::vector<at::Tensor> params{a, b, c};
+    if (!F2.Eval(params).is_cuda())
+      mooseError("JIT result is not CUDA");
     auto t1 = high_resolution_clock::now();
 
-    for (int i = 0; i < 100; i++)
-      if (!F2.Eval(params).is_cuda())
-      {
-        mooseInfo("non-JIT result is not CUDA");
-        break;
-      }
+    for (int i = 0; i < 1000; i++)
+      F2.Eval(params);
 
     auto t2 = high_resolution_clock::now();
+
+    const auto sizes = F2.Eval(params).sizes();
+    for (auto i : sizes)
+      std::cout << i << ' ';
+    std::cout << " is output size\n";
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;

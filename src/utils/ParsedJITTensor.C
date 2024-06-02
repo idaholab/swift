@@ -239,8 +239,7 @@ ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
     throw std::runtime_error("Unexpected number of inputs in ParsedJITTensor::Eval.");
 
   // disable autograd
-  const auto ad = torch::autograd::GradMode::is_enabled();
-  torch::autograd::GradMode::set_enabled(false);
+  torch::NoGradGuard no_grad;
 
   if (!_graph_executor)
     _graph_executor = std::make_shared<GraphExecutor>(_graph, "F");
