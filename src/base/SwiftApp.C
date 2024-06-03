@@ -5,14 +5,24 @@
 #include "MooseSyntax.h"
 #include "SwiftUtils.h"
 
+#include <cstdlib>
+
 namespace MooseFFT
 {
-static bool force_cpu = false;
+static struct SwiftGlobalSettings
+{
+  SwiftGlobalSettings()
+  {
+    if (std::getenv("SWIFT_FORCE_CPU"))
+      _force_cpu = true;
+  }
+  bool _force_cpu;
+} swift_global_settings;
 
 bool
 forceCPU()
 {
-  return force_cpu;
+  return swift_global_settings._force_cpu;
 }
 }
 
@@ -32,7 +42,8 @@ SwiftApp::validParams()
 SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
-  MooseFFT::force_cpu = getParam<bool>("force_cpu");
+  if (getParam<bool>("force_cpu"))
+    MooseFFT::swift_global_settings._force_cpu = true;
 }
 
 SwiftApp::~SwiftApp() {}
