@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "SwiftUtils.h"
+#include "Moose.h"
 
 namespace MooseFFT
 {
@@ -15,12 +16,12 @@ namespace MooseFFT
 void
 printTensorInfo(const torch::Tensor & x)
 {
-  std::cout << "      dimension: " << x.dim() << std::endl;
-  std::cout << "          shape: " << x.sizes() << std::endl;
-  std::cout << "          dtype: " << x.dtype() << std::endl;
-  std::cout << "         device: " << x.device() << std::endl;
-  std::cout << "  requires grad: " << (x.requires_grad() ? "true" : "false") << std::endl;
-  std::cout << std::endl;
+  Moose::out << "      dimension: " << x.dim() << std::endl;
+  Moose::out << "          shape: " << x.sizes() << std::endl;
+  Moose::out << "          dtype: " << x.dtype() << std::endl;
+  Moose::out << "         device: " << x.device() << std::endl;
+  Moose::out << "  requires grad: " << (x.requires_grad() ? "true" : "false") << std::endl;
+  Moose::out << std::endl;
 }
 
 const torch::TensorOptions

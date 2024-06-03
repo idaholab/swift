@@ -80,7 +80,6 @@ ParsedJITTensor::setupTensors()
     {
       case cImmed:
         ++sp;
-        std::cout << "Added immed " << _data.mImmed[nImmed] << '\n';
         s[sp] = _constant_immed[nImmed++];
         break;
 
@@ -229,8 +228,7 @@ ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
 {
   using namespace torch::jit;
 
-  // std::cout << "tensorExprFuserEnabled = " << tensorExprFuserEnabled() << '\n';
-  // copy stuff around (actshually... this should reference the same storage )
+  // build stack
   Stack stack;
   for (const auto & i : params)
     stack.push_back(i);

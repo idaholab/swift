@@ -41,10 +41,6 @@ TEST(BenchmarkParsedTensors, Time)
   c = 2.0 * x * y;
 
   F1.Parse("a * b + c + log(a+0.1) + a*a*a*a - b*b*b ", variables);
-
-  // F1.PrintByteCode(std::cout);
-  // F1.Optimize();
-  // F1.PrintByteCode(std::cout);
   F1.setupTensors();
 
   F2.Parse("a * b + c + log(a+0.1) + a*a*a*a - b*b*b ", variables);
@@ -84,14 +80,11 @@ TEST(BenchmarkParsedTensors, Time)
 
     auto t2 = high_resolution_clock::now();
 
-    const auto sizes = F1.Eval(params).sizes();
-    for (auto i : sizes)
-      std::cout << i << ' ';
-    std::cout << " is output size\n";
+    MooseFFT::printTensorInfo(F1.Eval(params));
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
-    std::cout << "non-JIT : " << ms_double.count() << "ms\n";
+    Moose::out << "non-JIT : " << ms_double.count() << "ms\n";
   }
 
   {
@@ -105,14 +98,11 @@ TEST(BenchmarkParsedTensors, Time)
 
     auto t2 = high_resolution_clock::now();
 
-    const auto sizes = F2.Eval(params).sizes();
-    for (auto i : sizes)
-      std::cout << i << ' ';
-    std::cout << " is output size\n";
+    MooseFFT::printTensorInfo(F2.Eval(params));
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
-    std::cout << "    JIT : " << ms_double.count() << "ms\n";
+    Moose::out << "    JIT : " << ms_double.count() << "ms\n";
   }
 }
 

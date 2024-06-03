@@ -134,10 +134,8 @@ FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape,
                            const std::array<Real, D> & min,
                            const std::array<Real, D> & max)
   : _options(floatTensorOptions()),
-    //   _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
-    //                           _options.dtype(torch::kComplex64))),
     _two_pi_i(
-        at::tensor(c10::complex<double>(0.0, 2.0 * libMesh::pi), at::dtype(at::kComplexDouble))),
+        torch::tensor(c10::complex<double>(0.0, 2.0 * pi), _options.dtype(torch::kComplexDouble))),
     _data(T::zeros(batch_shape, _options)),
     _rfft(true),
     _min(min),

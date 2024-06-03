@@ -21,10 +21,6 @@ TEST(FFTBufferTest, Gradient)
   auto [x, y] = A.getAxis();
   auto [i, j] = A.getFrequency();
 
-  MooseFFT::printTensorInfo(a);
-  MooseFFT::printTensorInfo(x);
-  MooseFFT::printTensorInfo(i);
-
   // function
   a = sin(2.0 * x) * sin(3.0 * y);
 
