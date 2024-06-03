@@ -11,14 +11,14 @@
 
 #include "MooseApp.h"
 
-class swiftApp : public MooseApp
+class SwiftTestApp : public MooseApp
 {
 public:
   static InputParameters validParams();
 
-  swiftApp(InputParameters parameters);
-  virtual ~swiftApp();
+  SwiftTestApp(InputParameters parameters);
+  virtual ~SwiftTestApp();
 
   static void registerApps();
-  static void registerAll(Factory & f, ActionFactory & af, Syntax & s);
+  static void registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs = false);
 };

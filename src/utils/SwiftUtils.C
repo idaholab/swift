@@ -8,10 +8,17 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "SwiftUtils.h"
+#include "SwiftApp.h"
 #include "Moose.h"
 
 namespace MooseFFT
 {
+
+torch::Device
+getDevice()
+{
+  return torch::cuda::is_available() && !forceCPU() ? torch::kCUDA : torch::kCPU;
+}
 
 void
 printTensorInfo(const torch::Tensor & x)
@@ -32,7 +39,7 @@ floatTensorOptions()
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+      .device(getDevice())
       .requires_grad(false);
 }
 
@@ -44,7 +51,7 @@ intTensorOptions()
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU)
+      .device(getDevice())
       .requires_grad(false);
 }
 

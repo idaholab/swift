@@ -11,14 +11,19 @@
 
 #include "MooseApp.h"
 
-class swiftTestApp : public MooseApp
+namespace MooseFFT
+{
+bool forceCPU();
+}
+
+class SwiftApp : public MooseApp
 {
 public:
   static InputParameters validParams();
 
-  swiftTestApp(InputParameters parameters);
-  virtual ~swiftTestApp();
+  SwiftApp(InputParameters parameters);
+  virtual ~SwiftApp();
 
   static void registerApps();
-  static void registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs = false);
+  static void registerAll(Factory & f, ActionFactory & af, Syntax & s);
 };

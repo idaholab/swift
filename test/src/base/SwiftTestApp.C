@@ -6,44 +6,44 @@
 //*
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
-#include "swiftTestApp.h"
-#include "swiftApp.h"
+#include "SwiftTestApp.h"
+#include "SwiftApp.h"
 #include "Moose.h"
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
 InputParameters
-swiftTestApp::validParams()
+SwiftTestApp::validParams()
 {
-  InputParameters params = swiftApp::validParams();
+  InputParameters params = SwiftApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
   return params;
 }
 
-swiftTestApp::swiftTestApp(InputParameters parameters) : MooseApp(parameters)
+SwiftTestApp::SwiftTestApp(InputParameters parameters) : MooseApp(parameters)
 {
-  swiftTestApp::registerAll(
+  SwiftTestApp::registerAll(
       _factory, _action_factory, _syntax, getParam<bool>("allow_test_objects"));
 }
 
-swiftTestApp::~swiftTestApp() {}
+SwiftTestApp::~SwiftTestApp() {}
 
 void
-swiftTestApp::registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs)
+SwiftTestApp::registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs)
 {
-  swiftApp::registerAll(f, af, s);
+  SwiftApp::registerAll(f, af, s);
   if (use_test_objs)
   {
-    Registry::registerObjectsTo(f, {"swiftTestApp"});
-    Registry::registerActionsTo(af, {"swiftTestApp"});
+    Registry::registerObjectsTo(f, {"SwiftTestApp"});
+    Registry::registerActionsTo(af, {"SwiftTestApp"});
   }
 }
 
 void
-swiftTestApp::registerApps()
+SwiftTestApp::registerApps()
 {
-  registerApp(swiftApp);
-  registerApp(swiftTestApp);
+  registerApp(SwiftApp);
+  registerApp(SwiftTestApp);
 }
 
 /***************************************************************************************************
@@ -51,12 +51,12 @@ swiftTestApp::registerApps()
  **************************************************************************************************/
 // External entry point for dynamic application loading
 extern "C" void
-swiftTestApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
+SwiftTestApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
 {
-  swiftTestApp::registerAll(f, af, s);
+  SwiftTestApp::registerAll(f, af, s);
 }
 extern "C" void
-swiftTestApp__registerApps()
+SwiftTestApp__registerApps()
 {
-  swiftTestApp::registerApps();
+  SwiftTestApp::registerApps();
 }
