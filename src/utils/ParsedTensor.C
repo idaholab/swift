@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include "ParsedTensor.h"
 #include "libmesh/extrasrc/fptypes.hh"
 
@@ -380,3 +382,5 @@ ParsedTensor::Eval(const std::vector<neml2::Scalar> & params)
 
   return s[sp];
 }
+
+#endif

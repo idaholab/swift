@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include "NEML2Utils.h"
 #include "neml2/tensors/Scalar.h"
 
@@ -58,3 +60,5 @@ https://github.com/pytorch/pytorch/blob/main/torch/csrc/jit/codegen/fuser/interf
 https://github.com/pytorch/pytorch/blob/main/test/cpp/jit/test_fuser.cpp#L272
 https://github.com/pytorch/pytorch/blob/main/test/cpp/jit/test_graph_executor.cpp
 */
+
+#endif

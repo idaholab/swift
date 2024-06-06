@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include <torch/torch.h>
 
 namespace MooseFFT
@@ -20,3 +22,5 @@ const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions intTensorOptions();
 
 } // namespace MooseFFT
+
+#endif

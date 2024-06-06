@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include "NEML2Utils.h"
 #include "neml2/tensors/Scalar.h"
 
@@ -40,3 +42,5 @@ protected:
   std::size_t _mFFT;
   std::size_t _miFFT;
 };
+
+#endif

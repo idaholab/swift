@@ -9,11 +9,11 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include "NEML2Utils.h"
 #include "SwiftUtils.h"
 #include "neml2/tensors/Scalar.h"
-
-#ifdef NEML2_ENABLED
 
 using neml2::TorchShapeRef;
 
@@ -229,8 +229,8 @@ FFTBuffer<T, D>::fft() const
   if constexpr (D == 2)
     return torch::fft::rfft2(_data);
 
-  if constexpr (D == 2)
-    throw std::domain_error("3D not implemented yet");
+  if constexpr (D == 3)
+    return torch::fft::irfftn(_data, c10::nullopt, {0, 1, 2});
 }
 
 template <typename T, std::size_t D>
@@ -244,8 +244,8 @@ FFTBuffer<T, D>::ifft(const T & Abar) const
   if constexpr (D == 2)
     return torch::fft::irfft2(Abar);
 
-  if constexpr (D == 2)
-    throw std::domain_error("3D not implemented yet");
+  if constexpr (D == 3)
+    return torch::fft::irfftn(Abar, c10::nullopt, {0, 1, 2});
 }
 
 template <typename T, std::size_t D>

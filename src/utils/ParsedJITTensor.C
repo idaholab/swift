@@ -9,6 +9,8 @@
 
 #pragma once
 
+#ifdef NEML2_ENABLED
+
 #include "ParsedJITTensor.h"
 #include "libmesh/extrasrc/fptypes.hh"
 
@@ -256,3 +258,5 @@ ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
 
   return stack[0].toTensor();
 }
+
+#endif
