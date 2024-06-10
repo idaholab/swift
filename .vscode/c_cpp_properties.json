@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "defines": [
+        "NEML2_ENABLED"
+      ],
+      "cStandard": "c17"
+    }
+  ],
+  "version": 4
+}
