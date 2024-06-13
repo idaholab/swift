@@ -1,3 +1,12 @@
+//* This file is part of the MOOSE framework
+//* https://www.mooseframework.org
+//*
+//* All rights reserved, see COPYRIGHT for full restrictions
+//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
 #include "SwiftApp.h"
 #include "Moose.h"
 #include "AppFactory.h"
@@ -31,6 +40,8 @@ SwiftApp::validParams()
 {
   InputParameters params = MooseApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
+  params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
+
   params.addCommandLineParam<bool>("force_cpu",
                                    "--force-cpu",
                                    false,
@@ -49,13 +60,23 @@ SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 SwiftApp::~SwiftApp() {}
 
 void
-SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & s)
+SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 {
-  ModulesApp::registerAllObjects<SwiftApp>(f, af, s);
+  ModulesApp::registerAllObjects<SwiftApp>(f, af, syntax);
   Registry::registerObjectsTo(f, {"SwiftApp"});
   Registry::registerActionsTo(af, {"SwiftApp"});
 
-  /* register custom execute flags, action syntax, etc. here */
+  // FFTBuffer Actions
+  registerSyntaxTask("AddFFTBufferAction", "FFTBuffers/*", "add_fft_buffer");
+  syntax.registerSyntaxType("FFTBuffers/*", "FFTBufferName");
+  registerMooseObjectTask("add_fft_buffer", FFTBuffer, false);
+  addTaskDependency("add_fft_buffer", "setup_mesh_complete");
+
+  // FFTCompute Actions
+  registerSyntaxTask("AddFFTComputeAction", "FFTComputes/*", "add_fft_compute");
+  syntax.registerSyntaxType("FFTComputes/*", "FFTComputeName");
+  registerMooseObjectTask("add_fft_compute", FFTCompute, false);
+  addTaskDependency("add_fft_compute", "add_fft_buffer");
 }
 
 void
