@@ -9,6 +9,7 @@
 
 #include "FFTProblem.h"
 #include "FFTMesh.h"
+#include "SwiftUtils.h"
 
 registerMooseObject("SwiftApp", FFTProblem);
 
@@ -33,35 +34,53 @@ FFTProblem::initialSetup()
 
   _dim = fft_mesh->getDim();
 
-  _xmax = fft_mesh->getMaxInDimension(0);
-  _ymax = fft_mesh->getMaxInDimension(1);
-  _zmax = fft_mesh->getMaxInDimension(2);
-  _nx = fft_mesh->getElementsInDimension(0);
-  _ny = fft_mesh->getElementsInDimension(1);
-  _nz = fft_mesh->getElementsInDimension(2);
+  // get grid geometry
+  for (const auto dim : make_range(3))
+  {
+    _max[dim] = fft_mesh->getMaxInDimension(dim);
+    _n[dim] = fft_mesh->getElementsInDimension(dim);
+    _grid_spacing[dim] = _max[dim] / _n[dim];
+  }
 
   switch (_dim)
   {
     case 1:
-      _shape_storage = {_nx};
+      _shape_storage = {_n[0]};
     case 2:
-      _shape_storage = {_nx, _ny};
+      _shape_storage = {_n[0], _n[1]};
     case 3:
-      _shape_storage = {_nx, _ny, _nz};
+      _shape_storage = {_n[0], _n[1], _n[2]};
     default:
       mooseError("Unsupported mesh dimension");
   }
   _shape = _shape_storage;
 
-  // Compute grid spacing
-  _dx = _xmax / _nx;
-  _dy = _ymax / _ny;
-  _dz = _zmax / _nz;
-
   // initialize tensors (assuming all scalar for now, but in the future well have an FFTBufferBase
   // pointer as well)
+  auto options = MooseFFT::floatTensorOptions();
   for (auto pair : _fft_buffer)
-    pair.second = torch::zeros(_shape);
+    pair.second = torch::zeros(_shape, options);
+
+  // build real space axes
+  for (const auto dim : make_range(_dim))
+    _axis.push_back(
+        torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
+                                         _n[dim],
+                                         options),
+                         _dim - dim - 1));
+
+  // build reciprocal space axes
+  for (const auto dim : make_range(_dim))
+  {
+    const auto freq = (dim == _dim - 1) ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], options)
+                                        : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], options);
+    _reciprocal_axis.push_back(torch::unsqueeze(freq, _dim - dim - 1));
+  }
+
+  // dependency resolution of FFTICs
+
+  // dependency resolution of FFTComputes
 }
 
 void

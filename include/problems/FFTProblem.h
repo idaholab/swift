@@ -36,17 +36,23 @@ protected:
   unsigned int _dim;
 
   /// Number of elements in x, y, z direction
-  unsigned int _nx, _ny, _nz;
+  std::array<unsigned int, 3> _n;
 
   /// The max values for x,y,z component
-  Real _xmax, _ymax, _zmax;
+  std::array<Real, 3> _max;
 
   /// grid spacing
-  Real _dx, _dy, _dz;
+  std::array<Real, 3> _grid_spacing;
 
   /// domain shape
   std::vector<long int> _shape_storage;
   torch::IntArrayRef _shape;
+
+  /// real space axes
+  std::vector<torch::Tensor> _axis;
+
+  /// reciprocal space axes
+  std::vector<torch::Tensor> _reciprocal_axis;
 };
 
 #endif
