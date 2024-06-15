@@ -62,13 +62,18 @@ FFTProblem::initialSetup()
     pair.second = torch::zeros(_shape, options);
 
   // build real space axes
-  for (const auto dim : make_range(_dim))
-    _axis.push_back(
-        torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
-                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
-                                         _n[dim],
-                                         options),
-                         _dim - dim - 1));
+  for (const auto dim : make_range(3))
+  {
+    if (dim < _dim)
+      _axis.push_back(
+          torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                           c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
+                                           _n[dim],
+                                           options),
+                           _dim - dim - 1));
+    else
+      _axis.push_back(torch::tensor({0.0}, options));
+  }
 
   // build reciprocal space axes
   for (const auto dim : make_range(_dim))
@@ -92,6 +97,25 @@ FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & para
 }
 
 void
-FFTProblem::addFFTCompute(const std::string & compute_name, InputParameters & parameters)
+FFTProblem::addFFTCompute(const std::string & compute_name,
+                          const std::string & name,
+                          InputParameters & parameters)
 {
+  // Add a pointer to the FFTProblem class
+  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+
+  // Create the object
+  std::shared_ptr<FFTCompute> compute_object =
+      _factory.create<FFTCompute>(compute_name, name, parameters, 0);
+  logAdd("FFTCompute", name, compute_name);
+  _computes.push_back(compute_object);
+}
+
+torch::Tensor &
+FFTProblem::getBuffer(const FFTBufferName & buffer_name)
+{
+  auto it = _fft_buffer.find(buffer_name);
+  if (it == _fft_buffer.end())
+    mooseError("FFTBuffer '", buffer_name, "' does not exist in the system");
+  return it->second;
 }

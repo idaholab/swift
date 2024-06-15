@@ -12,6 +12,8 @@
 #ifdef NEML2_ENABLED
 
 #include "FEProblem.h"
+#include "SwiftTypes.h"
+#include "FFTCompute.h"
 #include "torch/torch.h"
 
 /**
@@ -27,11 +29,15 @@ public:
   void initialSetup() override;
 
   virtual void addFFTBuffer(const std::string & buffer_name, InputParameters & parameters);
-  virtual void addFFTCompute(const std::string & compute_name, InputParameters & parameters);
+  virtual void addFFTCompute(const std::string & compute_name,
+                             const std::string & name,
+                             InputParameters & parameters);
+
+  torch::Tensor & getBuffer(const FFTBufferName & buffer_name);
 
 protected:
   /// list of FFTBuffers (i.e. tensors)
-  std::map<std::string, torch::Tensor> _fft_buffer;
+  std::map<FFTBufferName, torch::Tensor> _fft_buffer;
 
   unsigned int _dim;
 
@@ -53,6 +59,9 @@ protected:
 
   /// reciprocal space axes
   std::vector<torch::Tensor> _reciprocal_axis;
+
+  // compute objects
+  std::vector<std::shared_ptr<FFTCompute>> _computes;
 };
 
 #endif

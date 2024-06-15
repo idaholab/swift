@@ -9,13 +9,20 @@
 
 #pragma once
 
-#include "MooseObject.h"
-#include "SwiftTypes.h"
+#include "MooseObjectAction.h"
 
-class FFTBufferBase : public MooseObject
+class FFTProblem;
+
+/**
+ * This class adds an FFTCompute object.
+ * The FFTCompute performs a mathematical operation on input tensors to produce output tensors
+ */
+class AddFFTComputeAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();
 
-  FFTBufferBase(const InputParameters & parameters);
+  AddFFTComputeAction(const InputParameters & parameters);
+
+  virtual void act() override;
 };
