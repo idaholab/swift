@@ -33,11 +33,11 @@ public:
                              const std::string & name,
                              InputParameters & parameters);
 
-  torch::Tensor & getBuffer(const FFTBufferName & buffer_name);
+  torch::Tensor & getBuffer(const std::string & buffer_name);
 
 protected:
   /// list of FFTBuffers (i.e. tensors)
-  std::map<FFTBufferName, torch::Tensor> _fft_buffer;
+  std::map<std::string, torch::Tensor> _fft_buffer;
 
   unsigned int _dim;
 

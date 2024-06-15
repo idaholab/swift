@@ -10,6 +10,7 @@
 #include "FFTProblem.h"
 #include "FFTMesh.h"
 #include "SwiftUtils.h"
+#include "DependencyResolverInterface.h"
 
 registerMooseObject("SwiftApp", FFTProblem);
 
@@ -86,6 +87,7 @@ FFTProblem::initialSetup()
   // dependency resolution of FFTICs
 
   // dependency resolution of FFTComputes
+  DependencyResolverInterface::sort(_computes);
 }
 
 void
@@ -112,7 +114,7 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
 }
 
 torch::Tensor &
-FFTProblem::getBuffer(const FFTBufferName & buffer_name)
+FFTProblem::getBuffer(const std::string & buffer_name)
 {
   auto it = _fft_buffer.find(buffer_name);
   if (it == _fft_buffer.end())

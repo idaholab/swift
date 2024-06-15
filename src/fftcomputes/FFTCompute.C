@@ -15,7 +15,7 @@ InputParameters
 FFTCompute::validParams()
 {
   InputParameters params = MooseObject::validParams();
-  params.addRequiredParam<FFTBufferName>("output", "The buffer this compute is writing to");
+  params.addRequiredParam<FFTOutputBufferName>("output", "The buffer this compute is writing to");
   params.registerBase("FFTCompute");
   params.addClassDescription("FFTCompute object.");
   return params;
@@ -23,19 +23,33 @@ FFTCompute::validParams()
 
 FFTCompute::FFTCompute(const InputParameters & parameters)
   : MooseObject(parameters),
-    _u(getBuffer("output")),
+    _u(getOutputBuffer("output")),
     _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>("_fft_problem"))
 {
 }
 
-torch::Tensor &
-FFTCompute::getBuffer(const std::string & param)
+const torch::Tensor &
+FFTCompute::getInputBuffer(const std::string & param)
 {
-  return getBufferByName(getParam<FFTBufferName>(param));
+  return getInputBufferByName(getParam<FFTInputBufferName>(param));
+}
+
+const torch::Tensor &
+FFTCompute::getInputBufferByName(const FFTInputBufferName & buffer_name)
+{
+  _supplied_buffers.insert(buffer_name);
+  return _fft_problem.getBuffer(buffer_name);
 }
 
 torch::Tensor &
-FFTCompute::getBufferByName(const FFTBufferName & buffer_name)
+FFTCompute::getOutputBuffer(const std::string & param)
 {
+  return getOutputBufferByName(getParam<FFTOutputBufferName>(param));
+}
+
+torch::Tensor &
+FFTCompute::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
+{
+  _requested_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);
 }

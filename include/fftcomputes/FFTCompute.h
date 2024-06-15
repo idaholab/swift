@@ -11,6 +11,7 @@
 
 #include "MooseObject.h"
 #include "SwiftTypes.h"
+#include "DependencyResolverInterface.h"
 #include "FFTBufferBase.h"
 
 #include "torch/torch.h"
@@ -20,22 +21,31 @@ class FFTProblem;
 /**
  * FFTCompute object
  */
-class FFTCompute : public MooseObject
+class FFTCompute : public MooseObject, public DependencyResolverInterface
 {
 public:
   static InputParameters validParams();
 
   FFTCompute(const InputParameters & parameters);
 
+  virtual const std::set<std::string> & getRequestedItems() override { return _requested_buffers; }
+  virtual const std::set<std::string> & getSuppliedItems() override { return _supplied_buffers; }
+
 protected:
   /// perform the computation
   virtual Real computeBuffer() = 0;
 
-  torch::Tensor & getBuffer(const std::string & param);
-  torch::Tensor & getBufferByName(const FFTBufferName & buffer_name);
+  const torch::Tensor & getInputBuffer(const std::string & param);
+  const torch::Tensor & getInputBufferByName(const FFTInputBufferName & buffer_name);
+
+  torch::Tensor & getOutputBuffer(const std::string & param);
+  torch::Tensor & getOutputBufferByName(const FFTOutputBufferName & buffer_name);
 
   /// output buffer
   torch::Tensor & _u;
 
   FFTProblem & _fft_problem;
+
+  std::set<std::string> _requested_buffers;
+  std::set<std::string> _supplied_buffers;
 };
