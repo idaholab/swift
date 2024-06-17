@@ -24,7 +24,7 @@ public:
   void setupTensors();
 
   /// overload for torch tensors
-  neml2::Scalar Eval(const std::vector<neml2::Scalar> & params);
+  neml2::Scalar Eval(const std::vector<const torch::Tensor *> & params);
 
 protected:
   /// dummy function for fourier transforms (those are executed in

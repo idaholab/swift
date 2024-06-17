@@ -88,7 +88,7 @@ TEST(BenchmarkParsedTensors, Time)
   }
 
   {
-    std::vector<at::Tensor> params{a, b, c};
+    std::vector<const torch::Tensor *> params{&a, &b, &c};
     if (!F2.Eval(params).is_cuda())
       mooseInfo("JIT result is not CUDA");
     auto t1 = high_resolution_clock::now();

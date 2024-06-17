@@ -226,14 +226,14 @@ makeStack(Inputs &&... inputs)
 }
 
 neml2::Scalar
-ParsedJITTensor::Eval(at::ArrayRef<at::Tensor> params)
+ParsedJITTensor::Eval(const std::vector<const torch::Tensor *> & params)
 {
   using namespace torch::jit;
 
   // build stack
   Stack stack;
-  for (const auto & i : params)
-    stack.push_back(i);
+  for (const auto & p : params)
+    stack.push_back(*p);
 
   if (_input.size() != params.size())
     throw std::runtime_error("Unexpected number of inputs in ParsedJITTensor::Eval.");

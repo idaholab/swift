@@ -35,7 +35,7 @@ public:
   void setupTensors();
 
   /// overload for torch tensors
-  neml2::Scalar Eval(at::ArrayRef<at::Tensor> params);
+  neml2::Scalar Eval(const std::vector<const torch::Tensor *> & params);
 
   /// print IR for debugging
   void print() { _graph->dump(); }
