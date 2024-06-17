@@ -42,7 +42,6 @@ FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
 void
 FFTBufferAux::customSetup(const ExecFlagType &)
 {
-  std::cout << _buffer << '\n';
   _cpu_buffer = _buffer.cpu();
 }
 

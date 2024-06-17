@@ -3,8 +3,8 @@
   dim = 2
   nx = 50
   ny = 50
-  xmax = 10
-  ymax = 10
+  xmax = ${fparse pi*4}
+  ymax = ${fparse pi*4}
 []
 
 [FFTBuffers]

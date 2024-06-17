@@ -13,9 +13,11 @@
 
 #include "FEProblem.h"
 #include "SwiftTypes.h"
-#include "FFTCompute.h"
-#include "FFTInitialCondition.h"
 #include "torch/torch.h"
+
+class FFTMesh;
+class FFTCompute;
+class FFTInitialCondition;
 
 /**
  * Problem for solving eigenvalue problems
@@ -27,7 +29,7 @@ public:
 
   FFTProblem(const InputParameters & parameters);
 
-  void initialSetup() override;
+  void init() override;
 
   virtual void addFFTBuffer(const std::string & buffer_name, InputParameters & parameters);
   virtual void addFFTCompute(const std::string & compute_name,
@@ -44,6 +46,9 @@ public:
   const torch::Tensor & getAxis(std::size_t component) const;
 
 protected:
+  /// FFT Mesh object
+  FFTMesh * _fft_mesh;
+
   /// list of FFTBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _fft_buffer;
 
@@ -72,7 +77,7 @@ protected:
   std::vector<std::shared_ptr<FFTCompute>> _computes;
 
   // ice objects
-  std::vector<std::shared_ptr<FFTCompute>> _ics;
+  std::vector<std::shared_ptr<FFTInitialCondition>> _ics;
 };
 
 #endif

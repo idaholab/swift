@@ -9,6 +9,8 @@
 
 #include "FFTProblem.h"
 #include "FFTMesh.h"
+#include "FFTCompute.h"
+#include "FFTInitialCondition.h"
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
 
@@ -24,22 +26,22 @@ FFTProblem::validParams()
   return params;
 }
 
-FFTProblem::FFTProblem(const InputParameters & parameters) : FEProblem(parameters) {}
+FFTProblem::FFTProblem(const InputParameters & parameters)
+  : FEProblem(parameters), _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh))
+{
+  if (!_fft_mesh)
+    mooseError("FFTProblem must be used with an FFTMesh");
+  _dim = _fft_mesh->getDim();
+}
 
 void
-FFTProblem::initialSetup()
+FFTProblem::init()
 {
-  auto * fft_mesh = dynamic_cast<FFTMesh *>(&_mesh);
-  if (!fft_mesh)
-    mooseError("FFTProblem must be used with an FFTMesh");
-
-  _dim = fft_mesh->getDim();
-
   // get grid geometry
   for (const auto dim : make_range(3))
   {
-    _max[dim] = fft_mesh->getMaxInDimension(dim);
-    _n[dim] = fft_mesh->getElementsInDimension(dim);
+    _max[dim] = _fft_mesh->getMaxInDimension(dim);
+    _n[dim] = _fft_mesh->getElementsInDimension(dim);
     _grid_spacing[dim] = _max[dim] / _n[dim];
   }
 
@@ -99,6 +101,9 @@ FFTProblem::initialSetup()
   // run ICs
   for (auto & ic : _ics)
     ic->computeBuffer();
+
+  // call base class init
+  FEProblem::init();
 }
 
 void
@@ -133,7 +138,8 @@ FFTProblem::addFFTIC(const std::string & ic_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  std::shared_ptr<FFTCompute> ic_object = _factory.create<FFTCompute>(ic_name, name, parameters, 0);
+  std::shared_ptr<FFTInitialCondition> ic_object =
+      _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
   logAdd("FFTInitialCondition", name, ic_name);
   _ics.push_back(ic_object);
 }
