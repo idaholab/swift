@@ -72,6 +72,7 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   syntax.registerSyntaxType("FFTBuffers/*", "FFTOutputBufferName");
   registerMooseObjectTask("add_fft_buffer", FFTBuffer, false);
   addTaskDependency("add_fft_buffer", "create_problem_complete");
+  addTaskDependency("add_fft_buffer", "create_problem_complete");
 
   // FFTCompute Actions
   registerSyntaxTask("AddFFTComputeAction", "FFTComputes/*", "add_fft_compute");
@@ -84,6 +85,9 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   syntax.registerSyntaxType("FFTICs/*", "FFTICName");
   registerMooseObjectTask("add_fft_ic", FFTInitialCondition, false);
   addTaskDependency("add_fft_ic", "add_fft_compute");
+
+  // make sure all this gets run before `init_physics`
+  addTaskDependency("init_physics", "add_fft_ic");
 }
 
 void

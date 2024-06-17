@@ -15,7 +15,7 @@ InputParameters
 FFTCompute::validParams()
 {
   InputParameters params = MooseObject::validParams();
-  params.addRequiredParam<FFTOutputBufferName>("output", "The buffer this compute is writing to");
+  params.addRequiredParam<FFTOutputBufferName>("buffer", "The buffer this compute is writing to");
   params.registerBase("FFTCompute");
   params.addClassDescription("FFTCompute object.");
   return params;
@@ -24,10 +24,12 @@ FFTCompute::validParams()
 FFTCompute::FFTCompute(const InputParameters & parameters)
   : MooseObject(parameters),
     _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>("_fft_problem")),
-    _u(getOutputBuffer("output")),
+    _u(getOutputBuffer("buffer")),
     _x(_fft_problem.getAxis(0)),
     _y(_fft_problem.getAxis(1)),
-    _z(_fft_problem.getAxis(2))
+    _z(_fft_problem.getAxis(2)),
+    _requested_buffers(),
+    _supplied_buffers()
 {
 }
 
