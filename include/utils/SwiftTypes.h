@@ -10,6 +10,10 @@ typedef std::string FFTComputeName;
 // DerivativeStringClass(FFTICName);
 typedef std::string FFTICName;
 
+/// Name of an FFTTimeIntegrator object
+// DerivativeStringClass(FFTTimeIntegratorName);
+typedef std::string FFTTimeIntegratorName;
+
 /// Name of a read-only input FFTBuffer object
 // DerivativeStringClass(FFTInputBufferName);
 typedef std::string FFTInputBufferName;

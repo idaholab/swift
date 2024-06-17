@@ -86,6 +86,12 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_fft_ic", FFTInitialCondition, false);
   addTaskDependency("add_fft_ic", "add_fft_compute");
 
+  // FFTICs Actions
+  registerSyntaxTask("AddFFTComputeAction", "FFTTimeIntegrators/*", "add_fft_time_integrator");
+  syntax.registerSyntaxType("FFTTimeIntegrators/*", "FFTTimeIntegratorName");
+  registerMooseObjectTask("add_fft_time_integrator", FFTTimeIntegrator, false);
+  addTaskDependency("add_fft_time_integrator", "add_fft_ic");
+
   // make sure all this gets run before `init_physics`
   addTaskDependency("init_physics", "add_fft_ic");
 }

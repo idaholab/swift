@@ -18,6 +18,7 @@
 class FFTMesh;
 class FFTCompute;
 class FFTInitialCondition;
+class FFTTimeIntegrator;
 
 /**
  * Problem for solving eigenvalue problems
@@ -29,7 +30,14 @@ public:
 
   FFTProblem(const InputParameters & parameters);
 
+  // setup stuff
   void init() override;
+
+  // run compute objects
+  void execute(const ExecFlagType & exec_type) override;
+
+  // move tensors in time
+  void advanceState() override;
 
   virtual void addFFTBuffer(const std::string & buffer_name, InputParameters & parameters);
   virtual void addFFTCompute(const std::string & compute_name,
@@ -38,19 +46,34 @@ public:
   virtual void addFFTIC(const std::string & compute_name,
                         const std::string & name,
                         InputParameters & parameters);
+  virtual void addFFTTimeIntegrator(const std::string & time_integrator_name,
+                                    const std::string & name,
+                                    InputParameters & parameters);
 
   torch::Tensor & getBuffer(const std::string & buffer_name);
+  const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
+                                                  unsigned int max_states);
+
   unsigned int & getDim() { return _dim; }
   const std::array<unsigned int, 3> & getGridSize() const { return _n; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
 
+  torch::Tensor fft(torch::Tensor t) const;
+  torch::Tensor ifft(torch::Tensor t) const;
+
 protected:
   /// FFT Mesh object
   FFTMesh * _fft_mesh;
 
+  /// tensor options
+  const torch::TensorOptions _options;
+
   /// list of FFTBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _fft_buffer;
+
+  /// old buffers (stores max number of states, requested, and states)
+  std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_fft_buffer;
 
   unsigned int _dim;
 
@@ -73,11 +96,14 @@ protected:
   /// reciprocal space axes
   std::array<torch::Tensor, 3> _reciprocal_axis;
 
-  // compute objects
+  /// compute objects
   std::vector<std::shared_ptr<FFTCompute>> _computes;
 
-  // ice objects
+  /// ic objects
   std::vector<std::shared_ptr<FFTInitialCondition>> _ics;
+
+  ///  time integrator objects
+  std::vector<std::shared_ptr<FFTTimeIntegrator>> _time_integrators;
 };
 
 #endif

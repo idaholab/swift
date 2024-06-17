@@ -11,6 +11,7 @@
 #include "FFTMesh.h"
 #include "FFTCompute.h"
 #include "FFTInitialCondition.h"
+#include "FFTTimeIntegrator.h"
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
 
@@ -27,7 +28,9 @@ FFTProblem::validParams()
 }
 
 FFTProblem::FFTProblem(const InputParameters & parameters)
-  : FEProblem(parameters), _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh))
+  : FEProblem(parameters),
+    _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh)),
+    _options(MooseFFT::floatTensorOptions())
 {
   if (!_fft_mesh)
     mooseError("FFTProblem must be used with an FFTMesh");
@@ -66,9 +69,8 @@ FFTProblem::init()
 
   // initialize tensors (assuming all scalar for now, but in the future well have an FFTBufferBase
   // pointer as well)
-  auto options = MooseFFT::floatTensorOptions();
   for (auto pair : _fft_buffer)
-    pair.second = torch::zeros(_shape, options);
+    pair.second = torch::zeros(_shape, _options);
 
   // build real space axes
   for (const auto dim : make_range(3))
@@ -78,17 +80,18 @@ FFTProblem::init()
           torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
                                            c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
                                            _n[dim],
-                                           options),
+                                           _options),
                            _dim - dim - 1);
     else
-      _axis[dim] = torch::tensor({0.0}, options);
+      _axis[dim] = torch::tensor({0.0}, _options);
   }
 
   // build reciprocal space axes
   for (const auto dim : make_range(_dim))
   {
-    const auto freq = (dim == _dim - 1) ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], options)
-                                        : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], options);
+    const auto freq = (dim == _dim - 1)
+                          ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
+                          : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
     _reciprocal_axis[dim] = torch::unsqueeze(freq, _dim - dim - 1);
   }
 
@@ -98,12 +101,47 @@ FFTProblem::init()
   // dependency resolution of FFTComputes
   DependencyResolverInterface::sort(_computes);
 
-  // run ICs
-  for (auto & ic : _ics)
-    ic->computeBuffer();
-
   // call base class init
   FEProblem::init();
+}
+
+void
+FFTProblem::execute(const ExecFlagType & exec_type)
+{
+  if (exec_type == EXEC_INITIAL)
+  {
+    // run ICs
+    for (auto & ic : _ics)
+      ic->computeBuffer();
+  }
+
+  if (exec_type == EXEC_TIMESTEP_BEGIN)
+  {
+    // run computes on begin
+    for (auto & cmp : _computes)
+      cmp->computeBuffer();
+
+    // run timeintegrator
+  }
+
+  FEProblem::execute(exec_type);
+}
+
+void
+FFTProblem::advanceState()
+{
+  FEProblem::advanceState();
+
+  // move buffers in time
+  for (auto & [name, max_states] : _old_fft_buffer)
+  {
+    auto & [max, states] = max_states;
+    if (states.size() < max)
+      states.push_back(torch::tensor({}, _options));
+    for (std::size_t i = states.size() - 1; i > 0; --i)
+      states[i] = states[i - 1];
+    states[0] = _fft_buffer[name];
+  }
 }
 
 void
@@ -144,6 +182,33 @@ FFTProblem::addFFTIC(const std::string & ic_name,
   _ics.push_back(ic_object);
 }
 
+void
+FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
+                                 const std::string & name,
+                                 InputParameters & parameters)
+{
+  // Add a pointer to the FFTProblem class
+  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+
+  // check that we have no other TI that advances the same buffer
+  const auto & output_buffer = parameters.get<FFTOutputBufferName>("buffer");
+  for (const auto ti : _time_integrators)
+    if (ti->parameters().get<FFTOutputBufferName>("buffer") == output_buffer)
+      mooseError("Buffer '",
+                 output_buffer,
+                 "' is already advanced by time integrator '",
+                 ti->name(),
+                 "'. Cannot add '",
+                 name,
+                 "'.");
+
+  // Create the object
+  std::shared_ptr<FFTTimeIntegrator> time_integrator_object =
+      _factory.create<FFTTimeIntegrator>(time_integrator_name, name, parameters, 0);
+  logAdd("FFTTimeIntegrator", name, time_integrator_name);
+  _time_integrators.push_back(time_integrator_object);
+}
+
 torch::Tensor &
 FFTProblem::getBuffer(const std::string & buffer_name)
 {
@@ -153,10 +218,58 @@ FFTProblem::getBuffer(const std::string & buffer_name)
   return it->second;
 }
 
+const std::vector<torch::Tensor> &
+FFTProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
+{
+  auto it = _old_fft_buffer.find(buffer_name);
+  if (it == _old_fft_buffer.end())
+  {
+    auto [newit, success] = _old_fft_buffer.emplace(
+        buffer_name, std::make_pair(max_states, std::vector<torch::Tensor>{}));
+    if (success)
+      it = newit;
+    else
+      mooseError("Failed to insert old buffer state");
+  }
+  return it->second.second;
+}
+
 const torch::Tensor &
 FFTProblem::getAxis(std::size_t component) const
 {
   if (component < 3)
     return _axis[component];
   mooseError("Invalid component");
+}
+
+torch::Tensor
+FFTProblem::fft(torch::Tensor t) const
+{
+  switch (_dim)
+  {
+    case 1:
+      return torch::fft::rfft2(t);
+    case 2:
+      return torch::fft::rfft2(t);
+    case 3:
+      return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+}
+
+torch::Tensor
+FFTProblem::ifft(torch::Tensor t) const
+{
+  switch (_dim)
+  {
+    case 1:
+      return torch::fft::irfft2(t);
+    case 2:
+      return torch::fft::irfft2(t);
+    case 3:
+      return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
 }

@@ -40,8 +40,10 @@ FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
 }
 
 void
-FFTBufferAux::customSetup(const ExecFlagType &)
+FFTBufferAux::customSetup(const ExecFlagType & e)
 {
+  if (!_execute_enum.contains(e))
+    return;
   _cpu_buffer = _buffer.cpu();
 }
 
