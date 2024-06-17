@@ -24,15 +24,15 @@ FFTBufferAux::validParams()
 
 FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
   : AuxKernel(parameters),
-    _fft_problem(dynamic_cast<FFTProblem *>(&_subproblem)),
-    _buffer(
+    _fft_problem(
         [this]()
         {
-          mooseInfoRepeated("Fetching buffer ", getParam<FFTInputBufferName>("buffer"));
-          if (!_fft_problem)
+          auto fft_problem = dynamic_cast<FFTProblem *>(&_subproblem);
+          if (!fft_problem)
             mooseError("Can only be used with FFTProblem");
-          return _fft_problem->getBuffer(getParam<FFTInputBufferName>("buffer"));
+          return fft_problem;
         }()),
+    _buffer(_fft_problem->getBuffer(getParam<FFTInputBufferName>("buffer"))),
     _dim(_fft_problem->getDim()),
     _n(_fft_problem->getGridSize()),
     _grid_spacing(_fft_problem->getGridSpacing())
@@ -42,6 +42,7 @@ FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
 void
 FFTBufferAux::customSetup(const ExecFlagType &)
 {
+  std::cout << _buffer << '\n';
   _cpu_buffer = _buffer.cpu();
 }
 
@@ -55,16 +56,17 @@ FFTBufferAux::computeValue()
   switch (_dim)
   {
     case 1:
-      return _buffer.index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0]}).item<double>();
+      return _cpu_buffer.index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0]})
+          .item<double>();
 
     case 2:
-      return _buffer
+      return _cpu_buffer
           .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
                   static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1]})
           .item<double>();
 
     case 3:
-      return _buffer
+      return _cpu_buffer
           .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
                   static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1],
                   static_cast<long int>(p(2) / _grid_spacing[2]) % _n[2]})

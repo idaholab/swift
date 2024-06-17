@@ -41,6 +41,9 @@ protected:
   torch::Tensor & getOutputBuffer(const std::string & param);
   torch::Tensor & getOutputBufferByName(const FFTOutputBufferName & buffer_name);
 
+  std::set<std::string> _requested_buffers;
+  std::set<std::string> _supplied_buffers;
+
   FFTProblem & _fft_problem;
 
   /// output buffer
@@ -48,7 +51,4 @@ protected:
 
   /// axes
   const torch::Tensor &_x, &_y, &_z;
-
-  std::set<std::string> _requested_buffers;
-  std::set<std::string> _supplied_buffers;
 };
