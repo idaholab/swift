@@ -24,43 +24,7 @@ FFTProblem::validParams()
   return params;
 }
 
-FFTProblem::FFTProblem(const InputParameters & parameters) : FEProblem(parameters)
-{
-  auto options = MooseFFT::floatTensorOptions();
-  auto * fft_mesh = dynamic_cast<FFTMesh *>(&_mesh);
-  if (!fft_mesh)
-    mooseError("FFTProblem must be used with an FFTMesh");
-
-  // get grid geometry
-  for (const auto dim : make_range(3))
-  {
-    _max[dim] = fft_mesh->getMaxInDimension(dim);
-    _n[dim] = fft_mesh->getElementsInDimension(dim);
-    _grid_spacing[dim] = _max[dim] / _n[dim];
-  }
-
-  // build real space axes
-  for (const auto dim : make_range(3))
-  {
-    if (dim < _dim)
-      _axis.push_back(
-          torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
-                                           c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
-                                           _n[dim],
-                                           options),
-                           _dim - dim - 1));
-    else
-      _axis.push_back(torch::tensor({0.0}, options));
-  }
-
-  // build reciprocal space axes
-  for (const auto dim : make_range(_dim))
-  {
-    const auto freq = (dim == _dim - 1) ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], options)
-                                        : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], options);
-    _reciprocal_axis.push_back(torch::unsqueeze(freq, _dim - dim - 1));
-  }
-}
+FFTProblem::FFTProblem(const InputParameters & parameters) : FEProblem(parameters) {}
 
 void
 FFTProblem::initialSetup()
@@ -70,6 +34,14 @@ FFTProblem::initialSetup()
     mooseError("FFTProblem must be used with an FFTMesh");
 
   _dim = fft_mesh->getDim();
+
+  // get grid geometry
+  for (const auto dim : make_range(3))
+  {
+    _max[dim] = fft_mesh->getMaxInDimension(dim);
+    _n[dim] = fft_mesh->getElementsInDimension(dim);
+    _grid_spacing[dim] = _max[dim] / _n[dim];
+  }
 
   switch (_dim)
   {
@@ -95,6 +67,28 @@ FFTProblem::initialSetup()
   auto options = MooseFFT::floatTensorOptions();
   for (auto pair : _fft_buffer)
     pair.second = torch::zeros(_shape, options);
+
+  // build real space axes
+  for (const auto dim : make_range(3))
+  {
+    if (dim < _dim)
+      _axis[dim] =
+          torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                           c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
+                                           _n[dim],
+                                           options),
+                           _dim - dim - 1);
+    else
+      _axis[dim] = torch::tensor({0.0}, options);
+  }
+
+  // build reciprocal space axes
+  for (const auto dim : make_range(_dim))
+  {
+    const auto freq = (dim == _dim - 1) ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], options)
+                                        : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], options);
+    _reciprocal_axis[dim] = torch::unsqueeze(freq, _dim - dim - 1);
+  }
 
   // dependency resolution of FFTICs
   DependencyResolverInterface::sort(_ics);
@@ -139,8 +133,7 @@ FFTProblem::addFFTIC(const std::string & ic_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  std::shared_ptr<FFTInitialCondition> ic_object =
-      _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
+  std::shared_ptr<FFTCompute> ic_object = _factory.create<FFTCompute>(ic_name, name, parameters, 0);
   logAdd("FFTInitialCondition", name, ic_name);
   _ics.push_back(ic_object);
 }
@@ -157,7 +150,7 @@ FFTProblem::getBuffer(const std::string & buffer_name)
 const torch::Tensor &
 FFTProblem::getAxis(std::size_t component) const
 {
-  if (component < _axis.size())
+  if (component < 3)
     return _axis[component];
   mooseError("Invalid component");
 }

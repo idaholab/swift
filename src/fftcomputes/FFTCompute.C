@@ -31,6 +31,7 @@ FFTCompute::FFTCompute(const InputParameters & parameters)
     _requested_buffers(),
     _supplied_buffers()
 {
+  mooseInfoRepeated("ctor _requested_buffers ", _requested_buffers.size());
 }
 
 const torch::Tensor &
@@ -49,12 +50,14 @@ FFTCompute::getInputBufferByName(const FFTInputBufferName & buffer_name)
 torch::Tensor &
 FFTCompute::getOutputBuffer(const std::string & param)
 {
+  mooseInfoRepeated("getOutputBuffer _requested_buffers ", _requested_buffers.size());
   return getOutputBufferByName(getParam<FFTOutputBufferName>(param));
 }
 
 torch::Tensor &
 FFTCompute::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
 {
+  mooseInfoRepeated(_requested_buffers.size(), buffer_name);
   _requested_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);
 }

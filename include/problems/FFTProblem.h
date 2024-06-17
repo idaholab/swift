@@ -63,16 +63,16 @@ protected:
   torch::IntArrayRef _shape;
 
   /// real space axes
-  std::vector<torch::Tensor> _axis;
+  std::array<torch::Tensor, 3> _axis;
 
   /// reciprocal space axes
-  std::vector<torch::Tensor> _reciprocal_axis;
+  std::array<torch::Tensor, 3> _reciprocal_axis;
 
   // compute objects
   std::vector<std::shared_ptr<FFTCompute>> _computes;
 
   // ice objects
-  std::vector<std::shared_ptr<FFTInitialCondition>> _ics;
+  std::vector<std::shared_ptr<FFTCompute>> _ics;
 };
 
 #endif
