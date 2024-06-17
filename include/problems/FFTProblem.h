@@ -58,6 +58,7 @@ public:
   const std::array<unsigned int, 3> & getGridSize() const { return _n; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
+  const torch::Tensor & getReciprocalAxis(std::size_t component) const;
 
   torch::Tensor fft(torch::Tensor t) const;
   torch::Tensor ifft(torch::Tensor t) const;

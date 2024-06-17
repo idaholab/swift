@@ -11,13 +11,15 @@
 
 #include "MooseUtils.h"
 
+registerMooseObject("SwiftApp", ParsedCompute);
+
 InputParameters
 ParsedCompute::validParams()
 {
   InputParameters params = FFTCompute::validParams();
   params.addClassDescription("ParsedCompute object.");
   params.addRequiredParam<std::string>("expession", "Parsed expression");
-  params.addParam<std::vector<FFTInputBufferName>>("input_buffers", "Buffer names");
+  params.addParam<std::vector<FFTInputBufferName>>("inputs", "Buffer names");
   params.addParam<bool>(
       "enable_jit", true, "Use operator fusion and just in time compilation (recommended on GPU)");
   return params;
@@ -30,7 +32,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 
   // get all input buffers
   for (const auto & name : names)
-    _params.push_back(&getInputBuffer(name));
+    _params.push_back(&getInputBufferByName(name));
 
   // build variable string
   const auto variables = MooseUtils::join(names, ",");
@@ -53,7 +55,7 @@ void
 ParsedCompute::computeBuffer()
 {
   if (_use_jit)
-  {
-    // _u = ;
-  }
+    _u = _jit.Eval(_params);
+  else
+    _u = _no_jit.Eval(_params);
 }

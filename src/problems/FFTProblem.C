@@ -87,12 +87,17 @@ FFTProblem::init()
   }
 
   // build reciprocal space axes
-  for (const auto dim : make_range(_dim))
+  for (const auto dim : make_range(3))
   {
-    const auto freq = (dim == _dim - 1)
-                          ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
-                          : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
-    _reciprocal_axis[dim] = torch::unsqueeze(freq, _dim - dim - 1);
+    if (dim < _dim)
+    {
+      const auto freq = (dim == _dim - 1)
+                            ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
+                            : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
+      _reciprocal_axis[dim] = torch::unsqueeze(freq, _dim - dim - 1);
+    }
+    else
+      _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
   }
 
   // dependency resolution of FFTICs
@@ -239,6 +244,14 @@ FFTProblem::getAxis(std::size_t component) const
 {
   if (component < 3)
     return _axis[component];
+  mooseError("Invalid component");
+}
+
+const torch::Tensor &
+FFTProblem::getReciprocalAxis(std::size_t component) const
+{
+  if (component < 3)
+    return _reciprocal_axis[component];
   mooseError("Invalid component");
 }
 

@@ -10,6 +10,8 @@
 #include "FFTSemiImplicit.h"
 #include "FFTProblem.h"
 
+registerMooseObject("SwiftApp", FFTSemiImplicit);
+
 InputParameters
 FFTSemiImplicit::validParams()
 {

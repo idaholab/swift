@@ -30,7 +30,10 @@ FFTCompute::FFTCompute(const InputParameters & parameters)
     _u(getOutputBuffer("buffer")),
     _x(_fft_problem.getAxis(0)),
     _y(_fft_problem.getAxis(1)),
-    _z(_fft_problem.getAxis(2))
+    _z(_fft_problem.getAxis(2)),
+    _i(_fft_problem.getReciprocalAxis(0)),
+    _j(_fft_problem.getReciprocalAxis(1)),
+    _k(_fft_problem.getReciprocalAxis(2))
 {
 }
 

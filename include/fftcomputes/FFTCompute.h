@@ -51,4 +51,7 @@ protected:
 
   /// axes
   const torch::Tensor &_x, &_y, &_z;
+
+  /// reciprocal axes
+  const torch::Tensor &_i, &_j, &_k;
 };
