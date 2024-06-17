@@ -1,5 +1,3 @@
-
-
 //* This file is part of the MOOSE framework
 //* https://www.mooseframework.org
 //*
@@ -9,16 +7,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTBufferBase.h"
+#include "FFTInitialCondition.h"
 
 InputParameters
-FFTBufferBase::validParams()
+FFTInitialCondition::validParams()
 {
-  InputParameters params = MooseObject::validParams();
-  params.addClassDescription("FFTBuffer object.");
-  params.registerBase("FFTBuffer");
-  params.registerSystemAttributeName("FFTBuffer"); //?
+  InputParameters params = FFTCompute::validParams();
+  params.registerBase("FFTInitialCondition");
+  params.addClassDescription("FFTInitialCondition object.");
   return params;
 }
 
-FFTBufferBase::FFTBufferBase(const InputParameters & parameters) : MooseObject(parameters) {}
+FFTInitialCondition::FFTInitialCondition(const InputParameters & parameters)
+  : FFTCompute(parameters)
+{
+}

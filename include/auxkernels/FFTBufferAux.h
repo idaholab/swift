@@ -24,9 +24,17 @@ public:
 
   FFTBufferAux(const InputParameters & parameters);
 
+  virtual void customSetup(const ExecFlagType & exec_type);
+
 protected:
   virtual Real computeValue() override;
 
   FFTProblem * _fft_problem;
+
   const torch::Tensor & _buffer;
+  torch::Tensor _cpu_buffer;
+
+  unsigned int _dim;
+  const std::array<unsigned int, 3> & _n;
+  const std::array<Real, 3> & _grid_spacing;
 };

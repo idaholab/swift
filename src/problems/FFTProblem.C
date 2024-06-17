@@ -47,10 +47,16 @@ FFTProblem::initialSetup()
   {
     case 1:
       _shape_storage = {_n[0]};
+      break;
+
     case 2:
       _shape_storage = {_n[0], _n[1]};
+      break;
+
     case 3:
       _shape_storage = {_n[0], _n[1], _n[2]};
+      break;
+
     default:
       mooseError("Unsupported mesh dimension");
   }
@@ -85,14 +91,20 @@ FFTProblem::initialSetup()
   }
 
   // dependency resolution of FFTICs
+  DependencyResolverInterface::sort(_ics);
 
   // dependency resolution of FFTComputes
   DependencyResolverInterface::sort(_computes);
+
+  // run ICs
+  for (auto & ic : _ics)
+    ic->computeBuffer();
 }
 
 void
 FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & parameters)
 {
+  mooseInfoRepeated("Adding buffer ", buffer_name);
   if (_fft_buffer.find(buffer_name) != _fft_buffer.end())
     mooseError("FFTBuffer '", buffer_name, "' already exists in the system");
   _fft_buffer.try_emplace(buffer_name);
@@ -113,6 +125,21 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
   _computes.push_back(compute_object);
 }
 
+void
+FFTProblem::addFFTIC(const std::string & ic_name,
+                     const std::string & name,
+                     InputParameters & parameters)
+{
+  // Add a pointer to the FFTProblem class
+  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+
+  // Create the object
+  std::shared_ptr<FFTInitialCondition> ic_object =
+      _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
+  logAdd("FFTInitialCondition", name, ic_name);
+  _ics.push_back(ic_object);
+}
+
 torch::Tensor &
 FFTProblem::getBuffer(const std::string & buffer_name)
 {
@@ -120,4 +147,12 @@ FFTProblem::getBuffer(const std::string & buffer_name)
   if (it == _fft_buffer.end())
     mooseError("FFTBuffer '", buffer_name, "' does not exist in the system");
   return it->second;
+}
+
+const torch::Tensor &
+FFTProblem::getAxis(std::size_t component) const
+{
+  if (component < _axis.size())
+    return _axis[component];
+  mooseError("Invalid component");
 }

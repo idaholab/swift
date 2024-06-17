@@ -68,15 +68,22 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 
   // FFTBuffer Actions
   registerSyntaxTask("AddFFTBufferAction", "FFTBuffers/*", "add_fft_buffer");
-  syntax.registerSyntaxType("FFTBuffers/*", "FFTBufferName");
+  syntax.registerSyntaxType("FFTBuffers/*", "FFTInputBufferName");
+  syntax.registerSyntaxType("FFTBuffers/*", "FFTOutputBufferName");
   registerMooseObjectTask("add_fft_buffer", FFTBuffer, false);
-  addTaskDependency("add_fft_buffer", "setup_mesh_complete");
+  addTaskDependency("add_fft_buffer", "create_problem_complete");
 
   // FFTCompute Actions
   registerSyntaxTask("AddFFTComputeAction", "FFTComputes/*", "add_fft_compute");
   syntax.registerSyntaxType("FFTComputes/*", "FFTComputeName");
   registerMooseObjectTask("add_fft_compute", FFTCompute, false);
   addTaskDependency("add_fft_compute", "add_fft_buffer");
+
+  // FFTICs Actions
+  registerSyntaxTask("AddFFTComputeAction", "FFTICs/*", "add_fft_ic");
+  syntax.registerSyntaxType("FFTICs/*", "FFTICName");
+  registerMooseObjectTask("add_fft_ic", FFTInitialCondition, false);
+  addTaskDependency("add_fft_ic", "add_fft_compute");
 }
 
 void

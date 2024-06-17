@@ -24,11 +24,14 @@ AddFFTBufferAction::validParams()
 AddFFTBufferAction::AddFFTBufferAction(const InputParameters & parameters)
   : MooseObjectAction(parameters)
 {
+  mooseInfoRepeated("AddFFTBufferAction");
 }
 
 void
 AddFFTBufferAction::act()
 {
+  mooseInfoRepeated("1 Adding buffer ", _name);
+
   auto fft_problem = std::dynamic_pointer_cast<FFTProblem>(_problem);
   if (!fft_problem)
     mooseError("FFT Buffers are only supported if the problem class is set to `FFTProblem`");

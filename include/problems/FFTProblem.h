@@ -14,6 +14,7 @@
 #include "FEProblem.h"
 #include "SwiftTypes.h"
 #include "FFTCompute.h"
+#include "FFTInitialCondition.h"
 #include "torch/torch.h"
 
 /**
@@ -32,8 +33,15 @@ public:
   virtual void addFFTCompute(const std::string & compute_name,
                              const std::string & name,
                              InputParameters & parameters);
+  virtual void addFFTIC(const std::string & compute_name,
+                        const std::string & name,
+                        InputParameters & parameters);
 
   torch::Tensor & getBuffer(const std::string & buffer_name);
+  unsigned int & getDim() { return _dim; }
+  const std::array<unsigned int, 3> & getGridSize() const { return _n; }
+  const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
+  const torch::Tensor & getAxis(std::size_t component) const;
 
 protected:
   /// list of FFTBuffers (i.e. tensors)
@@ -62,6 +70,9 @@ protected:
 
   // compute objects
   std::vector<std::shared_ptr<FFTCompute>> _computes;
+
+  // ice objects
+  std::vector<std::shared_ptr<FFTInitialCondition>> _ics;
 };
 
 #endif

@@ -23,8 +23,11 @@ FFTCompute::validParams()
 
 FFTCompute::FFTCompute(const InputParameters & parameters)
   : MooseObject(parameters),
+    _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>("_fft_problem")),
     _u(getOutputBuffer("output")),
-    _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>("_fft_problem"))
+    _x(_fft_problem.getAxis(0)),
+    _y(_fft_problem.getAxis(1)),
+    _z(_fft_problem.getAxis(2))
 {
 }
 

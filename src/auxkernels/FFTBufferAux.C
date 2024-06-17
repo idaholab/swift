@@ -28,24 +28,48 @@ FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
     _buffer(
         [this]()
         {
+          mooseInfoRepeated("Fetching buffer ", getParam<FFTInputBufferName>("buffer"));
           if (!_fft_problem)
             mooseError("Can only be used with FFTProblem");
           return _fft_problem->getBuffer(getParam<FFTInputBufferName>("buffer"));
-        }())
+        }()),
+    _dim(_fft_problem->getDim()),
+    _n(_fft_problem->getGridSize()),
+    _grid_spacing(_fft_problem->getGridSpacing())
 {
+}
+
+void
+FFTBufferAux::customSetup(const ExecFlagType &)
+{
+  _cpu_buffer = _buffer.cpu();
 }
 
 Real
 FFTBufferAux::computeValue()
 {
-  if (isNodal())
+  const static Point shift(_grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
+
+  Point p = isNodal() ? (*_current_node + shift) : _current_elem->centroid();
+
+  switch (_dim)
   {
-    Point p = *_current_node;
-    return 0.0;
+    case 1:
+      return _buffer.index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0]}).item<double>();
+
+    case 2:
+      return _buffer
+          .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
+                  static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1]})
+          .item<double>();
+
+    case 3:
+      return _buffer
+          .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
+                  static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1],
+                  static_cast<long int>(p(2) / _grid_spacing[2]) % _n[2]})
+          .item<double>();
   }
-  else
-  {
-    Point p = _current_elem->centroid();
-    return 1.0;
-  }
+
+  mooseError("Internal error (invalid dimension)");
 }
