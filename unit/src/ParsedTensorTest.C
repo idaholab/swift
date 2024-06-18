@@ -40,7 +40,7 @@ TEST(ParsedTensorTest, Parse)
   F.Optimize();
   F.setupTensors();
 
-  std::vector<neml2::Scalar> params{a, b, c};
+  std::vector<const torch::Tensor *> params{&a, &b, &c};
   auto gold = a * b + c;
 
   // compare parsed result tensor to compiled expression

@@ -69,8 +69,9 @@ TEST(BenchmarkParsedTensors, Time)
   using std::chrono::high_resolution_clock;
   using std::chrono::milliseconds;
 
+  std::vector<const torch::Tensor *> params{&a, &b, &c};
+
   {
-    std::vector<neml2::Scalar> params{a, b, c};
     if (!F1.Eval(params).is_cuda())
       mooseInfo("non-JIT result is not CUDA");
     auto t1 = high_resolution_clock::now();
@@ -88,7 +89,6 @@ TEST(BenchmarkParsedTensors, Time)
   }
 
   {
-    std::vector<const torch::Tensor *> params{&a, &b, &c};
     if (!F2.Eval(params).is_cuda())
       mooseInfo("JIT result is not CUDA");
     auto t1 = high_resolution_clock::now();
