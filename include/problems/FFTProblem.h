@@ -54,7 +54,9 @@ public:
   const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
                                                   unsigned int max_states);
 
-  unsigned int & getDim() { return _dim; }
+  const unsigned int & getDim() { return _dim; }
+  const Real & getSubDt() { return _sub_dt; }
+
   const std::array<unsigned int, 3> & getGridSize() const { return _n; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
@@ -75,6 +77,12 @@ protected:
 
   /// tensor options
   const torch::TensorOptions _options;
+
+  /// solver substeps
+  const unsigned int _substeps;
+
+  /// substepping timestep
+  Real _sub_dt;
 
   /// list of FFTBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _fft_buffer;

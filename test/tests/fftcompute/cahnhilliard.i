@@ -132,6 +132,7 @@
 
 [Problem]
   type = FFTProblem
+  spectral_solve_substeps = 1
 []
 
 [Executioner]

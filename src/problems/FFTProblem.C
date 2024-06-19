@@ -24,13 +24,18 @@ FFTProblem::validParams()
   params.addClassDescription(
       "A normal Problem object that adds the ability to perform spectral solves.");
   params.set<bool>("skip_nl_system_check") = true;
+  params.addParam<unsigned int>(
+      "spectral_solve_substeps",
+      1,
+      "How many substeps to divide the spectral solve for each MOOSE timestep into.");
   return params;
 }
 
 FFTProblem::FFTProblem(const InputParameters & parameters)
   : FEProblem(parameters),
     _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh)),
-    _options(MooseFFT::floatTensorOptions())
+    _options(MooseFFT::floatTensorOptions()),
+    _substeps(getParam<unsigned int>("spectral_solve_substeps"))
 {
   if (!_fft_mesh)
     mooseError("FFTProblem must be used with an FFTMesh");
@@ -116,26 +121,27 @@ FFTProblem::execute(const ExecFlagType & exec_type)
   {
     // run ICs
     for (auto & ic : _ics)
-    {
-      mooseInfoRepeated("Running IC: ", ic->name());
       ic->computeBuffer();
-    }
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
-    // run computes on begin
-    for (auto & cmp : _computes)
-    {
-      mooseInfoRepeated("Running Compute: ", cmp->name());
-      cmp->computeBuffer();
-    }
+    // update substepping dt
+    _sub_dt = dt() / _substeps;
 
-    // run timeintegrators
-    for (auto & ti : _time_integrators)
+    for (unsigned substep = 0; substep < _substeps; ++substep)
     {
-      mooseInfoRepeated("Running Time integrator: ", ti->name());
-      ti->computeBuffer();
+      // run computes on begin
+      for (auto & cmp : _computes)
+        cmp->computeBuffer();
+
+      // run timeintegrators
+      for (auto & ti : _time_integrators)
+        ti->computeBuffer();
+
+      // advance step (this will not work with solve failures!)
+      if (substep < _substeps - 1)
+        advanceState();
     }
   }
 
@@ -148,15 +154,11 @@ FFTProblem::advanceState()
   FEProblem::advanceState();
 
   if (timeStep() <= 1)
-  {
-    mooseInfoRepeated("SKIPPING ADVANCE");
     return;
-  }
 
   // move buffers in time
   for (auto & [name, max_states] : _old_fft_buffer)
   {
-    mooseInfoRepeated(timeStep(), " FFT advance state ", name);
     auto & [max, states] = max_states;
     if (states.size() < max)
       states.push_back(torch::tensor({}, _options));
@@ -228,7 +230,6 @@ FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
   std::shared_ptr<FFTTimeIntegrator> time_integrator_object =
       _factory.create<FFTTimeIntegrator>(time_integrator_name, name, parameters, 0);
   logAdd("FFTTimeIntegrator", name, time_integrator_name);
-  mooseInfoRepeated("Added time integrator ", name, time_integrator_name);
   _time_integrators.push_back(time_integrator_object);
 }
 
