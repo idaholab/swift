@@ -28,7 +28,7 @@ ParsedCompute::validParams()
 ParsedCompute::ParsedCompute(const InputParameters & parameters)
   : FFTCompute(parameters), _use_jit(getParam<bool>("enable_jit"))
 {
-  const auto & names = getParam<std::vector<FFTInputBufferName>>("input_buffers");
+  const auto & names = getParam<std::vector<FFTInputBufferName>>("inputs");
 
   // get all input buffers
   for (const auto & name : names)

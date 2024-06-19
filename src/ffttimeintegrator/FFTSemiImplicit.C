@@ -39,9 +39,25 @@ FFTSemiImplicit::FFTSemiImplicit(const InputParameters & parameters)
 void
 FFTSemiImplicit::computeBuffer()
 {
-  // compute FFT time update (1st order)
-  auto ubar =
-      (_reciprocal_buffer + _dt * _non_linear_reciprocal) / (1.0 + _dt * _linear_reciprocal);
+  const auto n_old = _old_reciprocal_buffer.size();
+  if (_old_non_linear_reciprocal.size() != n_old)
+    mooseError("Inconsistent history size");
+
+  mooseInfoRepeated("n_old = ", n_old);
+
+  torch::Tensor ubar;
+  if (n_old == 0)
+    // compute FFT time update (1st order)
+    ubar = (_reciprocal_buffer + _dt * _non_linear_reciprocal) / (1.0 - _dt * _linear_reciprocal);
+
+  if (n_old >= 1)
+    // compute FFT time update (2nd order) - this probably breaks for adaptive dt!
+    ubar = (4.0 * _reciprocal_buffer - _old_reciprocal_buffer[0] +
+            (2.0 * _dt) * (2.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
+           (3.0 - (2.0 * _dt) * _linear_reciprocal);
 
   _u = _fft_problem.ifft(ubar);
+
+  if (!_u.is_cuda())
+    mooseError("not using CUDA");
 }

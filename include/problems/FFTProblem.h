@@ -63,6 +63,9 @@ public:
   torch::Tensor fft(torch::Tensor t) const;
   torch::Tensor ifft(torch::Tensor t) const;
 
+  /// align a 1d tensor in a specific dimension
+  torch::Tensor align(torch::Tensor t, unsigned int dim) const;
+
 protected:
   /// FFT Mesh object
   FFTMesh * _fft_mesh;

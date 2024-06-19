@@ -12,6 +12,7 @@
 
 registerMooseAction("SwiftApp", AddFFTComputeAction, "add_fft_compute");
 registerMooseAction("SwiftApp", AddFFTComputeAction, "add_fft_ic");
+registerMooseAction("SwiftApp", AddFFTComputeAction, "add_fft_time_integrator");
 
 InputParameters
 AddFFTComputeAction::validParams()
@@ -49,6 +50,17 @@ AddFFTComputeAction::act()
 
     // use addObject<FFTInitialCondition>(_type, _name, _moose_object_pars, /* threaded = */ false)
     fft_problem->addFFTIC(_type, _name, _moose_object_pars);
+    return;
+  }
+
+  if (_current_task == "add_fft_time_integrator")
+  {
+    if (!fft_problem)
+      mooseError(
+          "FFT time integrators are only supported if the problem class is set to `FFTProblem`");
+
+    // use addObject<FFTTimeIntegrator>(_type, _name, _moose_object_pars, /* threaded = */ false)
+    fft_problem->addFFTTimeIntegrator(_type, _name, _moose_object_pars);
     return;
   }
 }

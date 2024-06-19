@@ -28,5 +28,5 @@ ReciprocalLaplacianFactor::ReciprocalLaplacianFactor(const InputParameters & par
 void
 ReciprocalLaplacianFactor::computeBuffer()
 {
-  _u = (_i * _i + _j * _j + _k * _k) * (libMesh::pi * libMesh::pi * _factor);
+  _u = -(_i * _i + _j * _j + _k * _k) * (libMesh::pi * libMesh::pi * _factor);
 }

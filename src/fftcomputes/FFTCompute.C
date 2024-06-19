@@ -46,7 +46,7 @@ FFTCompute::getInputBuffer(const std::string & param)
 const torch::Tensor &
 FFTCompute::getInputBufferByName(const FFTInputBufferName & buffer_name)
 {
-  _supplied_buffers.insert(buffer_name);
+  _requested_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);
 }
 
@@ -59,6 +59,6 @@ FFTCompute::getOutputBuffer(const std::string & param)
 torch::Tensor &
 FFTCompute::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
 {
-  _requested_buffers.insert(buffer_name);
+  _supplied_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);
 }

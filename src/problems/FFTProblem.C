@@ -76,12 +76,11 @@ FFTProblem::init()
   for (const auto dim : make_range(3))
   {
     if (dim < _dim)
-      _axis[dim] =
-          torch::unsqueeze(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
-                                           c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
-                                           _n[dim],
-                                           _options),
-                           _dim - dim - 1);
+      _axis[dim] = align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
+                                         _n[dim],
+                                         _options),
+                         dim);
     else
       _axis[dim] = torch::tensor({0.0}, _options);
   }
@@ -94,7 +93,7 @@ FFTProblem::init()
       const auto freq = (dim == _dim - 1)
                             ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
                             : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
-      _reciprocal_axis[dim] = torch::unsqueeze(freq, _dim - dim - 1);
+      _reciprocal_axis[dim] = align(freq, dim);
     }
     else
       _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
@@ -117,16 +116,27 @@ FFTProblem::execute(const ExecFlagType & exec_type)
   {
     // run ICs
     for (auto & ic : _ics)
+    {
+      mooseInfoRepeated("Running IC: ", ic->name());
       ic->computeBuffer();
+    }
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
     // run computes on begin
     for (auto & cmp : _computes)
+    {
+      mooseInfoRepeated("Running Compute: ", cmp->name());
       cmp->computeBuffer();
+    }
 
-    // run timeintegrator
+    // run timeintegrators
+    for (auto & ti : _time_integrators)
+    {
+      mooseInfoRepeated("Running Time integrator: ", ti->name());
+      ti->computeBuffer();
+    }
   }
 
   FEProblem::execute(exec_type);
@@ -137,9 +147,16 @@ FFTProblem::advanceState()
 {
   FEProblem::advanceState();
 
+  if (timeStep() <= 1)
+  {
+    mooseInfoRepeated("SKIPPING ADVANCE");
+    return;
+  }
+
   // move buffers in time
   for (auto & [name, max_states] : _old_fft_buffer)
   {
+    mooseInfoRepeated(timeStep(), " FFT advance state ", name);
     auto & [max, states] = max_states;
     if (states.size() < max)
       states.push_back(torch::tensor({}, _options));
@@ -211,6 +228,7 @@ FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
   std::shared_ptr<FFTTimeIntegrator> time_integrator_object =
       _factory.create<FFTTimeIntegrator>(time_integrator_name, name, parameters, 0);
   logAdd("FFTTimeIntegrator", name, time_integrator_name);
+  mooseInfoRepeated("Added time integrator ", name, time_integrator_name);
   _time_integrators.push_back(time_integrator_object);
 }
 
@@ -282,6 +300,36 @@ FFTProblem::ifft(torch::Tensor t) const
       return torch::fft::irfft2(t);
     case 3:
       return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+}
+
+torch::Tensor
+FFTProblem::align(torch::Tensor t, unsigned int dim) const
+{
+  if (dim >= _dim)
+    mooseError("Unsupported alignment dimension requested dimension");
+
+  switch (_dim)
+  {
+    case 1:
+      return t;
+
+    case 2:
+      if (dim == 0)
+        return torch::unsqueeze(t, 1);
+      else
+        return torch::unsqueeze(t, 0);
+
+    case 3:
+      if (dim == 0)
+        return t.unsqueeze(1).unsqueeze(2);
+      else if (dim == 1)
+        return t.unsqueeze(0).unsqueeze(2);
+      else
+        return t.unsqueeze(0).unsqueeze(0);
+
     default:
       mooseError("Unsupported mesh dimension");
   }
