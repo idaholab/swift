@@ -12,14 +12,14 @@
 #include "FFTInitialCondition.h"
 
 /**
- * Constant IC
+ * Random IC
  */
-class ConstantFFTIC : public FFTInitialCondition
+class RandomFFTIC : public FFTInitialCondition
 {
 public:
   static InputParameters validParams();
 
-  ConstantFFTIC(const InputParameters & parameters);
+  RandomFFTIC(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 };

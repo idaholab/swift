@@ -66,6 +66,9 @@ public:
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
 
+  /// get the domain shape (to build tensors from scratch)
+  const torch::IntArrayRef & getShape() { return _shape; }
+
 protected:
   /// FFT Mesh object
   FFTMesh * _fft_mesh;
