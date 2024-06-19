@@ -13,6 +13,10 @@
 
 #include "FEProblem.h"
 #include "SwiftTypes.h"
+
+#include "AuxiliarySystem.h"
+#include "libmesh/petsc_vector.h"
+
 #include "torch/torch.h"
 
 class FFTMesh;
@@ -72,6 +76,8 @@ public:
   const torch::IntArrayRef & getShape() { return _shape; }
 
 protected:
+  void mapBuffersToAux();
+
   /// FFT Mesh object
   FFTMesh * _fft_mesh;
 

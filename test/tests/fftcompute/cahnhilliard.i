@@ -88,15 +88,19 @@
 [AuxVariables]
   [c]
   []
+  [c2]
+  []
+  [c3]
+  []
 []
 
 [AuxKernels]
-  [c]
-    type = FFTBufferAux
-    buffer = c
-    variable = c
-    execute_on = TIMESTEP_END
-  []
+  # [c]
+  #   type = FFTBufferAux
+  #   buffer = c
+  #   variable = c
+  #   execute_on = final
+  # []
   # [f]
   #   type = FFTBufferAux
   #   buffer = f

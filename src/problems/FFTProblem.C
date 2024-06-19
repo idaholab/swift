@@ -40,6 +40,13 @@ FFTProblem::FFTProblem(const InputParameters & parameters)
   if (!_fft_mesh)
     mooseError("FFTProblem must be used with an FFTMesh");
   _dim = _fft_mesh->getDim();
+
+  // make sure AuxVariables are contiguous in teh solution vector
+  getAuxiliarySystem().sys().identify_variable_groups(false);
+
+  // this should only be run in serial, there is no COMM for the torch stuff yet
+  if (comm().size() > 1)
+    mooseError("FFT problems can only be run in serial at this time.");
 }
 
 void
@@ -143,9 +150,34 @@ FFTProblem::execute(const ExecFlagType & exec_type)
       if (substep < _substeps - 1)
         advanceState();
     }
+
+    mapBuffersToAux();
   }
 
+  // if (exec_type == EXEC_TIMESTEP_END)
+  //   // map buffers to AuxVariables
+  //   mapBuffersToAux();
+
   FEProblem::execute(exec_type);
+}
+
+void
+FFTProblem::mapBuffersToAux()
+{
+  auto * current_solution = &getAuxiliarySystem().solution();
+  auto * solution_vector = dynamic_cast<PetscVector<Number> *>(current_solution);
+  if (!solution_vector)
+    mooseError(
+        "Cannot map directly to the solution vector because NumericVector is not a PetscVector!");
+
+  mooseInfoRepeated("solution local size is ", solution_vector->local_size());
+  auto value = solution_vector->get_array();
+  // do magic
+  for (const auto i : make_range(solution_vector->local_size()))
+    value[i] = 0.001 * i;
+  solution_vector->restore_array();
+
+  getAuxiliarySystem().sys().update();
 }
 
 void
