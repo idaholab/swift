@@ -1,6 +1,6 @@
 [Mesh]
   type = FFTMesh
-  dim = 3
+  dim = 2
   nx = 100
   ny = 100
   nz = 100
@@ -39,7 +39,8 @@
     type = ParsedCompute
     buffer = f
     enable_jit = true
-    expession = '0.1*(eta+2)^2*(eta-2)^2'
+    expression = '0.1*(eta+2)^2*(eta-2)^2'
+    derivatives = eta
     inputs = eta
   []
   [fbar]

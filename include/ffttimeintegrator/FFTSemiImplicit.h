@@ -24,6 +24,7 @@ public:
   virtual void computeBuffer() override;
 
 protected:
+  const unsigned int _history_size;
   const torch::Tensor & _reciprocal_buffer;
   const torch::Tensor & _linear_reciprocal;
   const torch::Tensor & _non_linear_reciprocal;

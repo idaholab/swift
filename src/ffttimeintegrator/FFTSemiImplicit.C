@@ -23,16 +23,19 @@ FFTSemiImplicit::validParams()
       "linear_reciprocal", "Buffer with the reciprocal of the linear prefactor (e.g. kappa*k^2)");
   params.addRequiredParam<FFTInputBufferName>(
       "nonlinear_reciprocal", "Buffer with the reciprocal of the non-linear contribution");
+  params.addParam<unsigned int>(
+      "history_size", 1, "How many old states to use (determines time integration order).");
   return params;
 }
 
 FFTSemiImplicit::FFTSemiImplicit(const InputParameters & parameters)
   : FFTTimeIntegrator(parameters),
+    _history_size(getParam<unsigned int>("history_size")),
     _reciprocal_buffer(getInputBuffer("reciprocal_buffer")),
     _linear_reciprocal(getInputBuffer("linear_reciprocal")),
     _non_linear_reciprocal(getInputBuffer("nonlinear_reciprocal")),
-    _old_reciprocal_buffer(getBufferOld("reciprocal_buffer", 2)),
-    _old_non_linear_reciprocal(getBufferOld("nonlinear_reciprocal", 2))
+    _old_reciprocal_buffer(getBufferOld("reciprocal_buffer", _history_size)),
+    _old_non_linear_reciprocal(getBufferOld("nonlinear_reciprocal", _history_size))
 {
 }
 
@@ -42,8 +45,6 @@ FFTSemiImplicit::computeBuffer()
   const auto n_old = _old_reciprocal_buffer.size();
   if (_old_non_linear_reciprocal.size() != n_old)
     mooseError("Inconsistent history size");
-
-  mooseInfoRepeated("n_old = ", n_old);
 
   torch::Tensor ubar;
   if (n_old == 0)
@@ -57,7 +58,4 @@ FFTSemiImplicit::computeBuffer()
            (3.0 - (2.0 * _dt) * _linear_reciprocal);
 
   _u = _fft_problem.ifft(ubar);
-
-  if (!_u.is_cuda())
-    mooseError("not using CUDA");
 }

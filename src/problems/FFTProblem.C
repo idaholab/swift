@@ -279,7 +279,7 @@ FFTProblem::fft(torch::Tensor t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::rfft2(t);
+      return torch::fft::rfft(t);
     case 2:
       return torch::fft::rfft2(t);
     case 3:
@@ -295,7 +295,7 @@ FFTProblem::ifft(torch::Tensor t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::irfft2(t);
+      return torch::fft::irfft(t);
     case 2:
       return torch::fft::irfft2(t);
     case 3:
