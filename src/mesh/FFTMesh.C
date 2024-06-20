@@ -34,6 +34,8 @@ FFTMesh::validParams()
   params.addParam<Real>("ymax", 1.0, "Upper Y Coordinate of the generated mesh");
   params.addParam<Real>("zmax", 1.0, "Upper Z Coordinate of the generated mesh");
 
+  params.set<bool>("allow_renumbering") = false;
+  params.suppressParameter<bool>("allow_renumbering");
   params.addClassDescription("Create a line, square, or cube mesh with uniformly spaced elements.");
   return params;
 }
@@ -50,6 +52,14 @@ FFTMesh::FFTMesh(const InputParameters & parameters)
 {
   // All generated meshes are regular orthogonal meshes - until they get modified ;)
   _regular_orthogonal_mesh = true;
+
+  // set unused dimensions to 1
+  if (_dim <= 2)
+    _nz = 1;
+  if (_dim <= 1)
+    _ny = 1;
+  if (_dim == 0)
+    _nx = 1;
 
   // Error check
   if (_nx == 0)

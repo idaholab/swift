@@ -18,6 +18,8 @@ FFTBufferBase::validParams()
   params.addClassDescription("FFTBuffer object.");
   params.registerBase("FFTBuffer");
   params.registerSystemAttributeName("FFTBuffer"); //?
+  params.addParam<AuxVariableName>("map_to_aux_variable",
+                                   "Sync the given AuxVariable to the buffer contents");
   return params;
 }
 

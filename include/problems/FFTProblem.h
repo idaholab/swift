@@ -84,6 +84,9 @@ protected:
   /// tensor options
   const torch::TensorOptions _options;
 
+  /// show debug ouput
+  const bool _debug;
+
   /// solver substeps
   const unsigned int _substeps;
 
@@ -125,6 +128,15 @@ protected:
 
   ///  time integrator objects
   std::vector<std::shared_ptr<FFTTimeIntegrator>> _time_integrators;
+
+  /// map from buffer name to variable name
+  std::map<std::string, AuxVariableName> _buffer_to_var_name;
+
+  /// buffers to constant monomial auxvariables
+  std::map<std::string, std::size_t> _buffer_to_constant_monomial;
+
+  /// buffers to first order lagrange
+  std::map<std::string, std::size_t> _buffer_to_first_order_lagrange;
 };
 
 #endif

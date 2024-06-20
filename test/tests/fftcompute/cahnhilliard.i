@@ -11,10 +11,12 @@
 
 [FFTBuffers]
   [c]
+    map_to_aux_variable = c
   []
   [cbar]
   []
   [mu]
+    map_to_aux_variable = mu
   []
   [mubar]
   []
@@ -86,11 +88,11 @@
 []
 
 [AuxVariables]
+  [mu]
+    family = MONOMIAL
+    order = CONSTANT
+  []
   [c]
-  []
-  [c2]
-  []
-  [c3]
   []
 []
 
@@ -136,7 +138,7 @@
 
 [Problem]
   type = FFTProblem
-  spectral_solve_substeps = 1
+  spectral_solve_substeps = 100
 []
 
 [Executioner]

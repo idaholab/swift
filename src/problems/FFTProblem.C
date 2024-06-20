@@ -24,6 +24,7 @@ FFTProblem::validParams()
   params.addClassDescription(
       "A normal Problem object that adds the ability to perform spectral solves.");
   params.set<bool>("skip_nl_system_check") = true;
+  params.addParam<bool>("print_debug_output", false, "Show FFT specific debug outputs");
   params.addParam<unsigned int>(
       "spectral_solve_substeps",
       1,
@@ -35,6 +36,7 @@ FFTProblem::FFTProblem(const InputParameters & parameters)
   : FEProblem(parameters),
     _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh)),
     _options(MooseFFT::floatTensorOptions()),
+    _debug(getParam<bool>("print_debug_output")),
     _substeps(getParam<unsigned int>("spectral_solve_substeps"))
 {
   if (!_fft_mesh)
@@ -119,6 +121,42 @@ FFTProblem::init()
 
   // call base class init
   FEProblem::init();
+
+  // variable mapping
+  const auto & aux = getAuxiliarySystem();
+  if (!const_cast<libMesh::System &>(aux.system()).is_initialized())
+    mooseError("Aux system is not initialized :(");
+
+  auto sys_num = aux.number();
+  for (const auto & [buffer_name, var_name] : _buffer_to_var_name)
+  {
+    if (!aux.hasVariable(var_name))
+      mooseError("AuxVariable '", var_name, "' does not exist in the system.");
+    auto & var = aux.getVariable(0, var_name);
+    if (var.isArray() || var.isVector() || var.isFV())
+      mooseError("Unsupported variable type for mapping");
+    auto var_num = var.number();
+
+    mooseInfoRepeated("Setting up mapping for sys_num=", sys_num, " var_num=", var_num);
+
+    if (var.feType() == FEType(FIRST, LAGRANGE))
+      _buffer_to_first_order_lagrange[buffer_name] =
+          _mesh.nodePtr(0)->dof_number(sys_num, var_num, 0);
+    else if (var.feType() == FEType(CONSTANT, MONOMIAL))
+      _buffer_to_constant_monomial[buffer_name] = _mesh.elemPtr(0)->dof_number(sys_num, var_num, 0);
+    else
+      mooseError("Only first order lagrange and constant monomial variables are supported for "
+                 "direct transfer. Try using the FFTBufferAux kernel to transfer buffers to "
+                 "variables of any other type.");
+  }
+
+  // debug output
+  std::string variable_mapping;
+  for (const auto & [buffer_name, start] : _buffer_to_constant_monomial)
+    variable_mapping += "ELEMENTAL " + buffer_name + " dof0 at " + Moose::stringify(start) + '\n';
+  for (const auto & [buffer_name, start] : _buffer_to_first_order_lagrange)
+    variable_mapping += "NODAL     " + buffer_name + " dof0 at " + Moose::stringify(start) + '\n';
+  mooseInfo("Direct buffer to solutionvector mappings:\n", variable_mapping);
 }
 
 void
@@ -164,19 +202,93 @@ FFTProblem::execute(const ExecFlagType & exec_type)
 void
 FFTProblem::mapBuffersToAux()
 {
+  // nothing to map?
+  if (_buffer_to_first_order_lagrange.empty() && _buffer_to_constant_monomial.empty())
+    return;
+
   auto * current_solution = &getAuxiliarySystem().solution();
   auto * solution_vector = dynamic_cast<PetscVector<Number> *>(current_solution);
   if (!solution_vector)
     mooseError(
         "Cannot map directly to the solution vector because NumericVector is not a PetscVector!");
 
-  mooseInfoRepeated("solution local size is ", solution_vector->local_size());
   auto value = solution_vector->get_array();
-  // do magic
-  for (const auto i : make_range(solution_vector->local_size()))
-    value[i] = 0.001 * i;
-  solution_vector->restore_array();
 
+  // const monomial variables
+  std::size_t size_elem = _n[0] * _n[1] * _n[2];
+  for (const auto & [buffer_name, start] : _buffer_to_constant_monomial)
+  {
+    const auto buffer = _fft_buffer[buffer_name].cpu();
+    std::size_t idx = start;
+    switch (_dim)
+    {
+      {
+        case 1:
+          const auto b = buffer.accessor<double, 1>();
+          for (const auto i : make_range(_n[0]))
+            value[idx++] = b[i];
+          break;
+      }
+      case 2:
+      {
+        const auto b = buffer.accessor<double, 2>();
+        for (const auto i : make_range(_n[0]))
+          for (const auto j : make_range(_n[1]))
+            value[idx++] = b[i][j];
+        break;
+      }
+      case 3:
+      {
+        const auto b = buffer.accessor<double, 3>();
+        for (const auto i : make_range(_n[0]))
+          for (const auto j : make_range(_n[1]))
+            for (const auto k : make_range(_n[2]))
+              value[idx++] = b[i][j][k];
+        break;
+      }
+      default:
+        mooseError("Unsupported dimension");
+    }
+  }
+
+  // nodal first order lagrange variables
+  std::size_t size_node = (_n[0] + 1) * (_n[1] + 1) * (_n[2] + 1);
+  for (const auto & [buffer_name, start] : _buffer_to_first_order_lagrange)
+  {
+    auto buffer = _fft_buffer[buffer_name].cpu();
+    std::size_t idx = start;
+    switch (_dim)
+    {
+      case 1:
+      {
+        const auto b = buffer.accessor<double, 1>();
+        for (const auto i : make_range(_n[0] + 1))
+          value[idx++] = b[i % _n[0]];
+        break;
+      }
+      case 2:
+      {
+        const auto b = buffer.accessor<double, 2>();
+        for (const auto i : make_range(_n[0] + 1))
+          for (const auto j : make_range(_n[1] + 1))
+            value[idx++] = b[i % _n[0]][j % _n[1]];
+        break;
+      }
+      case 3:
+      {
+        const auto b = buffer.accessor<double, 3>();
+        for (const auto i : make_range(_n[0] + 1))
+          for (const auto j : make_range(_n[1] + 1))
+            for (const auto k : make_range(_n[2] + 1))
+              value[idx++] = b[i % _n[0]][j % _n[1]][k % _n[2]];
+        break;
+      }
+      default:
+        mooseError("Unsupported dimension");
+    }
+  }
+
+  solution_vector->restore_array();
   getAuxiliarySystem().sys().update();
 }
 
@@ -203,9 +315,14 @@ FFTProblem::advanceState()
 void
 FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & parameters)
 {
+  // add buffer
   if (_fft_buffer.find(buffer_name) != _fft_buffer.end())
     mooseError("FFTBuffer '", buffer_name, "' already exists in the system");
   _fft_buffer.try_emplace(buffer_name);
+
+  // store variable mapping
+  if (parameters.isParamValid("map_to_aux_variable"))
+    _buffer_to_var_name[buffer_name] = parameters.get<AuxVariableName>("map_to_aux_variable");
 }
 
 void
