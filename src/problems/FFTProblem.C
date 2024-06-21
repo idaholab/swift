@@ -122,40 +122,12 @@ FFTProblem::init()
   // call base class init
   FEProblem::init();
 
-  // variable mapping
-  const auto & aux = getAuxiliarySystem();
-  if (!const_cast<libMesh::System &>(aux.system()).is_initialized())
-    mooseError("Aux system is not initialized :(");
-
-  auto sys_num = aux.number();
-  for (const auto & [buffer_name, var_name] : _buffer_to_var_name)
-  {
-    if (!aux.hasVariable(var_name))
-      mooseError("AuxVariable '", var_name, "' does not exist in the system.");
-    auto & var = aux.getVariable(0, var_name);
-    if (var.isArray() || var.isVector() || var.isFV())
-      mooseError("Unsupported variable type for mapping");
-    auto var_num = var.number();
-
-    mooseInfoRepeated("Setting up mapping for sys_num=", sys_num, " var_num=", var_num);
-
-    if (var.feType() == FEType(FIRST, LAGRANGE))
-      _buffer_to_first_order_lagrange[buffer_name] =
-          _mesh.nodePtr(0)->dof_number(sys_num, var_num, 0);
-    else if (var.feType() == FEType(CONSTANT, MONOMIAL))
-      _buffer_to_constant_monomial[buffer_name] = _mesh.elemPtr(0)->dof_number(sys_num, var_num, 0);
-    else
-      mooseError("Only first order lagrange and constant monomial variables are supported for "
-                 "direct transfer. Try using the FFTBufferAux kernel to transfer buffers to "
-                 "variables of any other type.");
-  }
+  updateDOFMap();
 
   // debug output
   std::string variable_mapping;
-  for (const auto & [buffer_name, start] : _buffer_to_constant_monomial)
-    variable_mapping += "ELEMENTAL " + buffer_name + " dof0 at " + Moose::stringify(start) + '\n';
-  for (const auto & [buffer_name, start] : _buffer_to_first_order_lagrange)
-    variable_mapping += "NODAL     " + buffer_name + " dof0 at " + Moose::stringify(start) + '\n';
+  for (const auto & [buffer_name, tuple] : _buffer_to_var)
+    variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
   mooseInfo("Direct buffer to solutionvector mappings:\n", variable_mapping);
 }
 
@@ -192,19 +164,103 @@ FFTProblem::execute(const ExecFlagType & exec_type)
     mapBuffersToAux();
   }
 
-  // if (exec_type == EXEC_TIMESTEP_END)
-  //   // map buffers to AuxVariables
-  //   mapBuffersToAux();
-
   FEProblem::execute(exec_type);
+}
+
+void
+FFTProblem::updateDOFMap()
+{
+  TIME_SECTION("update", 3, "Updating FFT DOF Map", true);
+
+  // variable mapping
+  const auto & aux = getAuxiliarySystem();
+  if (!const_cast<libMesh::System &>(aux.system()).is_initialized())
+    mooseError("Aux system is not initialized :(");
+
+  auto sys_num = aux.number();
+  for (auto & [buffer_name, tuple] : _buffer_to_var)
+  {
+    auto & [var, dofs, is_nodal] = tuple;
+    if (var->isArray() || var->isVector() || var->isFV())
+      mooseError("Unsupported variable type for mapping");
+    auto var_num = var->number();
+
+    const static Point shift(
+        _grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
+    auto compute_iteration_index = [this](Point p, long int n0, long int n1)
+    {
+      switch (_dim)
+      {
+        case 1:
+          return static_cast<long int>(p(0) / _grid_spacing[0]);
+
+        case 2:
+          return static_cast<long int>(p(0) / _grid_spacing[0]) +
+                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0;
+
+        case 3:
+          return static_cast<long int>(p(0) / _grid_spacing[0]) +
+                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0 +
+                 static_cast<long int>(p(2) / _grid_spacing[2]) * n0 * n1;
+        default:
+          mooseError("Unsupported dimension");
+      }
+    };
+
+    if (is_nodal)
+    {
+      long int n0 = _n[0] + 1;
+      long int n1 = _n[1] + 1;
+      long int n2 = _n[2] + 1;
+
+      switch (_dim)
+      {
+        case 1:
+          dofs.resize(n0);
+          break;
+        case 2:
+          dofs.resize(n0 * n1);
+          break;
+        case 3:
+          dofs.resize(n0 * n1 * n2);
+          break;
+        default:
+          mooseError("unsupported dimension");
+      }
+
+      // loop over nodes
+      for (const auto & node : _mesh.getMesh().node_ptr_range())
+      {
+        const auto dof_index = node->dof_number(sys_num, var_num, 0);
+        const auto iteration_index = compute_iteration_index(*node + shift, n0, n1);
+        dofs[iteration_index] = dof_index;
+      }
+    }
+    else
+    {
+      long int n0 = _n[0];
+      long int n1 = _n[1];
+      long int n2 = _n[2];
+      dofs.resize(n0 * n1 * n2);
+      // loop over elements
+      for (const auto & elem : _mesh.getMesh().element_ptr_range())
+      {
+        const auto dof_index = elem->dof_number(sys_num, var_num, 0);
+        const auto iteration_index = compute_iteration_index(elem->centroid(), n0, n1);
+        dofs[iteration_index] = dof_index;
+      }
+    }
+  }
 }
 
 void
 FFTProblem::mapBuffersToAux()
 {
   // nothing to map?
-  if (_buffer_to_first_order_lagrange.empty() && _buffer_to_constant_monomial.empty())
+  if (_buffer_to_var.empty())
     return;
+
+  TIME_SECTION("update", 3, "Mapping FFT buffers to Variables", true);
 
   auto * current_solution = &getAuxiliarySystem().solution();
   auto * solution_vector = dynamic_cast<PetscVector<Number> *>(current_solution);
@@ -215,72 +271,40 @@ FFTProblem::mapBuffersToAux()
   auto value = solution_vector->get_array();
 
   // const monomial variables
-  std::size_t size_elem = _n[0] * _n[1] * _n[2];
-  for (const auto & [buffer_name, start] : _buffer_to_constant_monomial)
+  for (const auto & [buffer_name, tuple] : _buffer_to_var)
   {
+    const auto & [var, dofs, is_nodal] = tuple;
+    libmesh_ignore(var);
+    const long int n0 = is_nodal ? _n[0] + 1 : _n[0];
+    const long int n1 = is_nodal ? _n[1] + 1 : _n[1];
+    const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
+
     const auto buffer = _fft_buffer[buffer_name].cpu();
-    std::size_t idx = start;
+    std::size_t idx = 0;
     switch (_dim)
     {
       {
         case 1:
           const auto b = buffer.accessor<double, 1>();
-          for (const auto i : make_range(_n[0]))
-            value[idx++] = b[i];
+          for (const auto i : make_range(n0))
+            value[dofs[idx++]] = b[i % _n[0]];
           break;
       }
       case 2:
       {
         const auto b = buffer.accessor<double, 2>();
-        for (const auto i : make_range(_n[0]))
-          for (const auto j : make_range(_n[1]))
-            value[idx++] = b[i][j];
+        for (const auto j : make_range(n1))
+          for (const auto i : make_range(n0))
+            value[dofs[idx++]] = b[i % _n[0]][j % _n[1]];
         break;
       }
       case 3:
       {
         const auto b = buffer.accessor<double, 3>();
-        for (const auto i : make_range(_n[0]))
-          for (const auto j : make_range(_n[1]))
-            for (const auto k : make_range(_n[2]))
-              value[idx++] = b[i][j][k];
-        break;
-      }
-      default:
-        mooseError("Unsupported dimension");
-    }
-  }
-
-  // nodal first order lagrange variables
-  std::size_t size_node = (_n[0] + 1) * (_n[1] + 1) * (_n[2] + 1);
-  for (const auto & [buffer_name, start] : _buffer_to_first_order_lagrange)
-  {
-    auto buffer = _fft_buffer[buffer_name].cpu();
-    std::size_t idx = start;
-    switch (_dim)
-    {
-      case 1:
-      {
-        const auto b = buffer.accessor<double, 1>();
-        for (const auto i : make_range(_n[0] + 1))
-          value[idx++] = b[i % _n[0]];
-        break;
-      }
-      case 2:
-      {
-        const auto b = buffer.accessor<double, 2>();
-        for (const auto i : make_range(_n[0] + 1))
-          for (const auto j : make_range(_n[1] + 1))
-            value[idx++] = b[i % _n[0]][j % _n[1]];
-        break;
-      }
-      case 3:
-      {
-        const auto b = buffer.accessor<double, 3>();
-        for (const auto i : make_range(_n[0] + 1))
-          for (const auto j : make_range(_n[1] + 1))
-            for (const auto k : make_range(_n[2] + 1))
-              value[idx++] = b[i % _n[0]][j % _n[1]][k % _n[2]];
+        for (const auto k : make_range(n2))
+          for (const auto j : make_range(n1))
+            for (const auto i : make_range(n0))
+              value[dofs[idx++]] = b[i % _n[0]][j % _n[1]][k % _n[2]];
         break;
       }
       default:
@@ -322,7 +346,25 @@ FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & para
 
   // store variable mapping
   if (parameters.isParamValid("map_to_aux_variable"))
-    _buffer_to_var_name[buffer_name] = parameters.get<AuxVariableName>("map_to_aux_variable");
+  {
+    const auto & aux = getAuxiliarySystem();
+    const auto & var_name = parameters.get<AuxVariableName>("map_to_aux_variable");
+    if (!aux.hasVariable(var_name))
+      mooseError("AuxVariable '", var_name, "' does not exist in the system.");
+
+    bool is_nodal;
+    const auto & var = aux.getVariable(0, var_name);
+    if (var.feType() == FEType(FIRST, LAGRANGE))
+      is_nodal = true;
+    else if (var.feType() == FEType(CONSTANT, MONOMIAL))
+      is_nodal = false;
+    else
+      mooseError("Only first order lagrange and constant monomial variables are supported for "
+                 "direct transfer. Try using the FFTBufferAux kernel to transfer buffers to "
+                 "variables of any other type.");
+
+    _buffer_to_var[buffer_name] = std::make_tuple(&var, std::vector<std::size_t>{}, is_nodal);
+  }
 }
 
 void

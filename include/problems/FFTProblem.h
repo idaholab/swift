@@ -76,6 +76,7 @@ public:
   const torch::IntArrayRef & getShape() { return _shape; }
 
 protected:
+  void updateDOFMap();
   void mapBuffersToAux();
 
   /// FFT Mesh object
@@ -132,11 +133,9 @@ protected:
   /// map from buffer name to variable name
   std::map<std::string, AuxVariableName> _buffer_to_var_name;
 
-  /// buffers to constant monomial auxvariables
-  std::map<std::string, std::size_t> _buffer_to_constant_monomial;
-
-  /// buffers to first order lagrange
-  std::map<std::string, std::size_t> _buffer_to_first_order_lagrange;
+  /// buffers to solution vector indices
+  std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
+      _buffer_to_var;
 };
 
 #endif
