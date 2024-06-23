@@ -35,6 +35,7 @@ FFTMesh::validParams()
   params.addParam<Real>("zmax", 1.0, "Upper Z Coordinate of the generated mesh");
 
   params.set<bool>("allow_renumbering") = false;
+  params.set<bool>("dummy_mesh") = false;
   params.suppressParameter<bool>("allow_renumbering");
   params.addClassDescription("Create a line, square, or cube mesh with uniformly spaced elements.");
   return params;
@@ -127,6 +128,8 @@ FFTMesh::safeClone() const
 void
 FFTMesh::buildMesh()
 {
+  auto dummy = getParam<bool>("dummy_mesh");
+
   // Switching on MooseEnum
   switch (_dim)
   {
@@ -136,8 +139,12 @@ FFTMesh::buildMesh()
     {
 
       auto elem_type = Utility::string_to_enum<ElemType>("EDGE2");
-      MeshTools::Generation::build_line(
-          dynamic_cast<UnstructuredMesh &>(getMesh()), _nx, 0.0, _xmax, elem_type, false);
+      MeshTools::Generation::build_line(dynamic_cast<UnstructuredMesh &>(getMesh()),
+                                        dummy ? 1 : _nx,
+                                        0.0,
+                                        _xmax,
+                                        elem_type,
+                                        false);
       break;
     }
 
@@ -145,8 +152,8 @@ FFTMesh::buildMesh()
     {
       auto elem_type = Utility::string_to_enum<ElemType>("QUAD4");
       MeshTools::Generation::build_square(dynamic_cast<UnstructuredMesh &>(getMesh()),
-                                          _nx,
-                                          _ny,
+                                          dummy ? 1 : _nx,
+                                          dummy ? 1 : _ny,
                                           0.0,
                                           _xmax,
                                           0.0,
@@ -160,9 +167,9 @@ FFTMesh::buildMesh()
     {
       auto elem_type = Utility::string_to_enum<ElemType>("HEX8");
       MeshTools::Generation::build_cube(dynamic_cast<UnstructuredMesh &>(getMesh()),
-                                        _nx,
-                                        _ny,
-                                        _nz,
+                                        dummy ? 1 : _nx,
+                                        dummy ? 1 : _ny,
+                                        dummy ? 1 : _nz,
                                         0.0,
                                         _xmax,
                                         0.0,

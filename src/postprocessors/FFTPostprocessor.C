@@ -23,8 +23,14 @@ FFTPostprocessor::validParams()
 
 FFTPostprocessor::FFTPostprocessor(const InputParameters & parameters)
   : GeneralPostprocessor(parameters),
-    _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>(
-        "_fe_problem", "FFTPostprocessors require a FFTProblem.")),
+    _fft_problem(
+        [this]()
+        {
+          auto fft_problem = dynamic_cast<FFTProblem *>(&_fe_problem);
+          if (!fft_problem)
+            mooseError("FFTPostprocessors require a FFTProblem.");
+          return std::ref(*fft_problem);
+        }()),
     _u(_fft_problem.getBuffer(getParam<FFTInputBufferName>("buffer")))
 {
 }
