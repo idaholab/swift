@@ -20,7 +20,7 @@ FFTTimeIntegrator::validParams()
 }
 
 FFTTimeIntegrator::FFTTimeIntegrator(const InputParameters & parameters)
-  : FFTCompute(parameters), _dt(_fft_problem.dt())
+  : FFTCompute(parameters), _dt(_fft_problem.getSubDt())
 {
 }
 

@@ -27,7 +27,7 @@ public:
 
   virtual std::unique_ptr<MooseMesh> safeClone() const override;
 
-  unsigned int getDim() { return _dim; }
+  unsigned int getDim() const { return _dim; }
 
   virtual void buildMesh() override;
   unsigned int getElementsInDimension(unsigned int component) const;

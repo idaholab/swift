@@ -128,7 +128,7 @@ FFTProblem::init()
   std::string variable_mapping;
   for (const auto & [buffer_name, tuple] : _buffer_to_var)
     variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
-  mooseInfo("Direct buffer to solutionvector mappings:\n", variable_mapping);
+  mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
 }
 
 void
@@ -143,6 +143,12 @@ FFTProblem::execute(const ExecFlagType & exec_type)
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
+    // if the time step changed and the current timeintegrator does not support variable timestep
+    // size, we clear the histories
+    if (dt() != dtOld())
+      for (auto & [name, max_states] : _old_fft_buffer)
+        max_states.second.clear();
+
     // update substepping dt
     _sub_dt = dt() / _substeps;
 
@@ -446,6 +452,8 @@ FFTProblem::getBufferOld(const std::string & buffer_name, unsigned int max_state
     else
       mooseError("Failed to insert old buffer state");
   }
+  else
+    it->second.first = std::max(it->second.first, max_states);
   return it->second.second;
 }
 

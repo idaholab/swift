@@ -1,12 +1,12 @@
 [Mesh]
   type = FFTMesh
   dim = 3
-  nx = 100
-  ny = 100
-  nz = 100
-  xmax = ${fparse pi*4}
-  ymax = ${fparse pi*4}
-  zmax = ${fparse pi*4}
+  nx = 200
+  ny = 200
+  nz = 200
+  xmax = ${fparse pi*8}
+  ymax = ${fparse pi*8}
+  zmax = ${fparse pi*8}
 []
 
 [FFTBuffers]
@@ -33,8 +33,8 @@
   [c]
     type = RandomFFTIC
     buffer = c
-    min = 0.39
-    max = 0.41
+    min = 0.44
+    max = 0.56
   []
   [Mbar]
     type = ReciprocalLaplacianFactor
@@ -140,13 +140,18 @@
 
 [Problem]
   type = FFTProblem
-  spectral_solve_substeps = 100
+  spectral_solve_substeps = 1000
 []
 
 [Executioner]
   type = Transient
   num_steps = 100
-  dt = 1
+  [TimeStepper]
+    type = IterationAdaptiveDT
+    growth_factor = 1.8
+    dt = 0.1
+  []
+  dtmax = 1000
 []
 
 [Outputs]

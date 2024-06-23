@@ -42,9 +42,7 @@ FFTSemiImplicit::FFTSemiImplicit(const InputParameters & parameters)
 void
 FFTSemiImplicit::computeBuffer()
 {
-  const auto n_old = _old_reciprocal_buffer.size();
-  if (_old_non_linear_reciprocal.size() != n_old)
-    mooseError("Inconsistent history size");
+  const auto n_old = std::min(_old_reciprocal_buffer.size(), _old_non_linear_reciprocal.size());
 
   torch::Tensor ubar;
   if (n_old == 0)
