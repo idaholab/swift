@@ -7,8 +7,8 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
+#include "FFTPostprocessor.h"
 #include "FFTProblem.h"
-#include "DependencyResolverInterface.h"
 
 registerMooseObject("SwiftApp", FFTProblem);
 
@@ -16,7 +16,7 @@ InputParameters
 FFTPostprocessor::validParams()
 {
   InputParameters params = GeneralPostprocessor::validParams();
-  params.addClassDescription("A normal Postprocessor acting on ann FFT buffer.");
+  params.addClassDescription("A normal Postprocessor acting on an FFT buffer.");
   params.addRequiredParam<FFTInputBufferName>("buffer", "The buffer this compute is operating on");
   return params;
 }
