@@ -14,6 +14,7 @@
 #include "FFTTimeIntegrator.h"
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
+#include "FFTRawXDMFOut.h"
 
 registerMooseObject("SwiftApp", FFTProblem);
 
@@ -129,6 +130,8 @@ FFTProblem::init()
   for (const auto & [buffer_name, tuple] : _buffer_to_var)
     variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
   mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
+
+  FFTRawXDMFOut(*this);
 }
 
 void

@@ -8,5 +8,22 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "FFTOutput.h"
+#include "MooseError.h"
 
 FFTOutput::FFTOutput(const FFTProblem & fft_problem) : _fft_problem(fft_problem) {}
+
+void
+FFTOutput::startOutput()
+{
+  if (_output_thread.joinable())
+    mooseError("Output thread is already running. Must call waitForCompletion() first. This is a "
+               "code error.");
+  _output_thread = std::move(std::thread(&FFTOutput::output, this));
+}
+
+void
+FFTOutput::waitForCompletion()
+{
+  if (_output_thread.joinable())
+    _output_thread.join();
+}

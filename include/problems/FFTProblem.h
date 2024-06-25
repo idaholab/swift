@@ -58,8 +58,8 @@ public:
   const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
                                                   unsigned int max_states);
 
-  const unsigned int & getDim() { return _dim; }
-  const Real & getSubDt() { return _sub_dt; }
+  const unsigned int & getDim() const { return _dim; }
+  const Real & getSubDt() const { return _sub_dt; }
 
   const std::array<unsigned int, 3> & getGridSize() const { return _n; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }

@@ -21,9 +21,17 @@ class FFTOutput
 public:
   FFTOutput(const FFTProblem & fft_problem);
 
+  void startOutput();
+
+  void waitForCompletion();
+
 protected:
+  virtual void output() = 0;
+
   const FFTProblem & _fft_problem;
 
-  /// The buffer this postprocessor is operating on
-  const std::vector<torch::Tensor *> & _out_buffers;
+  std::thread _output_thread;
+
+  /// The buffer this output object is outputting
+  // const std::vector<torch::Tensor *> & _out_buffers;
 };

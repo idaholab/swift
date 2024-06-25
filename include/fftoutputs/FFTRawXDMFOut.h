@@ -10,6 +10,7 @@
 #pragma once
 
 #include "FFTOutput.h"
+#include "pugixml.h"
 #include <thread>
 
 /**
@@ -20,8 +21,10 @@ class FFTRawXDMFOut : public FFTOutput
 public:
   FFTRawXDMFOut(const FFTProblem & fft_problem);
 
-  virtual void output() = 0;
-
 protected:
-  std::thread _output_thread;
+  virtual void output() override;
+
+  pugi::xml_document _xmdf;
+  pugi::xml_node _domain;
+  pugi::xml_node _tgrid;
 };
