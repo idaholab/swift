@@ -24,7 +24,17 @@ public:
 protected:
   virtual void output() override;
 
+  /// xml document references
   pugi::xml_document _xmdf;
-  pugi::xml_node _domain;
   pugi::xml_node _tgrid;
+  pugi::xml_attribute _tsize;
+  pugi::xml_node _tdata;
+
+  std::string _ngrid;
+
+  /// Timesteps
+  std::vector<Real> _times;
+
+  /// outputted frame
+  std::size_t _frame;
 };
