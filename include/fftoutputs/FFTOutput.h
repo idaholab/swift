@@ -9,29 +9,34 @@
 
 #pragma once
 
+#include "MooseObject.h"
 #include "torch/torch.h"
+#include <thread>
 
 class FFTProblem;
 
 /**
  * Direct buffer output
  */
-class FFTOutput
+class FFTOutput : public MooseObject
 {
 public:
-  FFTOutput(const FFTProblem & fft_problem);
+  static InputParameters validParams();
+
+  FFTOutput(const InputParameters & parameters);
+
+  virtual void init() {}
 
   void startOutput();
-
   void waitForCompletion();
 
 protected:
   virtual void output() = 0;
 
-  const FFTProblem & _fft_problem;
+  FFTProblem & _fft_problem;
 
   std::thread _output_thread;
 
   /// The buffer this output object is outputting
-  // const std::vector<torch::Tensor *> & _out_buffers;
+  std::map<std::string, const torch::Tensor *> _out_buffers;
 };

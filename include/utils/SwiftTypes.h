@@ -21,6 +21,10 @@ typedef std::string FFTInputBufferName;
 // DerivativeStringClass(FFTOutputBufferName);
 typedef std::string FFTOutputBufferName;
 
+/// Name of an FFTOutput object
+// DerivativeStringClass(FFTOutputName);
+typedef std::string FFTOutputName;
+
 /// Forward declarations
 class FFTBufferBase;
 class FFTCompute;

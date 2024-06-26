@@ -23,6 +23,7 @@ class FFTMesh;
 class FFTCompute;
 class FFTInitialCondition;
 class FFTTimeIntegrator;
+class FFTOutput;
 
 /**
  * Problem for solving eigenvalue problems
@@ -53,10 +54,16 @@ public:
   virtual void addFFTTimeIntegrator(const std::string & time_integrator_name,
                                     const std::string & name,
                                     InputParameters & parameters);
+  virtual void addFFTOutput(const std::string & output_name,
+                            const std::string & name,
+                            InputParameters & parameters);
 
   torch::Tensor & getBuffer(const std::string & buffer_name);
   const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
                                                   unsigned int max_states);
+
+  /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
+  const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
 
   const unsigned int & getDim() const { return _dim; }
   const Real & getSubDt() const { return _sub_dt; }
@@ -97,6 +104,9 @@ protected:
   /// list of FFTBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _fft_buffer;
 
+  /// list of read-only CPU FFTBuffers (for MOOSE objects and outputs)
+  std::map<std::string, torch::Tensor> _fft_cpu_buffer;
+
   /// old buffers (stores max number of states, requested, and states)
   std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_fft_buffer;
 
@@ -129,6 +139,8 @@ protected:
 
   ///  time integrator objects
   std::vector<std::shared_ptr<FFTTimeIntegrator>> _time_integrators;
+
+  std::vector<std::shared_ptr<FFTOutput>> _outputs;
 
   /// map from buffer name to variable name
   std::map<std::string, AuxVariableName> _buffer_to_var_name;

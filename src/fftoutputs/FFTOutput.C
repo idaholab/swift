@@ -9,8 +9,32 @@
 
 #include "FFTOutput.h"
 #include "MooseError.h"
+#include "SwiftTypes.h"
+#include "FFTProblem.h"
 
-FFTOutput::FFTOutput(const FFTProblem & fft_problem) : _fft_problem(fft_problem) {}
+InputParameters
+FFTOutput::validParams()
+{
+  InputParameters params = MooseObject::validParams();
+  params.addRequiredParam<std::vector<FFTInputBufferName>>("buffer", "The buffers to output");
+  params.addParam<std::string>(
+      "file_base",
+      "The desired solution output name without an extension. If not provided, MOOSE sets it "
+      "with Outputs/file_base when available. Otherwise, MOOSE uses input file name and this "
+      "object name for a master input or uses master file_base, the subapp name and this object "
+      "name for a subapp input to set it.");
+  params.registerBase("FFTOutput");
+  params.addPrivateParam<FFTProblem *>("_fft_problem", nullptr);
+  params.addClassDescription("FFTOutput object.");
+  return params;
+}
+
+FFTOutput::FFTOutput(const InputParameters & parameters)
+  : MooseObject(parameters), _fft_problem(*getCheckedPointerParam<FFTProblem *>("_fft_problem"))
+{
+  for (const auto & name : getParam<std::vector<FFTInputBufferName>>("buffer"))
+    _out_buffers[name] = &_fft_problem.getCPUBuffer(name);
+}
 
 void
 FFTOutput::startOutput()

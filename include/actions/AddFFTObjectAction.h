@@ -17,12 +17,12 @@ class FFTProblem;
  * This class adds an FFTCompute object.
  * The FFTCompute performs a mathematical operation on input tensors to produce output tensors
  */
-class AddFFTComputeAction : public MooseObjectAction
+class AddFFTObjectAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();
 
-  AddFFTComputeAction(const InputParameters & parameters);
+  AddFFTObjectAction(const InputParameters & parameters);
 
   virtual void act() override;
 };

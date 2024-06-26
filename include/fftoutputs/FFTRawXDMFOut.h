@@ -19,21 +19,18 @@
 class FFTRawXDMFOut : public FFTOutput
 {
 public:
-  FFTRawXDMFOut(const FFTProblem & fft_problem);
+  FFTRawXDMFOut(const InputParameters & parameters);
+
+  virtual void init() override;
 
 protected:
   virtual void output() override;
 
   /// xml document references
-  pugi::xml_document _xmdf;
+  pugi::xml_document _doc;
   pugi::xml_node _tgrid;
-  pugi::xml_attribute _tsize;
-  pugi::xml_node _tdata;
 
   std::string _ngrid;
-
-  /// Timesteps
-  std::vector<Real> _times;
 
   /// outputted frame
   std::size_t _frame;

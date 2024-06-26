@@ -8,7 +8,6 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "FFTBufferAux.h"
-#include "FFTProblem.h"
 #include "SwiftTypes.h"
 
 registerMooseObject("SwiftApp", FFTBufferAux);
@@ -24,27 +23,12 @@ FFTBufferAux::validParams()
 
 FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
   : AuxKernel(parameters),
-    _fft_problem(
-        [this]()
-        {
-          auto fft_problem = dynamic_cast<FFTProblem *>(&_subproblem);
-          if (!fft_problem)
-            mooseError("Can only be used with FFTProblem");
-          return fft_problem;
-        }()),
-    _buffer(_fft_problem->getBuffer(getParam<FFTInputBufferName>("buffer"))),
-    _dim(_fft_problem->getDim()),
-    _n(_fft_problem->getGridSize()),
-    _grid_spacing(_fft_problem->getGridSpacing())
+    FFTProblemInterface(this),
+    _cpu_buffer(_fft_problem.getCPUBuffer(getParam<FFTInputBufferName>("buffer"))),
+    _dim(_fft_problem.getDim()),
+    _n(_fft_problem.getGridSize()),
+    _grid_spacing(_fft_problem.getGridSpacing())
 {
-}
-
-void
-FFTBufferAux::customSetup(const ExecFlagType & e)
-{
-  if (!_execute_enum.contains(e))
-    return;
-  _cpu_buffer = _buffer.cpu();
 }
 
 Real

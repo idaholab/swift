@@ -26,7 +26,7 @@ FFTCompute::FFTCompute(const InputParameters & parameters)
   : MooseObject(parameters),
     _requested_buffers(),
     _supplied_buffers(),
-    _fft_problem(*parameters.getCheckedPointerParam<FFTProblem *>("_fft_problem")),
+    _fft_problem(*getCheckedPointerParam<FFTProblem *>("_fft_problem")),
     _u(getOutputBuffer("buffer")),
     _x(_fft_problem.getAxis(0)),
     _y(_fft_problem.getAxis(1)),

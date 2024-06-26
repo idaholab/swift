@@ -11,7 +11,14 @@
 #include "FFTProblem.h"
 #include "Conversion.h"
 
-FFTRawXDMFOut::FFTRawXDMFOut(const FFTProblem & fft_problem) : FFTOutput(fft_problem), _frame(0)
+registerMooseObject("SwiftApp", FFTRawXDMFOut);
+
+FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters) : FFTOutput(parameters), _frame(0)
+{
+}
+
+void
+FFTRawXDMFOut::init()
 {
   // get mesh metadata
   auto dim = _fft_problem.getDim();
@@ -31,8 +38,13 @@ FFTRawXDMFOut::FFTRawXDMFOut(const FFTProblem & fft_problem) : FFTOutput(fft_pro
   // setup XDMF skeleton
   //
 
+  // Top level xdmf block
+  auto xdmf = _doc.append_child("Xdmf");
+  xdmf.append_attribute("xmlns:xi") = "http://www.w3.org/2003/XInclude";
+  xdmf.append_attribute("Version") = "2.2";
+
   // Domain
-  auto domain = _xmdf.append_child("Domain");
+  auto domain = xdmf.append_child("Domain");
 
   // - Topology
   auto topology = domain.append_child("Topology");
@@ -42,18 +54,18 @@ FFTRawXDMFOut::FFTRawXDMFOut(const FFTProblem & fft_problem) : FFTOutput(fft_pro
 
   // -  Geometry
   auto geometry = domain.append_child("Geometry");
-  topology.append_attribute("name") = "Geom1";
+  geometry.append_attribute("name") = "Geom1";
   std::string type = "ORIGIN_";
   const char * dxyz[] = {"DX", "DY", "DZ"};
   for (const auto i : make_range(dim))
     type += dxyz[i];
-  topology.append_attribute("Type") = type.c_str();
+  geometry.append_attribute("Type") = type.c_str();
 
   // -- Origin
   {
     auto data = geometry.append_child("DataItem");
     data.append_attribute("Format").set_value("XML");
-    data.append_attribute("Dimension") = sdim.c_str();
+    data.append_attribute("Dimensions") = sdim.c_str();
     data.append_child(pugi::node_pcdata).set_value(Moose::stringify(origin, " ").c_str());
   }
 
@@ -61,7 +73,7 @@ FFTRawXDMFOut::FFTRawXDMFOut(const FFTProblem & fft_problem) : FFTOutput(fft_pro
   {
     auto data = geometry.append_child("DataItem");
     data.append_attribute("Format") = "XML";
-    data.append_attribute("Dimension") = sdim.c_str();
+    data.append_attribute("Dimensions") = sdim.c_str();
     data.append_child(pugi::node_pcdata).set_value(Moose::stringify(dgrid, " ").c_str());
   }
 
@@ -70,64 +82,63 @@ FFTRawXDMFOut::FFTRawXDMFOut(const FFTProblem & fft_problem) : FFTOutput(fft_pro
   _tgrid.append_attribute("Name") = "TimeSeries";
   _tgrid.append_attribute("GridType") = "Collection";
   _tgrid.append_attribute("CollectionType") = "Temporal";
-
-  // -- Times
-  auto time = _tgrid.append_child("Time");
-  time.append_attribute("TimeType") = "List";
-
-  // --- Time data
-  {
-    auto data = time.append_child("DataItem");
-    data.append_attribute("Format") = "XML";
-    data.append_attribute("NumberType") = "Float";
-    _tsize = data.append_attribute("Dimension");
-    _tdata = data.append_child(pugi::node_pcdata);
-  }
-
-  output();
-  output();
 }
 
 void
 FFTRawXDMFOut::output()
 {
-  // update timesteps
-  _times.push_back(_fft_problem.time());
-  _tsize.set_value(_times.size());
-  _tdata.set_value(Moose::stringify(_times, " ").c_str());
-
   // add grid for new timestep
   auto grid = _tgrid.append_child("Grid");
   grid.append_attribute("Name") = ("T" + Moose::stringify(_frame)).c_str();
   grid.append_attribute("GridType") = "Uniform";
+
+  // time
+  auto time = grid.append_child("Time");
+  time.append_attribute("Value") = _fft_problem.time();
 
   // add references
   grid.append_child("Topology").append_attribute("Reference") = "/Xdmf/Domain/Topology[1]";
   grid.append_child("Geometry").append_attribute("Reference") = "/Xdmf/Domain/Geometry[1]";
 
   // loop over buffers
-  for (const auto i : make_range(3))
+  for (const auto & [name, buffer] : _out_buffers)
   {
-    auto name = "Buf" + Moose::stringify(i);
-
     auto attr = grid.append_child("Attribute");
     attr.append_attribute("Name") = name.c_str();
     attr.append_attribute("Center") = "Node"; // or "Cell"?
     auto data = attr.append_child("DataItem");
     data.append_attribute("Format") = "Binary";
     data.append_attribute("DataType") = "Float";
-    data.append_attribute("Precision") = "8"; // or 4
     data.append_attribute("Endian") = "Big";
     data.append_attribute("Dimensions") = _ngrid.c_str();
 
     // save file
     auto fname = name + "." + Moose::stringify(_frame) + ".bin";
+    char * raw_ptr = static_cast<char *>(buffer->data_ptr());
+    std::size_t raw_size = buffer->numel();
+
+    if (buffer->dtype() == torch::kFloat32)
+    {
+      data.append_attribute("Precision") = "4";
+      raw_size *= 4;
+    }
+    else if (buffer->dtype() == torch::kFloat64)
+    {
+      data.append_attribute("Precision") = "8";
+      raw_size *= 8;
+    }
+    else
+      mooseError("Unsupported output type");
+
+    auto file = std::fstream(fname.c_str(), std::ios::out | std::ios::binary);
+    file.write(raw_ptr, raw_size);
+    file.close();
 
     data.append_child(pugi::node_pcdata).set_value(fname.c_str());
   }
 
   // write XDMF file
-  _xmdf.save_file("save_file_output.xml");
+  _doc.save_file("save_file_output.xmf");
 
   // increment frame
   _frame++;

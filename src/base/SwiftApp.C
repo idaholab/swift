@@ -74,25 +74,31 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   addTaskDependency("add_fft_buffer", "add_aux_variable");
 
   // FFTCompute Actions
-  registerSyntaxTask("AddFFTComputeAction", "FFTComputes/*", "add_fft_compute");
+  registerSyntaxTask("AddFFTObjectAction", "FFTComputes/*", "add_fft_compute");
   syntax.registerSyntaxType("FFTComputes/*", "FFTComputeName");
   registerMooseObjectTask("add_fft_compute", FFTCompute, false);
   addTaskDependency("add_fft_compute", "add_fft_buffer");
 
   // FFTICs Actions
-  registerSyntaxTask("AddFFTComputeAction", "FFTICs/*", "add_fft_ic");
+  registerSyntaxTask("AddFFTObjectAction", "FFTICs/*", "add_fft_ic");
   syntax.registerSyntaxType("FFTICs/*", "FFTICName");
   registerMooseObjectTask("add_fft_ic", FFTInitialCondition, false);
   addTaskDependency("add_fft_ic", "add_fft_compute");
 
   // FFTICs Actions
-  registerSyntaxTask("AddFFTComputeAction", "FFTTimeIntegrators/*", "add_fft_time_integrator");
+  registerSyntaxTask("AddFFTObjectAction", "FFTTimeIntegrators/*", "add_fft_time_integrator");
   syntax.registerSyntaxType("FFTTimeIntegrators/*", "FFTTimeIntegratorName");
   registerMooseObjectTask("add_fft_time_integrator", FFTTimeIntegrator, false);
   addTaskDependency("add_fft_time_integrator", "add_fft_ic");
 
+  // FFTOutputs Actions
+  registerSyntaxTask("AddFFTObjectAction", "FFTOutputs/*", "add_fft_output");
+  syntax.registerSyntaxType("FFTOutputs/*", "FFTOutputName");
+  registerMooseObjectTask("add_fft_output", FFTOutput, false);
+  addTaskDependency("add_fft_output", "add_fft_time_integrator");
+
   // make sure all this gets run before `add_mortar_variable`
-  addTaskDependency("add_mortar_variable", "add_fft_ic");
+  addTaskDependency("add_mortar_variable", "add_fft_output");
 }
 
 void

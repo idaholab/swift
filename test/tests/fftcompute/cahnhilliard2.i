@@ -28,6 +28,13 @@
   []
 []
 
+[FFTOutputs]
+  [xdmf]
+    type = FFTRawXDMFOut
+    buffer = 'c mu'
+  []
+[]
+
 [FFTICs]
   [c]
     type = RandomFFTIC

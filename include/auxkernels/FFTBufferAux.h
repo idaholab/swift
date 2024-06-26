@@ -10,6 +10,7 @@
 #pragma once
 
 #include "AuxKernel.h"
+#include "FFTProblemInterface.h"
 #include "torch/torch.h"
 
 class FFTProblem;
@@ -17,22 +18,17 @@ class FFTProblem;
 /**
  * Map an FFTBuffer to an AuxVariable
  */
-class FFTBufferAux : public AuxKernel
+class FFTBufferAux : public AuxKernel, public FFTProblemInterface
 {
 public:
   static InputParameters validParams();
 
   FFTBufferAux(const InputParameters & parameters);
 
-  virtual void customSetup(const ExecFlagType & exec_type);
-
 protected:
   virtual Real computeValue() override;
 
-  FFTProblem * _fft_problem;
-
-  const torch::Tensor & _buffer;
-  torch::Tensor _cpu_buffer;
+  const torch::Tensor & _cpu_buffer;
 
   const unsigned int & _dim;
   const std::array<unsigned int, 3> & _n;

@@ -9,12 +9,14 @@
 
 #include "FFTProblem.h"
 #include "FFTMesh.h"
+
 #include "FFTCompute.h"
 #include "FFTInitialCondition.h"
 #include "FFTTimeIntegrator.h"
+#include "FFTOutput.h"
+
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
-#include "FFTRawXDMFOut.h"
 
 registerMooseObject("SwiftApp", FFTProblem);
 
@@ -123,6 +125,10 @@ FFTProblem::init()
   // call base class init
   FEProblem::init();
 
+  // init outputs
+  for (auto & output : _outputs)
+    output->init();
+
   updateDOFMap();
 
   // debug output
@@ -130,8 +136,6 @@ FFTProblem::init()
   for (const auto & [buffer_name, tuple] : _buffer_to_var)
     variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
   mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
-
-  FFTRawXDMFOut(*this);
 }
 
 void
@@ -169,6 +173,26 @@ FFTProblem::execute(const ExecFlagType & exec_type)
       if (substep < _substeps - 1)
         advanceState();
     }
+
+    // wait for prior asynchronous activity on CPU buffers to complete
+    // (this is a synchronization barrier for the threaded CPU activity)
+    for (auto & output : _outputs)
+      output->waitForCompletion();
+
+    // prepare CPU buffers (this is a synchronization barrier for the GPU)
+    for (auto & [name, cpu_buffer] : _fft_cpu_buffer)
+    {
+      // get main buffer (GPU or CPU) - we already verified that it must exist
+      const auto & buffer = _fft_buffer[name];
+      if (buffer.is_cpu())
+        cpu_buffer = buffer.clone().contiguous();
+      else
+        cpu_buffer = buffer.cpu().contiguous();
+    }
+
+    // run direct buffer outputs (asynchronous in threads)
+    for (auto & output : _outputs)
+      output->startOutput();
 
     mapBuffersToAux();
   }
@@ -288,7 +312,7 @@ FFTProblem::mapBuffersToAux()
     const long int n1 = is_nodal ? _n[1] + 1 : _n[1];
     const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
 
-    const auto buffer = _fft_buffer[buffer_name].cpu();
+    const auto buffer = _fft_cpu_buffer[buffer_name];
     std::size_t idx = 0;
     switch (_dim)
     {
@@ -373,6 +397,7 @@ FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & para
                  "variables of any other type.");
 
     _buffer_to_var[buffer_name] = std::make_tuple(&var, std::vector<std::size_t>{}, is_nodal);
+    getCPUBuffer(buffer_name);
   }
 }
 
@@ -385,8 +410,7 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  std::shared_ptr<FFTCompute> compute_object =
-      _factory.create<FFTCompute>(compute_name, name, parameters, 0);
+  auto compute_object = _factory.create<FFTCompute>(compute_name, name, parameters, 0);
   logAdd("FFTCompute", name, compute_name);
   _computes.push_back(compute_object);
 }
@@ -400,8 +424,7 @@ FFTProblem::addFFTIC(const std::string & ic_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  std::shared_ptr<FFTInitialCondition> ic_object =
-      _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
+  auto ic_object = _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
   logAdd("FFTInitialCondition", name, ic_name);
   _ics.push_back(ic_object);
 }
@@ -427,10 +450,24 @@ FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
                  "'.");
 
   // Create the object
-  std::shared_ptr<FFTTimeIntegrator> time_integrator_object =
+  auto time_integrator_object =
       _factory.create<FFTTimeIntegrator>(time_integrator_name, name, parameters, 0);
   logAdd("FFTTimeIntegrator", name, time_integrator_name);
   _time_integrators.push_back(time_integrator_object);
+}
+
+void
+FFTProblem::addFFTOutput(const std::string & output_name,
+                         const std::string & name,
+                         InputParameters & parameters)
+{
+  // Add a pointer to the FFTProblem class
+  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+
+  // Create the object
+  auto output_object = _factory.create<FFTOutput>(output_name, name, parameters, 0);
+  logAdd("FFTInitialCondition", name, output_name);
+  _outputs.push_back(output_object);
 }
 
 torch::Tensor &
@@ -458,6 +495,26 @@ FFTProblem::getBufferOld(const std::string & buffer_name, unsigned int max_state
   else
     it->second.first = std::max(it->second.first, max_states);
   return it->second.second;
+}
+
+const torch::Tensor &
+FFTProblem::getCPUBuffer(const std::string & buffer_name)
+{
+  // does the buffer we request to copy to the CPU actually exist?
+  if (_fft_buffer.find(buffer_name) == _fft_buffer.end())
+    mooseError("Buffer '", buffer_name, "' does not exist. Cannot request a CPU copy of it.");
+
+  // add it to the list of buffers to be copied
+  auto it = _fft_cpu_buffer.find(buffer_name);
+  if (it == _fft_cpu_buffer.end())
+  {
+    auto [newit, success] = _fft_cpu_buffer.try_emplace(buffer_name);
+    if (success)
+      it = newit;
+    else
+      mooseError("Failed to insert read-only CPU buffer");
+  }
+  return it->second;
 }
 
 const torch::Tensor &
