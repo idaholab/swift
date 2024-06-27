@@ -11,9 +11,40 @@
 #include "FFTProblem.h"
 #include "Conversion.h"
 
+#ifdef LIBMESH_HAVE_HDF5
+namespace
+{
+void addDataToHDF5(const std::string & filename,
+                   const std::string & dataset_name,
+                   const char * data,
+                   std::vector<std::size_t> & ndim,
+                   hid_t type);
+}
+#endif
+
 registerMooseObject("SwiftApp", FFTRawXDMFOut);
 
-FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters) : FFTOutput(parameters), _frame(0)
+InputParameters
+FFTRawXDMFOut::validParams()
+{
+  auto params = FFTOutput::validParams();
+#ifdef LIBMESH_HAVE_HDF5
+  params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
+#endif
+  MooseEnum visType("CELL NODE", "CELL");
+  return params;
+}
+
+FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters)
+  : FFTOutput(parameters),
+    _dim(_fft_problem.getDim()),
+    _cell_data(false),
+    _file_base(_app.getOutputFileBase(true)),
+    _frame(0)
+#ifdef LIBMESH_HAVE_HDF5
+    ,
+    _enable_hdf5(getParam<bool>("enable_hdf5"))
+#endif
 {
 }
 
@@ -21,18 +52,18 @@ void
 FFTRawXDMFOut::init()
 {
   // get mesh metadata
-  auto dim = _fft_problem.getDim();
-  auto sdim = Moose::stringify(dim);
-  std::vector<unsigned int> ngrid;
-  std::vector<Real> dgrid;
+  auto sdim = Moose::stringify(_dim);
   std::vector<Real> origin;
-  for (const auto i : make_range(dim))
+  std::vector<Real> dgrid;
+  for (const auto i : make_range(_dim))
   {
-    ngrid.push_back(_fft_problem.getGridSize()[i]);
+    _ndata.push_back(_fft_problem.getGridSize()[i] + (_cell_data ? 0 : 1));
+    _nnode.push_back(_fft_problem.getGridSize()[i] + 1);
     dgrid.push_back(_fft_problem.getGridSpacing()[i]);
     origin.push_back(0.0);
   }
-  _ngrid = Moose::stringify(ngrid, " ");
+  _data_grid = Moose::stringify(_ndata, " ");
+  _node_grid = Moose::stringify(_nnode, " ");
 
   //
   // setup XDMF skeleton
@@ -48,16 +79,14 @@ FFTRawXDMFOut::init()
 
   // - Topology
   auto topology = domain.append_child("Topology");
-  topology.append_attribute("name") = "Topo1";
   topology.append_attribute("TopologyType") = (sdim + "DCoRectMesh").c_str();
-  topology.append_attribute("Dimensions").set_value(_ngrid.c_str());
+  topology.append_attribute("Dimensions").set_value(_node_grid.c_str());
 
   // -  Geometry
   auto geometry = domain.append_child("Geometry");
-  geometry.append_attribute("name") = "Geom1";
   std::string type = "ORIGIN_";
   const char * dxyz[] = {"DX", "DY", "DZ"};
-  for (const auto i : make_range(dim))
+  for (const auto i : make_range(_dim))
     type += dxyz[i];
   geometry.append_attribute("Type") = type.c_str();
 
@@ -97,49 +126,162 @@ FFTRawXDMFOut::output()
   time.append_attribute("Value") = _fft_problem.time();
 
   // add references
-  grid.append_child("Topology").append_attribute("Reference") = "/Xdmf/Domain/Topology[1]";
-  grid.append_child("Geometry").append_attribute("Reference") = "/Xdmf/Domain/Geometry[1]";
+  grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";
+  grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Geometry)";
 
   // loop over buffers
-  for (const auto & [name, buffer] : _out_buffers)
+  for (const auto & [name, original_buffer] : _out_buffers)
   {
     auto attr = grid.append_child("Attribute");
     attr.append_attribute("Name") = name.c_str();
-    attr.append_attribute("Center") = "Node"; // or "Cell"?
+    attr.append_attribute("Center") = _cell_data ? "Cell" : "Node";
     auto data = attr.append_child("DataItem");
-    data.append_attribute("Format") = "Binary";
     data.append_attribute("DataType") = "Float";
-    data.append_attribute("Endian") = "Big";
-    data.append_attribute("Dimensions") = _ngrid.c_str();
+    data.append_attribute("Dimensions") = _data_grid.c_str();
 
+    auto buffer = prepareTensor(*original_buffer);
     // save file
-    auto fname = name + "." + Moose::stringify(_frame) + ".bin";
-    char * raw_ptr = static_cast<char *>(buffer->data_ptr());
-    std::size_t raw_size = buffer->numel();
+    const auto setname = name + "." + Moose::stringify(_frame);
+    char * raw_ptr = static_cast<char *>(buffer.data_ptr());
+    std::size_t raw_size = buffer.numel();
 
-    if (buffer->dtype() == torch::kFloat32)
+#ifdef LIBMESH_HAVE_HDF5
+    if (_enable_hdf5)
     {
-      data.append_attribute("Precision") = "4";
-      raw_size *= 4;
-    }
-    else if (buffer->dtype() == torch::kFloat64)
-    {
-      data.append_attribute("Precision") = "8";
-      raw_size *= 8;
+      const auto h5name = _file_base + ".h5";
+      if (buffer.dtype() == torch::kFloat32)
+        addDataToHDF5(h5name, setname, raw_ptr, _ndata, H5T_NATIVE_FLOAT);
+      else if (buffer.dtype() == torch::kFloat64)
+        addDataToHDF5(h5name, setname, raw_ptr, _ndata, H5T_NATIVE_DOUBLE);
+      else
+        mooseError("Unsupported output type");
+
+      data.append_attribute("Format") = "HDF";
+      const auto h5path = h5name + ":/" + setname;
+      data.append_child(pugi::node_pcdata).set_value(h5path.c_str());
     }
     else
-      mooseError("Unsupported output type");
+#endif
+    {
+      if (buffer.dtype() == torch::kFloat32)
+      {
+        data.append_attribute("Precision") = "4";
+        raw_size *= 4;
+      }
+      else if (buffer.dtype() == torch::kFloat64)
+      {
+        data.append_attribute("Precision") = "8";
+        raw_size *= 8;
+      }
+      else
+        mooseError("Unsupported output type");
 
-    auto file = std::fstream(fname.c_str(), std::ios::out | std::ios::binary);
-    file.write(raw_ptr, raw_size);
-    file.close();
+      const auto fname = _file_base + "." + setname + ".bin";
+      auto file = std::fstream(fname.c_str(), std::ios::out | std::ios::binary);
+      file.write(raw_ptr, raw_size);
+      file.close();
 
-    data.append_child(pugi::node_pcdata).set_value(fname.c_str());
+      data.append_attribute("Format") = "Binary";
+      data.append_attribute("Endian") = "Little";
+      data.append_child(pugi::node_pcdata).set_value(fname.c_str());
+    }
   }
 
   // write XDMF file
-  _doc.save_file("save_file_output.xmf");
+  _doc.save_file((_file_base + ".xmf").c_str());
 
   // increment frame
   _frame++;
 }
+
+torch::Tensor
+FFTRawXDMFOut::prepareTensor(const torch::Tensor & in)
+{
+  // no extension necessary
+  if (_cell_data)
+    return in;
+
+  // for nodal data we increase each dimension by one and fill in a copy of the slice at 0
+  torch::Tensor tensor, first;
+  using torch::indexing::Slice;
+
+  if (_dim == 3)
+  {
+    first = in.index({0, Slice(), Slice()}).unsqueeze(0);
+    tensor = torch::cat({in, first}, 0);
+    first = tensor.index({Slice(), 0, Slice()}).unsqueeze(1);
+    tensor = torch::cat({tensor, first}, 1);
+    first = tensor.index({Slice(), Slice(), 0}).unsqueeze(2);
+    tensor = torch::cat({tensor, first}, 2);
+  }
+
+  else if (_dim == 2)
+  {
+    first = in.index({0}).unsqueeze(0);
+    tensor = torch::cat({in, first}, 0);
+    first = tensor.index({Slice(), 0}).unsqueeze(1);
+    tensor = torch::cat({tensor, first}, 1);
+  }
+  else
+    mooseError("Unsupported tensor dimension");
+
+  return tensor.contiguous();
+}
+
+#ifdef LIBMESH_HAVE_HDF5
+namespace
+{
+void
+addDataToHDF5(const std::string & filename,
+              const std::string & dataset_name,
+              const char * data,
+              std::vector<std::size_t> & ndim,
+              hid_t type)
+{
+  hid_t file_id, dataset_id, dataspace_id, plist_id;
+  herr_t status;
+
+  // Open the file in read/write mode, create if it doesn't exist
+  if (MooseUtils::checkFileWriteable(filename, false))
+    file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+  else
+    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+  // hsize_t chunk_dims[RANK];
+  std::vector<hsize_t> dims(ndim.begin(), ndim.end());
+
+  // Check if the dataset already exists
+  if (H5Lexists(file_id, dataset_name.c_str(), H5P_DEFAULT) > 0)
+    mooseError("Dataset '", dataset_name, "' already exists in HDF5 file '", filename, "'.");
+
+  // Create a new dataset
+  dataspace_id = H5Screate_simple(dims.size(), dims.data(), nullptr);
+  if (dataspace_id < 0)
+    mooseError("Error creating dataspace");
+
+  plist_id = H5Pcreate(H5P_DATASET_CREATE);
+  if (plist_id < 0)
+    mooseError("Error creating property list");
+
+  status = H5Pset_chunk(plist_id, dims.size(), dims.data());
+  if (status < 0)
+    mooseError("Error setting chunking");
+
+  H5Pset_deflate(plist_id, 9);
+
+  dataset_id = H5Dcreate(
+      file_id, dataset_name.c_str(), type, dataspace_id, H5P_DEFAULT, plist_id, H5P_DEFAULT);
+  if (dataset_id < 0)
+    mooseError("Error creating dataset");
+
+  // Write data to the dataset
+  status = H5Dwrite(dataset_id, type, H5S_ALL, dataspace_id, H5P_DEFAULT, data);
+
+  // Close resources
+  H5Pclose(plist_id);
+  H5Dclose(dataset_id);
+  H5Sclose(dataspace_id);
+  H5Fclose(file_id);
+}
+}
+#endif

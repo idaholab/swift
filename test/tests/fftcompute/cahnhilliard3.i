@@ -1,12 +1,12 @@
 [Mesh]
   type = FFTMesh
   dim = 3
-  nx = 200
-  ny = 200
-  nz = 200
-  xmax = ${fparse pi*8}
-  ymax = ${fparse pi*8}
-  zmax = ${fparse pi*8}
+  nx = 100
+  ny = 100
+  nz = 100
+  xmax = ${fparse pi*4}
+  ymax = ${fparse pi*4}
+  zmax = ${fparse pi*4}
   dummy_mesh = true
 []
 

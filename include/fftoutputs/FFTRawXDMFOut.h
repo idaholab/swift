@@ -13,12 +13,18 @@
 #include "pugixml.h"
 #include <thread>
 
+#ifdef LIBMESH_HAVE_HDF5
+#include "hdf5.h"
+#endif
+
 /**
  * Postprocessor that operates on a buffer
  */
 class FFTRawXDMFOut : public FFTOutput
 {
 public:
+  static InputParameters validParams();
+
   FFTRawXDMFOut(const InputParameters & parameters);
 
   virtual void init() override;
@@ -26,12 +32,33 @@ public:
 protected:
   virtual void output() override;
 
+  torch::Tensor prepareTensor(const torch::Tensor & in);
+
+  /// mesh dimension
+  const unsigned int _dim;
+
   /// xml document references
   pugi::xml_document _doc;
   pugi::xml_node _tgrid;
 
-  std::string _ngrid;
+  /// node grid is original buffer dimensions plus one
+  std::vector<std::size_t> _nnode;
+  std::string _node_grid;
+
+  /// data dimensions (depends on choice of Cell or Node output)
+  std::vector<std::size_t> _ndata;
+  std::string _data_grid;
+
+  /// Cell or node data?
+  const bool _cell_data;
+
+  /// file name base
+  std::string _file_base;
 
   /// outputted frame
   std::size_t _frame;
+
+#ifdef LIBMESH_HAVE_HDF5
+  const bool _enable_hdf5;
+#endif
 };
