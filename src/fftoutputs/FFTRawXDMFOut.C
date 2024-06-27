@@ -31,14 +31,14 @@ FFTRawXDMFOut::validParams()
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
 #endif
-  MooseEnum visType("CELL NODE", "CELL");
+  MultiMooseEnum outputMode("CELL NODE");
+  params.addParam<MultiMooseEnum>("output_mode", outputMode, "Output as cell or node data");
   return params;
 }
 
 FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters)
   : FFTOutput(parameters),
     _dim(_fft_problem.getDim()),
-    _cell_data(false),
     _file_base(_app.getOutputFileBase(true)),
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
@@ -46,6 +46,22 @@ FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters)
     _enable_hdf5(getParam<bool>("enable_hdf5"))
 #endif
 {
+  const auto & output_mode = getParam<MultiMooseEnum>("output_mode");
+  const auto nbuffers = _out_buffers.size();
+
+  if (output_mode.size() == 0)
+    // default all to Cell
+    for (const auto & pair : _out_buffers)
+      _is_cell_data[pair.first] = true;
+  else if (output_mode.size() != nbuffers)
+    paramError(
+        "output_mode", "Specify one output mode per buffer.", output_mode.size(), " != ", nbuffers);
+  else
+  {
+    const auto & buffer_name = getParam<std::vector<FFTInputBufferName>>("buffer");
+    for (const auto i : make_range(nbuffers))
+      _is_cell_data[buffer_name[i]] = (output_mode[i] == "CELL");
+  }
 }
 
 void
@@ -57,12 +73,14 @@ FFTRawXDMFOut::init()
   std::vector<Real> dgrid;
   for (const auto i : make_range(_dim))
   {
-    _ndata.push_back(_fft_problem.getGridSize()[i] + (_cell_data ? 0 : 1));
+    _ndata[0].push_back(_fft_problem.getGridSize()[i]);
+    _ndata[1].push_back(_fft_problem.getGridSize()[i] + 1);
     _nnode.push_back(_fft_problem.getGridSize()[i] + 1);
     dgrid.push_back(_fft_problem.getGridSpacing()[i]);
     origin.push_back(0.0);
   }
-  _data_grid = Moose::stringify(_ndata, " ");
+  _data_grid[0] = Moose::stringify(_ndata[0], " ");
+  _data_grid[1] = Moose::stringify(_ndata[1], " ");
   _node_grid = Moose::stringify(_nnode, " ");
 
   //
@@ -132,14 +150,15 @@ FFTRawXDMFOut::output()
   // loop over buffers
   for (const auto & [name, original_buffer] : _out_buffers)
   {
+    const auto is_cell = _is_cell_data[name];
     auto attr = grid.append_child("Attribute");
     attr.append_attribute("Name") = name.c_str();
-    attr.append_attribute("Center") = _cell_data ? "Cell" : "Node";
+    attr.append_attribute("Center") = is_cell ? "Cell" : "Node";
     auto data = attr.append_child("DataItem");
     data.append_attribute("DataType") = "Float";
-    data.append_attribute("Dimensions") = _data_grid.c_str();
+    data.append_attribute("Dimensions") = _data_grid[is_cell ? 0 : 1].c_str();
 
-    auto buffer = prepareTensor(*original_buffer);
+    auto buffer = is_cell ? *original_buffer : extendTensor(*original_buffer);
     // save file
     const auto setname = name + "." + Moose::stringify(_frame);
     char * raw_ptr = static_cast<char *>(buffer.data_ptr());
@@ -150,9 +169,9 @@ FFTRawXDMFOut::output()
     {
       const auto h5name = _file_base + ".h5";
       if (buffer.dtype() == torch::kFloat32)
-        addDataToHDF5(h5name, setname, raw_ptr, _ndata, H5T_NATIVE_FLOAT);
+        addDataToHDF5(h5name, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
       else if (buffer.dtype() == torch::kFloat64)
-        addDataToHDF5(h5name, setname, raw_ptr, _ndata, H5T_NATIVE_DOUBLE);
+        addDataToHDF5(h5name, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
       else
         mooseError("Unsupported output type");
 
@@ -195,20 +214,16 @@ FFTRawXDMFOut::output()
 }
 
 torch::Tensor
-FFTRawXDMFOut::prepareTensor(const torch::Tensor & in)
+FFTRawXDMFOut::extendTensor(torch::Tensor tensor)
 {
-  // no extension necessary
-  if (_cell_data)
-    return in;
-
   // for nodal data we increase each dimension by one and fill in a copy of the slice at 0
-  torch::Tensor tensor, first;
+  torch::Tensor first;
   using torch::indexing::Slice;
 
   if (_dim == 3)
   {
-    first = in.index({0, Slice(), Slice()}).unsqueeze(0);
-    tensor = torch::cat({in, first}, 0);
+    first = tensor.index({0, Slice(), Slice()}).unsqueeze(0);
+    tensor = torch::cat({tensor, first}, 0);
     first = tensor.index({Slice(), 0, Slice()}).unsqueeze(1);
     tensor = torch::cat({tensor, first}, 1);
     first = tensor.index({Slice(), Slice(), 0}).unsqueeze(2);
@@ -217,8 +232,8 @@ FFTRawXDMFOut::prepareTensor(const torch::Tensor & in)
 
   else if (_dim == 2)
   {
-    first = in.index({0}).unsqueeze(0);
-    tensor = torch::cat({in, first}, 0);
+    first = tensor.index({0}).unsqueeze(0);
+    tensor = torch::cat({tensor, first}, 0);
     first = tensor.index({Slice(), 0}).unsqueeze(1);
     tensor = torch::cat({tensor, first}, 1);
   }

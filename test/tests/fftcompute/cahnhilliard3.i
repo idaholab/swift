@@ -32,6 +32,7 @@
   [xdmf]
     type = FFTRawXDMFOut
     buffer = 'c mu'
+    output_mode = 'Node Cell'
     enable_hdf5 = true
   []
 []

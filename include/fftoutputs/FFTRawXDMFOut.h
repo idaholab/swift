@@ -32,7 +32,7 @@ public:
 protected:
   virtual void output() override;
 
-  torch::Tensor prepareTensor(const torch::Tensor & in);
+  torch::Tensor extendTensor(torch::Tensor tensor);
 
   /// mesh dimension
   const unsigned int _dim;
@@ -46,17 +46,16 @@ protected:
   std::string _node_grid;
 
   /// data dimensions (depends on choice of Cell or Node output)
-  std::vector<std::size_t> _ndata;
-  std::string _data_grid;
-
-  /// Cell or node data?
-  const bool _cell_data;
-
+  std::array<std::vector<std::size_t>, 2> _ndata;
+  std::array<std::string, 2> _data_grid;
   /// file name base
   std::string _file_base;
 
   /// outputted frame
   std::size_t _frame;
+
+  /// whether the tensor uses Cell or Node output
+  std::map<std::string, bool> _is_cell_data;
 
 #ifdef LIBMESH_HAVE_HDF5
   const bool _enable_hdf5;
