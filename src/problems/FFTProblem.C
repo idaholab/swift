@@ -54,6 +54,14 @@ FFTProblem::FFTProblem(const InputParameters & parameters)
     mooseError("FFT problems can only be run in serial at this time.");
 }
 
+FFTProblem::~FFTProblem()
+{
+  // wait for outputs to be completed (otherwise resources might get freed that the output thread
+  // depends on)
+  for (auto & output : _outputs)
+    output->waitForCompletion();
+}
+
 void
 FFTProblem::init()
 {
@@ -90,7 +98,7 @@ FFTProblem::init()
     pair.second = torch::zeros(_shape, _options);
 
   // build real space axes
-  for (const auto dim : make_range(3))
+  for (const auto dim : make_range(3u))
   {
     if (dim < _dim)
       _axis[dim] = align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
@@ -103,7 +111,7 @@ FFTProblem::init()
   }
 
   // build reciprocal space axes
-  for (const auto dim : make_range(3))
+  for (const auto dim : make_range(3u))
   {
     if (dim < _dim)
     {
@@ -439,7 +447,7 @@ FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
 
   // check that we have no other TI that advances the same buffer
   const auto & output_buffer = parameters.get<FFTOutputBufferName>("buffer");
-  for (const auto ti : _time_integrators)
+  for (const auto & ti : _time_integrators)
     if (ti->parameters().get<FFTOutputBufferName>("buffer") == output_buffer)
       mooseError("Buffer '",
                  output_buffer,

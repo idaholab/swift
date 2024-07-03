@@ -61,9 +61,9 @@
     type = ParsedCompute
     buffer = mu
     enable_jit = true
-    # expression = '0.1*c^2*(c-1)^2'
-    # derivatives = c
-    expression = "0.4*c^3-0.6*c^2+0.2*c"
+    expression = '0.1*c^2*(c-1)^2'
+    derivatives = c
+    # expression = "0.4*c^3-0.6*c^2+0.2*c"
     inputs = c
   []
   [mubar]
@@ -127,7 +127,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 100
+  num_steps = 20
   [TimeStepper]
     type = IterationAdaptiveDT
     growth_factor = 1.8

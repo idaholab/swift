@@ -11,6 +11,8 @@
 #include "FFTProblem.h"
 #include "Conversion.h"
 
+#include <filesystem>
+
 #ifdef LIBMESH_HAVE_HDF5
 namespace
 {
@@ -129,6 +131,12 @@ FFTRawXDMFOut::init()
   _tgrid.append_attribute("Name") = "TimeSeries";
   _tgrid.append_attribute("GridType") = "Collection";
   _tgrid.append_attribute("CollectionType") = "Temporal";
+
+  // write XDMF file
+  _doc.save_file((_file_base + ".xmf").c_str());
+  // delete HDF5 file
+  if (_enable_hdf5)
+    std::filesystem::remove(_file_base + ".h5");
 }
 
 void

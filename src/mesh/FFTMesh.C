@@ -22,8 +22,6 @@ FFTMesh::validParams()
 {
   InputParameters params = MooseMesh::validParams();
 
-  MooseEnum elem_types(LIST_GEOM_ELEM); // no default
-
   MooseEnum dims("1=1 2 3");
   params.addRequiredParam<MooseEnum>("dim", dims, "The dimension of the mesh to be generated");
 

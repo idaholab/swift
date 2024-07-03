@@ -54,7 +54,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     for (const auto & d : getParam<std::vector<FFTInputBufferName>>("derivatives"))
       if (std::find(names.begin(), names.end(), d) != names.end())
       {
-        if (fp.AutoDiff(d) != 1)
+        if (fp.AutoDiff(d) != -1)
           paramError("expression", "Failed to take derivative w.r.t. `", d, "`.");
       }
       else

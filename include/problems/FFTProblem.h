@@ -34,6 +34,7 @@ public:
   static InputParameters validParams();
 
   FFTProblem(const InputParameters & parameters);
+  ~FFTProblem() override;
 
   // setup stuff
   void init() override;
