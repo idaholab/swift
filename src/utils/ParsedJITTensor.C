@@ -13,6 +13,7 @@
 
 #include "ParsedJITTensor.h"
 #include "Conversion.h"
+#include "SwiftUtils.h"
 #include "libmesh/extrasrc/fptypes.hh"
 
 #include <torch/csrc/autograd/generated/variable_factories.h>
@@ -43,11 +44,10 @@ ParsedJITTensor::ParsedJITTensor()
 namespace
 {
 const std::string
-FP_GetOpcodeName(int opcode, bool pad = false)
+FP_GetOpcodeName(int opcode)
 {
   using namespace FUNCTIONPARSERTYPES;
 
-#if 1
   /* Symbolic meanings for the opcodes? */
   const char * p = 0;
   switch (opcode)
@@ -510,17 +510,10 @@ ParsedJITTensor::Eval(const std::vector<const torch::Tensor *> & params)
   if (!_graph_executor)
     _graph_executor = std::make_shared<GraphExecutor>(_graph, "F");
 
-  // if (!_execution_plan)
-  //   _execution_plan = std::make_shared<ExecutionPlan>(_graph_executor->getPlanFor(stack, 10));
-
-  // InterpreterState(_execution_plan->code).run(stack);
   _graph_executor->run(stack);
 
-  // exec.run(stack);
   if (stack.size() != 1)
     throw std::runtime_error("Unexpected number vof outputs in ParsedJITTensor::Eval.");
-
-  torch::autograd::GradMode::set_enabled(ad);
 
   return stack[0].toTensor();
 }

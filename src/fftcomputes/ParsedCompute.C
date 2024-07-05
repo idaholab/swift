@@ -26,11 +26,17 @@ ParsedCompute::validParams()
   params.addParam<bool>(
       "enable_jit", true, "Use operator fusion and just in time compilation (recommended on GPU)");
   params.addParam<bool>("enable_fpoptimizer", true, "Use algebraic optimizer");
+  params.addParam<bool>("extra_symbols",
+                        true,
+                        "Provide i (imaginary unit), j,k,l (reciprocal space frequency), x,y,z "
+                        "(real space coordinates), and pi,e.");
   return params;
 }
 
 ParsedCompute::ParsedCompute(const InputParameters & parameters)
-  : FFTCompute(parameters), _use_jit(getParam<bool>("enable_jit"))
+  : FFTCompute(parameters),
+    _use_jit(getParam<bool>("enable_jit")),
+    _extra_symbols(getParam<bool>("extra_symbols"))
 {
   const auto & expression = getParam<std::string>("expression");
   const auto & names = getParam<std::vector<FFTInputBufferName>>("inputs");
@@ -40,10 +46,27 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     _params.push_back(&getInputBufferByName(name));
 
   // build variable string
-  const auto variables = MooseUtils::join(names, ",");
+  auto variables = MooseUtils::join(names, ",");
 
   auto setup = [&](auto & fp)
   {
+    // add extra symbols
+    if (_extra_symbols)
+    {
+      variables = MooseUtils::join(std::vector<std::string>{variables, "i,x,j,y,k,z,l"}, ",");
+      _constant_tensors.push_back(torch::tensor(c10::complex<double>(0.0, 1.0)));
+      _params.push_back(&_constant_tensors[0]);
+
+      for (const auto dim : make_range(3u))
+      {
+        _params.push_back(&_fft_problem.getAxis(dim));
+        _params.push_back(&_fft_problem.getReciprocalAxis(dim));
+      }
+
+      fp.AddConstant("pi", libMesh::pi);
+      fp.AddConstant("e", std::exp(Real(1.0)));
+    }
+
     // parse
     fp.Parse(expression, variables);
 

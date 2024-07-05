@@ -9,29 +9,23 @@
 
 #pragma once
 
-#include "FFTCompute.h"
-#include "ParsedTensor.h"
-#include "ParsedJITTensor.h"
+#include "FFTComputeBase.h"
 
 /**
- * ParsedCompute object
+ * Monolithic mechanics solve for small strain elasticity
  */
-class ParsedCompute : public FFTCompute
+class FFTQuasistaticElasticity : public FFTComputeBase
 {
 public:
   static InputParameters validParams();
 
-  ParsedCompute(const InputParameters & parameters);
+  FFTQuasistaticElasticity(const InputParameters & parameters);
 
   void computeBuffer() override;
 
 protected:
-  const bool _use_jit;
-  const bool _extra_symbols;
-  std::vector<torch::Tensor> _constant_tensors;
-
-  ParsedJITTensor _jit;
-  ParsedTensor _no_jit;
-
-  std::vector<const torch::Tensor *> _params;
+  std::vector<torch::Tensor *> _displacements;
+  const torch::Tensor _two_pi_i;
+  const Real _mu;
+  const Real _lambda;
 };

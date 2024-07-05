@@ -106,6 +106,10 @@ compile_commands.json
 build
 framework/contrib/libtorch
 
+# FFT output
+*.xmf
+*.h5
+
 # Allow certain files in gold directories
 !**/gold/*.e
 !**/gold/*.e-s*
