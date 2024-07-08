@@ -418,7 +418,7 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  auto compute_object = _factory.create<FFTCompute>(compute_name, name, parameters, 0);
+  auto compute_object = _factory.create<FFTComputeBase>(compute_name, name, parameters, 0);
   logAdd("FFTCompute", name, compute_name);
   _computes.push_back(compute_object);
 }

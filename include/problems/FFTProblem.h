@@ -20,7 +20,7 @@
 #include "torch/torch.h"
 
 class FFTMesh;
-class FFTCompute;
+class FFTComputeBase;
 class FFTInitialCondition;
 class FFTTimeIntegrator;
 class FFTOutput;
@@ -133,7 +133,7 @@ protected:
   std::array<torch::Tensor, 3> _reciprocal_axis;
 
   /// compute objects
-  std::vector<std::shared_ptr<FFTCompute>> _computes;
+  std::vector<std::shared_ptr<FFTComputeBase>> _computes;
 
   /// ic objects
   std::vector<std::shared_ptr<FFTInitialCondition>> _ics;

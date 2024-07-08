@@ -28,4 +28,5 @@ protected:
   const torch::Tensor _two_pi_i;
   const Real _mu;
   const Real _lambda;
+  const torch::Tensor & _cbar;
 };
