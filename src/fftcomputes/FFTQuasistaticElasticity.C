@@ -69,10 +69,10 @@ FFTQuasistaticElasticity::computeBuffer()
   // system matrix ()
   const auto Axx = ul * kx * kx + _mu * ky * ky + _mu * kz * kz;
   const auto s = Axx.sizes();
-  const auto Axy = (_mu * kx * ky).expand(s);
-  const auto Axz = (_mu * kx * kz).expand(s);
+  const auto Axy = ((_lambda + _mu) * kx * ky).expand(s);
+  const auto Axz = ((_lambda + _mu) * kx * kz).expand(s);
   const auto Ayy = ul * ky * ky + _mu * kx * kx + _mu * kz * kz;
-  const auto Ayz = (_mu * ky * kz).expand(s);
+  const auto Ayz = ((_lambda + _mu) * ky * kz).expand(s);
   const auto Azz = ul * kz * kz + _mu * kx * kx + _mu * ky * ky;
 
   // override Axx, Ayy, Azz for |k|=0
@@ -82,15 +82,14 @@ FFTQuasistaticElasticity::computeBuffer()
 
   // RHS (eigenstrain)
   using torch::stack;
-  const auto e = ul * 0.02 * _cbar;
+  const auto e0 = 0.02 * _cbar;
+  const auto e = 2.0 * e0 * (3.0 * _lambda + _mu);
   e.index({0, 0, 0}) = 0.0;
 
   const auto b = stack({kx * e, ky * e, kz * e}, -1);
 
-  const auto A =
-      stack({stack({Axx, Axy, Axz}, -1), stack({Axy, Ayy, Ayz}, -1), stack({Axz, Ayz, Azz}, -1)},
-            -1)
-          .to(b.dtype());
+  const auto A = stack(
+      {stack({Axx, Axy, Axz}, -1), stack({Axy, Ayy, Ayz}, -1), stack({Axz, Ayz, Azz}, -1)}, -1);
 
   // solve
   const auto x = torch::linalg::solve(A, b, true);
