@@ -30,6 +30,10 @@
   []
   [disp_z]
   []
+  [mumechbar]
+  []
+  [mumech]
+  []
 
   # constant tensors
   [Mbar]
@@ -41,8 +45,8 @@
 [FFTOutputs]
   [xdmf]
     type = FFTRawXDMFOut
-    buffer = 'c disp_x disp_y disp_z'
-    output_mode = 'Node Node Node Node'
+    buffer = 'c disp_x disp_y disp_z mu mumech'
+    output_mode = 'Node Node Node Node Cell Cell'
     enable_hdf5 = true
   []
 []
@@ -86,26 +90,45 @@
 
 [FFTComputes]
   [mu]
+    # chemical potential (real space)
     type = ParsedCompute
     buffer = mu
     enable_jit = true
-    expression = '0.1*c^2*(c-1)^2 + c*sin(x/2)*0.00'
+    expression = '0.1*c^2*(c-1)^2' # + c*sin(x/2)*0.005'
     extra_symbols = true
     derivatives = c
-    # expression = "0.4*c^3-0.6*c^2+0.2*c"
     inputs = c
   []
   [mubar]
+    # chemical potential (reciprocal space)
     type = PerformFFT
     buffer = mubar
     input = mu
   []
+  [mumechbar]
+    # mechanical chemical potential (reciprocal space)
+    type = FFTElasticChemicalPotential
+    buffer = mumechbar
+    cbar = cbar
+    displacements = 'disp_x disp_y disp_z'
+    lambda = 100
+    mu = 50
+    e0 = 0.02
+  []
+  [mumech]
+    # chemical potential (reciprocal space)
+    type = PerformFFT
+    forward = false
+    buffer = mumech
+    input = mumechbar
+  []
+
   [Mbarmubar]
     type = ParsedCompute
     buffer = Mbarmubar
     enable_jit = true
-    expression = 'Mbar*mubar'
-    inputs = 'Mbar mubar'
+    expression = 'Mbar*(mubar+mumechbar)'
+    inputs = 'Mbar mubar mumechbar'
   []
   [cbar]
     type = PerformFFT
@@ -117,8 +140,9 @@
     type = FFTQuasistaticElasticity
     displacements = 'disp_x disp_y disp_z'
     cbar = cbar
-    lambda = 1
-    mu = 0.1
+    lambda = 100
+    mu = 50
+    e0 = 0.02
   []
 []
 
@@ -198,6 +222,7 @@
 [Problem]
   type = FFTProblem
   spectral_solve_substeps = 1000
+  print_debug_output = true
 []
 
 [Executioner]

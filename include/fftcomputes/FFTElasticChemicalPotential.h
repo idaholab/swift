@@ -9,22 +9,22 @@
 
 #pragma once
 
-#include "FFTComputeBase.h"
+#include "FFTCompute.h"
 
 /**
- * Monolithic mechanics solve for small strain elasticity
+ * Chemical potential for small strain elasticity volumetic eigenstrain solute
  */
-class FFTQuasistaticElasticity : public FFTComputeBase
+class FFTElasticChemicalPotential : public FFTCompute
 {
 public:
   static InputParameters validParams();
 
-  FFTQuasistaticElasticity(const InputParameters & parameters);
+  FFTElasticChemicalPotential(const InputParameters & parameters);
 
   void computeBuffer() override;
 
 protected:
-  std::vector<torch::Tensor *> _displacements;
+  std::vector<const torch::Tensor *> _displacements;
   const torch::Tensor _two_pi_i;
   const Real _mu;
   const Real _lambda;

@@ -130,6 +130,22 @@ FFTProblem::init()
   // dependency resolution of FFTComputes
   DependencyResolverInterface::sort(_computes);
 
+  // show computes
+  if (_debug)
+  {
+    _console << COLOR_CYAN << "Compute object execution order:\n" << COLOR_DEFAULT;
+    for (auto & cmp : _computes)
+    {
+      _console << "  " << cmp->name() << '\n' << COLOR_YELLOW;
+      for (const auto & ri : cmp->getRequestedItems())
+        _console << "    <- " << ri << '\n';
+      _console << COLOR_GREEN;
+      for (const auto & si : cmp->getSuppliedItems())
+        _console << "    -> " << si << '\n';
+      _console << COLOR_DEFAULT;
+    }
+  }
+
   // call base class init
   FEProblem::init();
 

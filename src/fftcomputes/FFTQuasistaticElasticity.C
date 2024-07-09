@@ -21,6 +21,7 @@ FFTQuasistaticElasticity::validParams()
   params.addParam<FFTInputBufferName>("cbar", "FFT of concentration buffer");
   params.addRequiredParam<Real>("mu", "Lame mu");
   params.addRequiredParam<Real>("lambda", "Lame lambda");
+  params.addRequiredParam<Real>("e0", "volumetric eigenstrain");
   return params;
 }
 
@@ -30,14 +31,14 @@ FFTQuasistaticElasticity::FFTQuasistaticElasticity(const InputParameters & param
                             MooseFFT::floatTensorOptions().dtype(torch::kComplexDouble))),
     _mu(getParam<Real>("mu")),
     _lambda(getParam<Real>("lambda")),
+    _e0(getParam<Real>("e0")),
     _cbar(getInputBuffer("cbar"))
-
 {
   for (const auto & name : getParam<std::vector<FFTOutputBufferName>>("displacements"))
     _displacements.push_back(&getOutputBufferByName(name));
 
   if (_fft_problem.getDim() != _displacements.size())
-    paramError("displacements", "Need one displacemnet variable per mesh dimension");
+    paramError("displacements", "Need one displacement variable per mesh dimension");
 }
 
 void
@@ -82,8 +83,7 @@ FFTQuasistaticElasticity::computeBuffer()
 
   // RHS (eigenstrain)
   using torch::stack;
-  const auto e0 = 0.02 * _cbar;
-  const auto e = 2.0 * e0 * (3.0 * _lambda + _mu);
+  const auto e = 2.0 * _e0 * _cbar * (3.0 * _lambda + _mu);
   e.index({0, 0, 0}) = 0.0;
 
   const auto b = stack({kx * e, ky * e, kz * e}, -1);
