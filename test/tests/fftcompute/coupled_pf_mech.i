@@ -89,7 +89,7 @@
     type = ParsedCompute
     buffer = mu
     enable_jit = true
-    expression = '0.1*c^2*(c-1)^2 + c*sin(x/2)*0.005'
+    expression = '0.1*c^2*(c-1)^2 + c*sin(x/2)*0.00'
     extra_symbols = true
     derivatives = c
     # expression = "0.4*c^3-0.6*c^2+0.2*c"
@@ -117,8 +117,8 @@
     type = FFTQuasistaticElasticity
     displacements = 'disp_x disp_y disp_z'
     cbar = cbar
-    lambda = 12
-    mu = 4
+    lambda = 1
+    mu = 0.1
   []
 []
 
