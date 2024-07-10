@@ -1,9 +1,9 @@
 [Mesh]
   type = FFTMesh
   dim = 3
-  nx = 100
-  ny = 100
-  nz = 100
+  nx = 128
+  ny = 128
+  nz = 128
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
   zmax = ${fparse pi*4}
@@ -227,13 +227,13 @@
 
 [Executioner]
   type = Transient
-  num_steps = 50
+  num_steps = 100
   [TimeStepper]
     type = IterationAdaptiveDT
     growth_factor = 1.8
     dt = 0.1
   []
-  dtmax = 500
+  dtmax = 1000
 []
 
 [Outputs]

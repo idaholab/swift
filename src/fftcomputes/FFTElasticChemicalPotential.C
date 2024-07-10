@@ -55,6 +55,6 @@ FFTElasticChemicalPotential::computeBuffer()
   auto uz = _fft_problem.fft(*_displacements[2]);
 
   // mu mech bar
-  _u = -_e0 * (_e0 * (9.0 * _lambda * _cbar - 9.0 / 2.0 * _lambda + _mu * (6.0 * _cbar - 3.0)) -
+  _u = -_e0 * (_e0 * (9.0 * _lambda * _cbar + _mu * 6.0 * _cbar) -
                (2.0 * _mu + 3.0 * _lambda) * (kx * ux + ky * uy + kz * uz));
 }
