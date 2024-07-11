@@ -11,16 +11,28 @@
 
 #include "SwiftUtils.h"
 #include "SwiftApp.h"
+#include "MooseUtils.h"
 #include "Moose.h"
+
+#ifdef CUDART_VERSION
+#error "CUDA AVAILABLE"
+#endif
 
 namespace MooseFFT
 {
 
-torch::Device
-getDevice()
+struct TorchDeviceSingleton
 {
-  return torch::cuda::is_available() && !forceCPU() ? torch::kCUDA : torch::kCPU;
-}
+  TorchDeviceSingleton()
+    : _device(torchDevice().empty() ? (torch::cuda::is_available() ? "cuda" : "cpu")
+                                    : torchDevice())
+  {
+    mooseInfo("tochDevice() = ", torchDevice());
+    mooseInfo(_device);
+  }
+  const torch::Device _device;
+  torch::Device getDevice() const { return _device; }
+};
 
 void
 printTensorInfo(const torch::Tensor & x)
@@ -36,24 +48,26 @@ printTensorInfo(const torch::Tensor & x)
 const torch::TensorOptions
 floatTensorOptions()
 {
+  const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
       .dtype(torch::kFloat64)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(getDevice())
+      .device(ts.getDevice())
       .requires_grad(false);
 }
 
 const torch::TensorOptions
 intTensorOptions()
 {
+  const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
       .dtype(torch::kInt64)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(getDevice())
+      .device(ts.getDevice())
       .requires_grad(false);
 }
 

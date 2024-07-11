@@ -22,16 +22,20 @@ static struct SwiftGlobalSettings
 {
   SwiftGlobalSettings()
   {
-    if (std::getenv("SWIFT_FORCE_CPU"))
-      _force_cpu = true;
+    const auto env = std::getenv("SWIFT_TORCH_DEVICE");
+    if (env)
+      _torch_device = std::string(env);
+    else
+      _torch_device = "";
+    mooseInfo("static init ", _torch_device);
   }
-  bool _force_cpu;
+  std::string _torch_device;
 } swift_global_settings;
 
-bool
-forceCPU()
+std::string
+torchDevice()
 {
-  return swift_global_settings._force_cpu;
+  return swift_global_settings._torch_device;
 }
 }
 
@@ -42,10 +46,8 @@ SwiftApp::validParams()
   params.set<bool>("use_legacy_material_output") = false;
   params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
 
-  params.addCommandLineParam<bool>("force_cpu",
-                                   "--force-cpu",
-                                   false,
-                                   "Use the CPU for spectral solves, even if a GPU is available.");
+  params.addCommandLineParam<std::string>(
+      "torch_device", "--torch_device", "", "Device to use for spectral solves.");
 
   return params;
 }
@@ -53,8 +55,7 @@ SwiftApp::validParams()
 SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
-  if (getParam<bool>("force_cpu"))
-    MooseFFT::swift_global_settings._force_cpu = true;
+  MooseFFT::swift_global_settings._torch_device = parameters.get<std::string>("torch_device");
 }
 
 SwiftApp::~SwiftApp() {}

@@ -13,7 +13,7 @@
 
 namespace MooseFFT
 {
-bool forceCPU();
+std::string torchDevice();
 }
 
 class SwiftApp : public MooseApp

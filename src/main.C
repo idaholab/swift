@@ -7,14 +7,14 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "SwiftTestApp.h"
+#include "SwiftApp.h"
 #include "MooseMain.h"
 
 // Begin the main program.
 int
 main(int argc, char * argv[])
 {
-  Moose::main<SwiftTestApp>(argc, argv);
+  Moose::main<SwiftApp>(argc, argv);
 
   return 0;
 }
