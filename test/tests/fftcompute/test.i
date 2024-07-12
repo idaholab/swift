@@ -74,13 +74,13 @@
 
 [AuxKernels]
   [eta]
-    type = FFTBufferAux
+    type = ProjectTensorAux
     buffer = eta
     variable = eta
     execute_on = TIMESTEP_END
   []
   [f]
-    type = FFTBufferAux
+    type = ProjectTensorAux
     buffer = f
     variable = f
     execute_on = TIMESTEP_END

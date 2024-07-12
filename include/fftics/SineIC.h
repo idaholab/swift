@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTInitialCondition.h"
+#include "TensorInitialCondition.h"
 
 /**
  * Sinusoidal IC
  */
-class SineIC : public FFTInitialCondition
+class SineIC : public TensorInitialCondition
 {
 public:
   static InputParameters validParams();

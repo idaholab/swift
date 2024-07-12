@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "FFTComputeBase.h"
+#include "TensorOperatorBase.h"
 
 /**
- * FFTCompute object with a single output
+ * TensorOperator object with a single output
  */
-class FFTCompute : public FFTComputeBase
+class TensorOperator : public TensorOperatorBase
 {
 public:
   static InputParameters validParams();
 
-  FFTCompute(const InputParameters & parameters);
+  TensorOperator(const InputParameters & parameters);
 
 protected:
   /// output buffer

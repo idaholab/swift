@@ -31,7 +31,7 @@
 
 [TensorICs]
   [c]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = c
     min = 0.44
     max = 0.56
@@ -100,13 +100,13 @@
 
 [AuxKernels]
   # [c]
-  #   type = FFTBufferAux
+  #   type = ProjectTensorAux
   #   buffer = c
   #   variable = c
   #   execute_on = final
   # []
   # [f]
-  #   type = FFTBufferAux
+  #   type = ProjectTensorAux
   #   buffer = f
   #   variable = f
   #   execute_on = TIMESTEP_END

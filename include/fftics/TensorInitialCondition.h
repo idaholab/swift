@@ -9,15 +9,15 @@
 
 #pragma once
 
-#include "FFTCompute.h"
+#include "TensorOperator.h"
 
 /**
- * FFTInitialCondition object (this is mostly a compute object)
+ * TensorInitialCondition object (this is mostly a compute object)
  */
-class FFTInitialCondition : public FFTCompute
+class TensorInitialCondition : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  FFTInitialCondition(const InputParameters & parameters);
+  TensorInitialCondition(const InputParameters & parameters);
 };

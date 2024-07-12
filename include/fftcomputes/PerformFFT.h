@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTCompute.h"
+#include "TensorOperator.h"
 
 /**
  * PerformFFT object
  */
-class PerformFFT : public FFTCompute
+class PerformFFT : public TensorOperator
 {
 public:
   static InputParameters validParams();

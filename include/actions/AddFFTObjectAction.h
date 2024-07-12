@@ -14,8 +14,8 @@
 class FFTProblem;
 
 /**
- * This class adds an FFTCompute object.
- * The FFTCompute performs a mathematical operation on input tensors to produce output tensors
+ * This class adds an TensorOperator object.
+ * The TensorOperator performs a mathematical operation on input tensors to produce output tensors
  */
 class AddFFTObjectAction : public MooseObjectAction
 {

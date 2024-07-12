@@ -14,14 +14,14 @@ registerMooseObject("SwiftApp", ReciprocalLaplacianFactor);
 InputParameters
 ReciprocalLaplacianFactor::validParams()
 {
-  InputParameters params = FFTInitialCondition::validParams();
+  InputParameters params = TensorInitialCondition::validParams();
   params.addClassDescription("Reciprocal space Laplacian IC.");
   params.addParam<Real>("factor", 1.0, "Prefactor");
   return params;
 }
 
 ReciprocalLaplacianFactor::ReciprocalLaplacianFactor(const InputParameters & parameters)
-  : FFTInitialCondition(parameters), _factor(getParam<Real>("factor"))
+  : TensorInitialCondition(parameters), _factor(getParam<Real>("factor"))
 {
 }
 

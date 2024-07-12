@@ -2,7 +2,7 @@
 
 #include <string>
 
-/// Name of an FFTCompute object
+/// Name of an TensorOperator object
 // DerivativeStringClass(FFTComputeName);
 typedef std::string FFTComputeName;
 
@@ -27,4 +27,4 @@ typedef std::string FFTOutputName;
 
 /// Forward declarations
 class FFTBufferBase;
-class FFTCompute;
+class TensorOperator;

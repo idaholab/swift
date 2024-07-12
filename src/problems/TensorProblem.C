@@ -10,8 +10,8 @@
 #include "FFTProblem.h"
 #include "FFTMesh.h"
 
-#include "FFTCompute.h"
-#include "FFTInitialCondition.h"
+#include "TensorOperator.h"
+#include "TensorInitialCondition.h"
 #include "FFTTimeIntegrator.h"
 #include "FFTOutput.h"
 
@@ -417,7 +417,7 @@ FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & para
       is_nodal = false;
     else
       mooseError("Only first order lagrange and constant monomial variables are supported for "
-                 "direct transfer. Try using the FFTBufferAux kernel to transfer buffers to "
+                 "direct transfer. Try using the ProjectTensorAux kernel to transfer buffers to "
                  "variables of any other type.");
 
     _buffer_to_var[buffer_name] = std::make_tuple(&var, std::vector<std::size_t>{}, is_nodal);
@@ -434,8 +434,8 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  auto compute_object = _factory.create<FFTComputeBase>(compute_name, name, parameters, 0);
-  logAdd("FFTCompute", name, compute_name);
+  auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
+  logAdd("TensorOperator", name, compute_name);
   _computes.push_back(compute_object);
 }
 
@@ -448,8 +448,8 @@ FFTProblem::addFFTIC(const std::string & ic_name,
   parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
 
   // Create the object
-  auto ic_object = _factory.create<FFTInitialCondition>(ic_name, name, parameters, 0);
-  logAdd("FFTInitialCondition", name, ic_name);
+  auto ic_object = _factory.create<TensorInitialCondition>(ic_name, name, parameters, 0);
+  logAdd("TensorInitialCondition", name, ic_name);
   _ics.push_back(ic_object);
 }
 
@@ -490,7 +490,7 @@ FFTProblem::addFFTOutput(const std::string & output_name,
 
   // Create the object
   auto output_object = _factory.create<FFTOutput>(output_name, name, parameters, 0);
-  logAdd("FFTInitialCondition", name, output_name);
+  logAdd("TensorInitialCondition", name, output_name);
   _outputs.push_back(output_object);
 }
 

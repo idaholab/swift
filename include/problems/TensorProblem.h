@@ -20,8 +20,8 @@
 #include "torch/torch.h"
 
 class FFTMesh;
-class FFTComputeBase;
-class FFTInitialCondition;
+class TensorOperatorBase;
+class TensorInitialCondition;
 class FFTTimeIntegrator;
 class FFTOutput;
 
@@ -133,10 +133,10 @@ protected:
   std::array<torch::Tensor, 3> _reciprocal_axis;
 
   /// compute objects
-  std::vector<std::shared_ptr<FFTComputeBase>> _computes;
+  std::vector<std::shared_ptr<TensorOperatorBase>> _computes;
 
   /// ic objects
-  std::vector<std::shared_ptr<FFTInitialCondition>> _ics;
+  std::vector<std::shared_ptr<TensorInitialCondition>> _ics;
 
   ///  time integrator objects
   std::vector<std::shared_ptr<FFTTimeIntegrator>> _time_integrators;

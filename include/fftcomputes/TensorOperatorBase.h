@@ -19,14 +19,14 @@
 class FFTProblem;
 
 /**
- * FFTComputeBase object
+ * TensorOperatorBase object
  */
-class FFTComputeBase : public MooseObject, public DependencyResolverInterface
+class TensorOperatorBase : public MooseObject, public DependencyResolverInterface
 {
 public:
   static InputParameters validParams();
 
-  FFTComputeBase(const InputParameters & parameters);
+  TensorOperatorBase(const InputParameters & parameters);
 
   virtual const std::set<std::string> & getRequestedItems() override { return _requested_buffers; }
   virtual const std::set<std::string> & getSuppliedItems() override { return _supplied_buffers; }

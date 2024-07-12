@@ -7,20 +7,20 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTCompute.h"
+#include "TensorOperator.h"
 #include "FFTBuffer.h"
 #include "FFTProblem.h"
 
 InputParameters
-FFTCompute::validParams()
+TensorOperator::validParams()
 {
-  InputParameters params = FFTComputeBase::validParams();
+  InputParameters params = TensorOperatorBase::validParams();
   params.addRequiredParam<FFTOutputBufferName>("buffer", "The buffer this compute is writing to");
-  params.addClassDescription("FFTCompute object.");
+  params.addClassDescription("TensorOperator object.");
   return params;
 }
 
-FFTCompute::FFTCompute(const InputParameters & parameters)
-  : FFTComputeBase(parameters), _u(getOutputBuffer("buffer"))
+TensorOperator::TensorOperator(const InputParameters & parameters)
+  : TensorOperatorBase(parameters), _u(getOutputBuffer("buffer"))
 {
 }

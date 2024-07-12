@@ -15,7 +15,7 @@ registerMooseObject("SwiftApp", PerformFFT);
 InputParameters
 PerformFFT::validParams()
 {
-  InputParameters params = FFTCompute::validParams();
+  InputParameters params = TensorOperator::validParams();
   params.addClassDescription("PerformFFT object.");
   params.addParam<FFTInputBufferName>("input", "Input buffer name");
   params.addParam<bool>("forward", true, "Forward FFT");
@@ -23,7 +23,7 @@ PerformFFT::validParams()
 }
 
 PerformFFT::PerformFFT(const InputParameters & parameters)
-  : FFTCompute(parameters), _forward(getParam<bool>("forward")), _input(getInputBuffer("input"))
+  : TensorOperator(parameters), _forward(getParam<bool>("forward")), _input(getInputBuffer("input"))
 {
 }
 

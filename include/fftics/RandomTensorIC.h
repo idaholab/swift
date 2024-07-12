@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "FFTInitialCondition.h"
+#include "TensorInitialCondition.h"
 
 /**
  * Random IC
  */
-class RandomFFTIC : public FFTInitialCondition
+class RandomTensorIC : public TensorInitialCondition
 {
 public:
   static InputParameters validParams();
 
-  RandomFFTIC(const InputParameters & parameters);
+  RandomTensorIC(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 };

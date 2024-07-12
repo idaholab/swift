@@ -7,18 +7,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTInitialCondition.h"
+#include "TensorInitialCondition.h"
 
 InputParameters
-FFTInitialCondition::validParams()
+TensorInitialCondition::validParams()
 {
-  InputParameters params = FFTCompute::validParams();
-  params.registerBase("FFTInitialCondition");
-  params.addClassDescription("FFTInitialCondition object.");
+  InputParameters params = TensorOperator::validParams();
+  params.registerBase("TensorInitialCondition");
+  params.addClassDescription("TensorInitialCondition object.");
   return params;
 }
 
-FFTInitialCondition::FFTInitialCondition(const InputParameters & parameters)
-  : FFTCompute(parameters)
+TensorInitialCondition::TensorInitialCondition(const InputParameters & parameters)
+  : TensorOperator(parameters)
 {
 }

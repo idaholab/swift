@@ -39,7 +39,7 @@
 
 [TensorICs]
   [c]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = c
     min = 0.44
     max = 0.56

@@ -24,7 +24,7 @@
     buffer = eta
   []
   [zero]
-    type = ConstantFFTIC
+    type = ConstantTensorIC
     buffer = zero
     real = 0
   []
@@ -61,7 +61,7 @@
 
 [AuxKernels]
   [eta]
-    type = FFTBufferAux
+    type = ProjectTensorAux
     buffer = eta
     variable = eta
     execute_on = TIMESTEP_END

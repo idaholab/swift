@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTComputeBase.h"
+#include "TensorOperatorBase.h"
 
 /**
  * Monolithic mechanics solve for small strain elasticity
  */
-class FFTQuasistaticElasticity : public FFTComputeBase
+class FFTQuasistaticElasticity : public TensorOperatorBase
 {
 public:
   static InputParameters validParams();

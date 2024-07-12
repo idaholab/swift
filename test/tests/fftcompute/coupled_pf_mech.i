@@ -53,25 +53,25 @@
 
 [TensorICs]
   [c]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = c
     min = 0.44
     max = 0.56
   []
   [disp_x]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = disp_x
     min = 0
     max = 0
   []
   [disp_y]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = disp_y
     min = 0
     max = 0
   []
   [disp_z]
-    type = RandomFFTIC
+    type = RandomTensorIC
     buffer = disp_z
     min = 0
     max = 0

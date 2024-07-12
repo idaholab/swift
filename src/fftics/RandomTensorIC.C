@@ -7,26 +7,29 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "RandomFFTIC.h"
+#include "RandomTensorIC.h"
 #include "SwiftUtils.h"
 #include "FFTProblem.h"
 
-registerMooseObject("SwiftApp", RandomFFTIC);
+registerMooseObject("SwiftApp", RandomTensorIC);
 
 InputParameters
-RandomFFTIC::validParams()
+RandomTensorIC::validParams()
 {
-  InputParameters params = FFTInitialCondition::validParams();
+  InputParameters params = TensorInitialCondition::validParams();
   params.addClassDescription("Uniform random IC with values between `min` and `max`.");
   params.addRequiredParam<Real>("min", "Minimum value.");
   params.addRequiredParam<Real>("max", "Maximum value.");
   return params;
 }
 
-RandomFFTIC::RandomFFTIC(const InputParameters & parameters) : FFTInitialCondition(parameters) {}
+RandomTensorIC::RandomTensorIC(const InputParameters & parameters)
+  : TensorInitialCondition(parameters)
+{
+}
 
 void
-RandomFFTIC::computeBuffer()
+RandomTensorIC::computeBuffer()
 {
   const auto min = getParam<Real>("min");
   const auto max = getParam<Real>("max");

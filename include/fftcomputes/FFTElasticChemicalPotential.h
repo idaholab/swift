@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTCompute.h"
+#include "TensorOperator.h"
 
 /**
  * Chemical potential for small strain elasticity volumetic eigenstrain solute
  */
-class FFTElasticChemicalPotential : public FFTCompute
+class FFTElasticChemicalPotential : public TensorOperator
 {
 public:
   static InputParameters validParams();

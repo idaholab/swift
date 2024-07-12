@@ -9,14 +9,14 @@
 
 #pragma once
 
-#include "FFTCompute.h"
+#include "TensorOperator.h"
 #include "ParsedTensor.h"
 #include "ParsedJITTensor.h"
 
 /**
  * ParsedCompute object
  */
-class ParsedCompute : public FFTCompute
+class ParsedCompute : public TensorOperator
 {
 public:
   static InputParameters validParams();

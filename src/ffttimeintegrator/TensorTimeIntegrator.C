@@ -13,14 +13,14 @@
 InputParameters
 FFTTimeIntegrator::validParams()
 {
-  InputParameters params = FFTCompute::validParams();
+  InputParameters params = TensorOperator::validParams();
   params.registerBase("FFTTimeIntegrator");
   params.addClassDescription("FFTTimeIntegrator object.");
   return params;
 }
 
 FFTTimeIntegrator::FFTTimeIntegrator(const InputParameters & parameters)
-  : FFTCompute(parameters), _dt(_fft_problem.getSubDt())
+  : TensorOperator(parameters), _dt(_fft_problem.getSubDt())
 {
 }
 

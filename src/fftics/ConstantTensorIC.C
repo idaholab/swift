@@ -7,15 +7,15 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "ConstantFFTIC.h"
+#include "ConstantTensorIC.h"
 #include "SwiftUtils.h"
 
-registerMooseObject("SwiftApp", ConstantFFTIC);
+registerMooseObject("SwiftApp", ConstantTensorIC);
 
 InputParameters
-ConstantFFTIC::validParams()
+ConstantTensorIC::validParams()
 {
-  InputParameters params = FFTInitialCondition::validParams();
+  InputParameters params = TensorInitialCondition::validParams();
   params.addClassDescription("Constant IC.");
   params.addRequiredParam<Real>("real", "Real part of the constant value.");
   params.addParam<Real>(
@@ -25,12 +25,13 @@ ConstantFFTIC::validParams()
   return params;
 }
 
-ConstantFFTIC::ConstantFFTIC(const InputParameters & parameters) : FFTInitialCondition(parameters)
+ConstantTensorIC::ConstantTensorIC(const InputParameters & parameters)
+  : TensorInitialCondition(parameters)
 {
 }
 
 void
-ConstantFFTIC::computeBuffer()
+ConstantTensorIC::computeBuffer()
 {
   const auto scalar = getParam<Real>("real");
   _u = torch::tensor({scalar}, MooseFFT::floatTensorOptions());

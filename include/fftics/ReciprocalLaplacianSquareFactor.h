@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTInitialCondition.h"
+#include "TensorInitialCondition.h"
 
 /**
  * Sinusoidal IC
  */
-class ReciprocalLaplacianSquareFactor : public FFTInitialCondition
+class ReciprocalLaplacianSquareFactor : public TensorInitialCondition
 {
 public:
   static InputParameters validParams();

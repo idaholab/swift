@@ -15,7 +15,7 @@ registerMooseObject("SwiftApp", FFTQuasistaticElasticity);
 InputParameters
 FFTQuasistaticElasticity::validParams()
 {
-  InputParameters params = FFTComputeBase::validParams();
+  InputParameters params = TensorOperatorBase::validParams();
   params.addClassDescription("FFT based monolithic homogeneous quasistatic elasticity solve.");
   params.addParam<std::vector<FFTOutputBufferName>>("displacements", "Displacements");
   params.addParam<FFTInputBufferName>("cbar", "FFT of concentration buffer");
@@ -26,7 +26,7 @@ FFTQuasistaticElasticity::validParams()
 }
 
 FFTQuasistaticElasticity::FFTQuasistaticElasticity(const InputParameters & parameters)
-  : FFTComputeBase(parameters),
+  : TensorOperatorBase(parameters),
     _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
                             MooseFFT::floatTensorOptions().dtype(torch::kComplexDouble))),
     _mu(getParam<Real>("mu")),

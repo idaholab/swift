@@ -14,12 +14,12 @@ registerMooseObject("SwiftApp", SineIC);
 InputParameters
 SineIC::validParams()
 {
-  InputParameters params = FFTInitialCondition::validParams();
+  InputParameters params = TensorInitialCondition::validParams();
   params.addClassDescription("Sinusoidal IC.");
   return params;
 }
 
-SineIC::SineIC(const InputParameters & parameters) : FFTInitialCondition(parameters) {}
+SineIC::SineIC(const InputParameters & parameters) : TensorInitialCondition(parameters) {}
 
 void
 SineIC::computeBuffer()

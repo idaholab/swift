@@ -18,12 +18,12 @@ class FFTProblem;
 /**
  * Map an FFTBuffer to an AuxVariable
  */
-class FFTBufferAux : public AuxKernel, public FFTProblemInterface
+class ProjectTensorAux : public AuxKernel, public FFTProblemInterface
 {
 public:
   static InputParameters validParams();
 
-  FFTBufferAux(const InputParameters & parameters);
+  ProjectTensorAux(const InputParameters & parameters);
 
 protected:
   virtual Real computeValue() override;

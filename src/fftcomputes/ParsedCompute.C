@@ -16,7 +16,7 @@ registerMooseObject("SwiftApp", ParsedCompute);
 InputParameters
 ParsedCompute::validParams()
 {
-  InputParameters params = FFTCompute::validParams();
+  InputParameters params = TensorOperator::validParams();
   params.addClassDescription("ParsedCompute object.");
   params.addRequiredParam<std::string>("expression", "Parsed expression");
   params.addParam<std::vector<FFTInputBufferName>>(
@@ -34,7 +34,7 @@ ParsedCompute::validParams()
 }
 
 ParsedCompute::ParsedCompute(const InputParameters & parameters)
-  : FFTCompute(parameters),
+  : TensorOperator(parameters),
     _use_jit(getParam<bool>("enable_jit")),
     _extra_symbols(getParam<bool>("extra_symbols"))
 {

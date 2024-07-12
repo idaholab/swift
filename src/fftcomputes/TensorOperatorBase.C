@@ -7,21 +7,21 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTComputeBase.h"
+#include "TensorOperatorBase.h"
 #include "FFTBuffer.h"
 #include "FFTProblem.h"
 
 InputParameters
-FFTComputeBase::validParams()
+TensorOperatorBase::validParams()
 {
   InputParameters params = MooseObject::validParams();
-  params.registerBase("FFTCompute");
+  params.registerBase("TensorOperator");
   params.addPrivateParam<FFTProblem *>("_fft_problem", nullptr);
-  params.addClassDescription("FFTComputeBase object.");
+  params.addClassDescription("TensorOperatorBase object.");
   return params;
 }
 
-FFTComputeBase::FFTComputeBase(const InputParameters & parameters)
+TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
   : MooseObject(parameters),
     _requested_buffers(),
     _supplied_buffers(),
@@ -36,26 +36,26 @@ FFTComputeBase::FFTComputeBase(const InputParameters & parameters)
 }
 
 const torch::Tensor &
-FFTComputeBase::getInputBuffer(const std::string & param)
+TensorOperatorBase::getInputBuffer(const std::string & param)
 {
   return getInputBufferByName(getParam<FFTInputBufferName>(param));
 }
 
 const torch::Tensor &
-FFTComputeBase::getInputBufferByName(const FFTInputBufferName & buffer_name)
+TensorOperatorBase::getInputBufferByName(const FFTInputBufferName & buffer_name)
 {
   _requested_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);
 }
 
 torch::Tensor &
-FFTComputeBase::getOutputBuffer(const std::string & param)
+TensorOperatorBase::getOutputBuffer(const std::string & param)
 {
   return getOutputBufferByName(getParam<FFTOutputBufferName>(param));
 }
 
 torch::Tensor &
-FFTComputeBase::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
+TensorOperatorBase::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
 {
   _supplied_buffers.insert(buffer_name);
   return _fft_problem.getBuffer(buffer_name);

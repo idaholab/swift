@@ -7,13 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTBufferAux.h"
+#include "ProjectTensorAux.h"
 #include "SwiftTypes.h"
 
-registerMooseObject("SwiftApp", FFTBufferAux);
+registerMooseObject("SwiftApp", ProjectTensorAux);
 
 InputParameters
-FFTBufferAux::validParams()
+ProjectTensorAux::validParams()
 {
   InputParameters params = AuxKernel::validParams();
   params.addClassDescription("Project an FFT buffer onto an auxiliary variable");
@@ -21,7 +21,7 @@ FFTBufferAux::validParams()
   return params;
 }
 
-FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
+ProjectTensorAux::ProjectTensorAux(const InputParameters & parameters)
   : AuxKernel(parameters),
     FFTProblemInterface(this),
     _cpu_buffer(_fft_problem.getCPUBuffer(getParam<FFTInputBufferName>("buffer"))),
@@ -32,7 +32,7 @@ FFTBufferAux::FFTBufferAux(const InputParameters & parameters)
 }
 
 Real
-FFTBufferAux::computeValue()
+ProjectTensorAux::computeValue()
 {
   const static Point shift(_grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
 

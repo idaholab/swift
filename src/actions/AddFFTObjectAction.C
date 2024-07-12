@@ -19,7 +19,7 @@ InputParameters
 AddFFTObjectAction::validParams()
 {
   InputParameters params = MooseObjectAction::validParams();
-  params.addClassDescription("Add an FFTCompute object to the simulation.");
+  params.addClassDescription("Add an TensorOperator object to the simulation.");
   return params;
 }
 
