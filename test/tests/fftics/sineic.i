@@ -12,7 +12,7 @@
   []
 []
 
-[FFTICs]
+[TensorICs]
   [eta]
     type = SineIC
     buffer = eta

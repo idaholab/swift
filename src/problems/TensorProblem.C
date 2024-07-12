@@ -124,7 +124,7 @@ FFTProblem::init()
       _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
   }
 
-  // dependency resolution of FFTICs
+  // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
   // dependency resolution of FFTComputes

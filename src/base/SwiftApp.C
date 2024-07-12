@@ -80,13 +80,13 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_fft_compute", FFTCompute, false);
   addTaskDependency("add_fft_compute", "add_fft_buffer");
 
-  // FFTICs Actions
-  registerSyntaxTask("AddFFTObjectAction", "FFTICs/*", "add_fft_ic");
-  syntax.registerSyntaxType("FFTICs/*", "FFTICName");
+  // TensorICs Actions
+  registerSyntaxTask("AddFFTObjectAction", "TensorICs/*", "add_fft_ic");
+  syntax.registerSyntaxType("TensorICs/*", "FFTICName");
   registerMooseObjectTask("add_fft_ic", FFTInitialCondition, false);
   addTaskDependency("add_fft_ic", "add_fft_compute");
 
-  // FFTICs Actions
+  // TensorICs Actions
   registerSyntaxTask("AddFFTObjectAction", "FFTTimeIntegrators/*", "add_fft_time_integrator");
   syntax.registerSyntaxType("FFTTimeIntegrators/*", "FFTTimeIntegratorName");
   registerMooseObjectTask("add_fft_time_integrator", FFTTimeIntegrator, false);

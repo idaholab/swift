@@ -51,7 +51,7 @@
   []
 []
 
-[FFTICs]
+[TensorICs]
   [c]
     type = RandomFFTIC
     buffer = c
