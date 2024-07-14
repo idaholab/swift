@@ -7,32 +7,32 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTTimeIntegrator.h"
-#include "FFTProblem.h"
+#include "TensorTimeIntegrator.h"
+#include "TensorProblem.h"
 
 InputParameters
-FFTTimeIntegrator::validParams()
+TensorTimeIntegrator::validParams()
 {
   InputParameters params = TensorOperator::validParams();
-  params.registerBase("FFTTimeIntegrator");
-  params.addClassDescription("FFTTimeIntegrator object.");
+  params.registerBase("TensorTimeIntegrator");
+  params.addClassDescription("TensorTimeIntegrator object.");
   return params;
 }
 
-FFTTimeIntegrator::FFTTimeIntegrator(const InputParameters & parameters)
-  : TensorOperator(parameters), _dt(_fft_problem.getSubDt())
+TensorTimeIntegrator::TensorTimeIntegrator(const InputParameters & parameters)
+  : TensorOperator(parameters), _dt(_tensor_problem.getSubDt())
 {
 }
 
 const std::vector<torch::Tensor> &
-FFTTimeIntegrator::getBufferOld(const std::string & param, unsigned int max_states)
+TensorTimeIntegrator::getBufferOld(const std::string & param, unsigned int max_states)
 {
   return getBufferOldByName(getParam<FFTInputBufferName>(param), max_states);
 }
 
 const std::vector<torch::Tensor> &
-FFTTimeIntegrator::getBufferOldByName(const FFTInputBufferName & buffer_name,
+TensorTimeIntegrator::getBufferOldByName(const FFTInputBufferName & buffer_name,
                                       unsigned int max_states)
 {
-  return _fft_problem.getBufferOld(buffer_name, max_states);
+  return _tensor_problem.getBufferOld(buffer_name, max_states);
 }

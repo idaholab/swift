@@ -23,11 +23,11 @@ ProjectTensorAux::validParams()
 
 ProjectTensorAux::ProjectTensorAux(const InputParameters & parameters)
   : AuxKernel(parameters),
-    FFTProblemInterface(this),
-    _cpu_buffer(_fft_problem.getCPUBuffer(getParam<FFTInputBufferName>("buffer"))),
-    _dim(_fft_problem.getDim()),
-    _n(_fft_problem.getGridSize()),
-    _grid_spacing(_fft_problem.getGridSpacing())
+    TensorProblemInterface(this),
+    _cpu_buffer(_tensor_problem.getCPUBuffer(getParam<FFTInputBufferName>("buffer"))),
+    _dim(_tensor_problem.getDim()),
+    _n(_tensor_problem.getGridSize()),
+    _grid_spacing(_tensor_problem.getGridSpacing())
 {
 }
 

@@ -19,22 +19,22 @@
 
 #include "torch/torch.h"
 
-class FFTMesh;
+class UniformTensorMesh;
 class TensorOperatorBase;
 class TensorInitialCondition;
-class FFTTimeIntegrator;
-class FFTOutput;
+class TensorTimeIntegrator;
+class TensorOutput;
 
 /**
  * Problem for solving eigenvalue problems
  */
-class FFTProblem : public FEProblem
+class TensorProblem : public FEProblem
 {
 public:
   static InputParameters validParams();
 
-  FFTProblem(const InputParameters & parameters);
-  ~FFTProblem() override;
+  TensorProblem(const InputParameters & parameters);
+  ~TensorProblem() override;
 
   // setup stuff
   void init() override;
@@ -45,7 +45,7 @@ public:
   // move tensors in time
   void advanceState() override;
 
-  virtual void addFFTBuffer(const std::string & buffer_name, InputParameters & parameters);
+  virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
   virtual void addFFTCompute(const std::string & compute_name,
                              const std::string & name,
                              InputParameters & parameters);
@@ -88,7 +88,7 @@ protected:
   void mapBuffersToAux();
 
   /// FFT Mesh object
-  FFTMesh * _fft_mesh;
+  UniformTensorMesh * _fft_mesh;
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -139,9 +139,9 @@ protected:
   std::vector<std::shared_ptr<TensorInitialCondition>> _ics;
 
   ///  time integrator objects
-  std::vector<std::shared_ptr<FFTTimeIntegrator>> _time_integrators;
+  std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;
 
-  std::vector<std::shared_ptr<FFTOutput>> _outputs;
+  std::vector<std::shared_ptr<TensorOutput>> _outputs;
 
   /// map from buffer name to variable name
   std::map<std::string, AuxVariableName> _buffer_to_var_name;

@@ -13,7 +13,7 @@
 
 #include <torch/torch.h>
 
-namespace MooseFFT
+namespace MooseTensor
 {
 
 void printTensorInfo(const torch::Tensor & x);
@@ -21,6 +21,6 @@ void printTensorInfo(const torch::Tensor & x);
 const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions intTensorOptions();
 
-} // namespace MooseFFT
+} // namespace MooseTensor
 
 #endif

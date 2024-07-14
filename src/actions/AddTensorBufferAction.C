@@ -7,13 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "AddFFTBufferAction.h"
-#include "FFTProblem.h"
+#include "AddTensorBufferAction.h"
+#include "TensorProblem.h"
 
-registerMooseAction("SwiftApp", AddFFTBufferAction, "add_fft_buffer");
+registerMooseAction("SwiftApp", AddTensorBufferAction, "add_fft_buffer");
 
 InputParameters
-AddFFTBufferAction::validParams()
+AddTensorBufferAction::validParams()
 {
   InputParameters params = MooseObjectAction::validParams();
   params.addClassDescription("Add an FFTBuffer object to the simulation.");
@@ -21,17 +21,17 @@ AddFFTBufferAction::validParams()
   return params;
 }
 
-AddFFTBufferAction::AddFFTBufferAction(const InputParameters & parameters)
+AddTensorBufferAction::AddTensorBufferAction(const InputParameters & parameters)
   : MooseObjectAction(parameters)
 {
 }
 
 void
-AddFFTBufferAction::act()
+AddTensorBufferAction::act()
 {
-  auto fft_problem = std::dynamic_pointer_cast<FFTProblem>(_problem);
-  if (!fft_problem)
-    mooseError("FFT Buffers are only supported if the problem class is set to `FFTProblem`");
+  auto tensor_problem = std::dynamic_pointer_cast<TensorProblem>(_problem);
+  if (!tensor_problem)
+    mooseError("FFT Buffers are only supported if the problem class is set to `TensorProblem`");
 
-  fft_problem->addFFTBuffer(_name, _moose_object_pars);
+  tensor_problem->addTensorBuffer(_name, _moose_object_pars);
 }

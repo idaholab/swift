@@ -21,9 +21,9 @@ TEST(ParsedTensorTest, Parse)
   ParsedTensor F;
   std::string variables = "a, b, c";
 
-  auto A = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
-  auto B = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
-  auto C = MooseFFT::createBuffer({5, 5}, {6.0, 6.0});
+  auto A = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
+  auto B = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
+  auto C = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
 
   auto & a = A.data();
   auto & b = B.data();

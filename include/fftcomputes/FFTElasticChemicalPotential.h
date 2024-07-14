@@ -12,7 +12,7 @@
 #include "TensorOperator.h"
 
 /**
- * Chemical potential for small strain elasticity volumetic eigenstrain solute
+ * Chemical potential for small strain elasticity volumetric Eigenstrain solute
  */
 class FFTElasticChemicalPotential : public TensorOperator
 {

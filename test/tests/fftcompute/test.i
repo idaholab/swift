@@ -1,5 +1,5 @@
 [Mesh]
-  type = FFTMesh
+  type = UniformTensorMesh
   dim = 2
   nx = 100
   ny = 100
@@ -113,7 +113,7 @@
 []
 
 [Problem]
-  type = FFTProblem
+  type = TensorProblem
 []
 
 [Executioner]

@@ -11,18 +11,18 @@
 
 #include "MooseObjectAction.h"
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * This class adds an TensorOperator object.
  * The TensorOperator performs a mathematical operation on input tensors to produce output tensors
  */
-class AddFFTObjectAction : public MooseObjectAction
+class AddTensorObjectAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();
 
-  AddFFTObjectAction(const InputParameters & parameters);
+  AddTensorObjectAction(const InputParameters & parameters);
 
   virtual void act() override;
 };

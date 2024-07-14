@@ -7,13 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTPostprocessor.h"
-#include "FFTProblem.h"
+#include "TensorPostprocessor.h"
+#include "TensorProblem.h"
 
-registerMooseObject("SwiftApp", FFTProblem);
+registerMooseObject("SwiftApp", TensorProblem);
 
 InputParameters
-FFTPostprocessor::validParams()
+TensorPostprocessor::validParams()
 {
   InputParameters params = GeneralPostprocessor::validParams();
   params.addClassDescription("A normal Postprocessor acting on an FFT buffer.");
@@ -21,16 +21,16 @@ FFTPostprocessor::validParams()
   return params;
 }
 
-FFTPostprocessor::FFTPostprocessor(const InputParameters & parameters)
+TensorPostprocessor::TensorPostprocessor(const InputParameters & parameters)
   : GeneralPostprocessor(parameters),
-    _fft_problem(
+    _tensor_problem(
         [this]()
         {
-          auto fft_problem = dynamic_cast<FFTProblem *>(&_fe_problem);
-          if (!fft_problem)
-            mooseError("FFTPostprocessors require a FFTProblem.");
-          return std::ref(*fft_problem);
+          auto tensor_problem = dynamic_cast<TensorProblem *>(&_fe_problem);
+          if (!tensor_problem)
+            mooseError("FFTPostprocessors require a TensorProblem.");
+          return std::ref(*tensor_problem);
         }()),
-    _u(_fft_problem.getBuffer(getParam<FFTInputBufferName>("buffer")))
+    _u(_tensor_problem.getBuffer(getParam<FFTInputBufferName>("buffer")))
 {
 }

@@ -18,7 +18,7 @@
 #error "CUDA AVAILABLE"
 #endif
 
-namespace MooseFFT
+namespace MooseTensor
 {
 
 struct TorchDeviceSingleton
@@ -27,8 +27,6 @@ struct TorchDeviceSingleton
     : _device(torchDevice().empty() ? (torch::cuda::is_available() ? "cuda" : "cpu")
                                     : torchDevice())
   {
-    mooseInfo("tochDevice() = ", torchDevice());
-    mooseInfo(_device);
   }
   const torch::Device _device;
   torch::Device getDevice() const { return _device; }
@@ -71,6 +69,6 @@ intTensorOptions()
       .requires_grad(false);
 }
 
-} // namespace MooseFFT
+} // namespace MooseTensor
 
 #endif

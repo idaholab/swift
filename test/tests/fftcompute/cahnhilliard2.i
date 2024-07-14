@@ -1,5 +1,5 @@
 [Mesh]
-  type = FFTMesh
+  type = UniformTensorMesh
   dim = 3
   nx = 200
   ny = 200
@@ -30,7 +30,7 @@
 
 [FFTOutputs]
   [xdmf]
-    type = FFTRawXDMFOut
+    type = XDMFTensorOutput
     buffer = 'c mu'
     enable_hdf5 = true
   []
@@ -96,31 +96,31 @@
 
 [Postprocessors]
   [min_c]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = c
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_c]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = c
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
   [C]
-    type = FFTIntegralPostprocessor
+    type = TensorIntegralPostprocessor
     buffer = c
     execute_on = 'TIMESTEP_END'
   []
   [cavg]
-    type = FFTAveragePostprocessor
+    type = TensorAveragePostprocessor
     buffer = c
     execute_on = 'TIMESTEP_END'
   []
 []
 
 [Problem]
-  type = FFTProblem
+  type = TensorProblem
   spectral_solve_substeps = 1000
 []
 

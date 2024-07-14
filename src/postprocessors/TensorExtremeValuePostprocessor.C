@@ -7,35 +7,35 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTExtremeValuePostprocessor.h"
+#include "TensorExtremeValuePostprocessor.h"
 
-registerMooseObject("SwiftApp", FFTExtremeValuePostprocessor);
+registerMooseObject("SwiftApp", TensorExtremeValuePostprocessor);
 
 InputParameters
-FFTExtremeValuePostprocessor::validParams()
+TensorExtremeValuePostprocessor::validParams()
 {
-  InputParameters params = FFTPostprocessor::validParams();
+  InputParameters params = TensorPostprocessor::validParams();
   params.addClassDescription("Find extreme values in the FFT buffer");
   MooseEnum valueType("MIN MAX");
   params.addParam<MooseEnum>("value_type", valueType, "Extreme value type");
   return params;
 }
 
-FFTExtremeValuePostprocessor::FFTExtremeValuePostprocessor(const InputParameters & parameters)
-  : FFTPostprocessor(parameters),
+TensorExtremeValuePostprocessor::TensorExtremeValuePostprocessor(const InputParameters & parameters)
+  : TensorPostprocessor(parameters),
     _value_type(getParam<MooseEnum>("value_type").getEnum<ValueType>())
 {
 }
 
 void
-FFTExtremeValuePostprocessor::execute()
+TensorExtremeValuePostprocessor::execute()
 {
   _value = _value_type == ValueType::MIN ? torch::min(_u).cpu().item<double>()
                                          : torch::max(_u).cpu().item<double>();
 }
 
 PostprocessorValue
-FFTExtremeValuePostprocessor::getValue() const
+TensorExtremeValuePostprocessor::getValue() const
 {
   return _value;
 }

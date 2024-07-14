@@ -7,8 +7,8 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTRawXDMFOut.h"
-#include "FFTProblem.h"
+#include "XDMFTensorOutput.h"
+#include "TensorProblem.h"
 #include "Conversion.h"
 
 #include <filesystem>
@@ -24,12 +24,12 @@ void addDataToHDF5(const std::string & filename,
 }
 #endif
 
-registerMooseObject("SwiftApp", FFTRawXDMFOut);
+registerMooseObject("SwiftApp", XDMFTensorOutput);
 
 InputParameters
-FFTRawXDMFOut::validParams()
+XDMFTensorOutput::validParams()
 {
-  auto params = FFTOutput::validParams();
+  auto params = TensorOutput::validParams();
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
 #endif
@@ -38,9 +38,9 @@ FFTRawXDMFOut::validParams()
   return params;
 }
 
-FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters)
-  : FFTOutput(parameters),
-    _dim(_fft_problem.getDim()),
+XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
+  : TensorOutput(parameters),
+    _dim(_tensor_problem.getDim()),
     _file_base(_app.getOutputFileBase(true)),
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
@@ -67,7 +67,7 @@ FFTRawXDMFOut::FFTRawXDMFOut(const InputParameters & parameters)
 }
 
 void
-FFTRawXDMFOut::init()
+XDMFTensorOutput::init()
 {
   // get mesh metadata
   auto sdim = Moose::stringify(_dim);
@@ -75,10 +75,10 @@ FFTRawXDMFOut::init()
   std::vector<Real> dgrid;
   for (const auto i : make_range(_dim))
   {
-    _ndata[0].push_back(_fft_problem.getGridSize()[i]);
-    _ndata[1].push_back(_fft_problem.getGridSize()[i] + 1);
-    _nnode.push_back(_fft_problem.getGridSize()[i] + 1);
-    dgrid.push_back(_fft_problem.getGridSpacing()[i]);
+    _ndata[0].push_back(_tensor_problem.getGridSize()[i]);
+    _ndata[1].push_back(_tensor_problem.getGridSize()[i] + 1);
+    _nnode.push_back(_tensor_problem.getGridSize()[i] + 1);
+    dgrid.push_back(_tensor_problem.getGridSpacing()[i]);
     origin.push_back(0.0);
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");
@@ -140,7 +140,7 @@ FFTRawXDMFOut::init()
 }
 
 void
-FFTRawXDMFOut::output()
+XDMFTensorOutput::output()
 {
   // add grid for new timestep
   auto grid = _tgrid.append_child("Grid");
@@ -149,7 +149,7 @@ FFTRawXDMFOut::output()
 
   // time
   auto time = grid.append_child("Time");
-  time.append_attribute("Value") = _fft_problem.time();
+  time.append_attribute("Value") = _tensor_problem.time();
 
   // add references
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";
@@ -222,7 +222,7 @@ FFTRawXDMFOut::output()
 }
 
 torch::Tensor
-FFTRawXDMFOut::extendTensor(torch::Tensor tensor)
+XDMFTensorOutput::extendTensor(torch::Tensor tensor)
 {
   // for nodal data we increase each dimension by one and fill in a copy of the slice at 0
   torch::Tensor first;

@@ -10,25 +10,25 @@
 #pragma once
 
 #include "MooseObject.h"
-#include "FFTProblem.h"
+#include "TensorProblem.h"
 
-class FFTProblemInterface
+class TensorProblemInterface
 {
 public:
-  FFTProblemInterface(MooseObject * moose_object)
-    : _fft_problem(
+  TensorProblemInterface(MooseObject * moose_object)
+    : _tensor_problem(
           [this, moose_object]()
           {
-            auto fft_problem = dynamic_cast<FFTProblem *>(
+            auto tensor_problem = dynamic_cast<TensorProblem *>(
                 moose_object->parameters().getCheckedPointerParam<SubProblem *>("_subproblem"));
-            if (!fft_problem)
+            if (!tensor_problem)
               moose_object->mooseError(
-                  "'", moose_object->name(), "' can only be used with FFTProblem");
-            return std::ref(*fft_problem);
+                  "'", moose_object->name(), "' can only be used with TensorProblem");
+            return std::ref(*tensor_problem);
           }())
   {
   }
 
 protected:
-  FFTProblem & _fft_problem;
+  TensorProblem & _tensor_problem;
 };

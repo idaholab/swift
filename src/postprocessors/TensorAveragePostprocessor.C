@@ -7,31 +7,31 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTAveragePostprocessor.h"
+#include "TensorAveragePostprocessor.h"
 
-registerMooseObject("SwiftApp", FFTAveragePostprocessor);
+registerMooseObject("SwiftApp", TensorAveragePostprocessor);
 
 InputParameters
-FFTAveragePostprocessor::validParams()
+TensorAveragePostprocessor::validParams()
 {
-  InputParameters params = FFTPostprocessor::validParams();
+  InputParameters params = TensorPostprocessor::validParams();
   params.addClassDescription("Compute the average value over a buffer");
   return params;
 }
 
-FFTAveragePostprocessor::FFTAveragePostprocessor(const InputParameters & parameters)
-  : FFTPostprocessor(parameters)
+TensorAveragePostprocessor::TensorAveragePostprocessor(const InputParameters & parameters)
+  : TensorPostprocessor(parameters)
 {
 }
 
 void
-FFTAveragePostprocessor::execute()
+TensorAveragePostprocessor::execute()
 {
   _average = _u.sum().cpu().item<double>() / torch::numel(_u);
 }
 
 PostprocessorValue
-FFTAveragePostprocessor::getValue() const
+TensorAveragePostprocessor::getValue() const
 {
   return _average;
 }

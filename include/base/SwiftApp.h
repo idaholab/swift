@@ -11,7 +11,7 @@
 
 #include "MooseApp.h"
 
-namespace MooseFFT
+namespace MooseTensor
 {
 std::string torchDevice();
 }

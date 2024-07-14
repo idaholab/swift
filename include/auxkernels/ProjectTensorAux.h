@@ -10,15 +10,15 @@
 #pragma once
 
 #include "AuxKernel.h"
-#include "FFTProblemInterface.h"
+#include "TensorProblemInterface.h"
 #include "torch/torch.h"
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * Map an FFTBuffer to an AuxVariable
  */
-class ProjectTensorAux : public AuxKernel, public FFTProblemInterface
+class ProjectTensorAux : public AuxKernel, public TensorProblemInterface
 {
 public:
   static InputParameters validParams();

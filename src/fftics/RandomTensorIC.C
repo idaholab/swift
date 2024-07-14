@@ -9,7 +9,7 @@
 
 #include "RandomTensorIC.h"
 #include "SwiftUtils.h"
-#include "FFTProblem.h"
+#include "TensorProblem.h"
 
 registerMooseObject("SwiftApp", RandomTensorIC);
 
@@ -33,5 +33,6 @@ RandomTensorIC::computeBuffer()
 {
   const auto min = getParam<Real>("min");
   const auto max = getParam<Real>("max");
-  _u = torch::rand(_fft_problem.getShape(), MooseFFT::floatTensorOptions()) * (max - min) + min;
+  _u = torch::rand(_tensor_problem.getShape(), MooseTensor::floatTensorOptions()) * (max - min) +
+       min;
 }

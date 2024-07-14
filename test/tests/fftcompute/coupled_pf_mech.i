@@ -1,5 +1,5 @@
 [Mesh]
-  type = FFTMesh
+  type = UniformTensorMesh
   dim = 3
   nx = 128
   ny = 128
@@ -44,7 +44,7 @@
 
 [FFTOutputs]
   [xdmf]
-    type = FFTRawXDMFOut
+    type = XDMFTensorOutput
     buffer = 'c disp_x disp_y disp_z mu mumech'
     output_mode = 'Node Node Node Node Cell Cell'
     enable_hdf5 = true
@@ -158,69 +158,69 @@
 
 [Postprocessors]
   [min_c]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = c
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_c]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = c
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
 
   [min_disp_x]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_x
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_disp_x]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_x
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
   [min_disp_y]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_y
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_disp_y]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_y
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
   [min_disp_z]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_z
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_disp_z]
-    type = FFTExtremeValuePostprocessor
+    type = TensorExtremeValuePostprocessor
     buffer = disp_z
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
 
   [C]
-    type = FFTIntegralPostprocessor
+    type = TensorIntegralPostprocessor
     buffer = c
     execute_on = 'TIMESTEP_END'
   []
   [cavg]
-    type = FFTAveragePostprocessor
+    type = TensorAveragePostprocessor
     buffer = c
     execute_on = 'TIMESTEP_END'
   []
 []
 
 [Problem]
-  type = FFTProblem
+  type = TensorProblem
   spectral_solve_substeps = 1000
   print_debug_output = true
 []

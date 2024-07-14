@@ -10,7 +10,7 @@ typedef std::string FFTComputeName;
 // DerivativeStringClass(FFTICName);
 typedef std::string FFTICName;
 
-/// Name of an FFTTimeIntegrator object
+/// Name of an TensorTimeIntegrator object
 // DerivativeStringClass(FFTTimeIntegratorName);
 typedef std::string FFTTimeIntegratorName;
 
@@ -21,7 +21,7 @@ typedef std::string FFTInputBufferName;
 // DerivativeStringClass(FFTOutputBufferName);
 typedef std::string FFTOutputBufferName;
 
-/// Name of an FFTOutput object
+/// Name of an TensorOutput object
 // DerivativeStringClass(FFTOutputName);
 typedef std::string FFTOutputName;
 

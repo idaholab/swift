@@ -59,8 +59,8 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 
       for (const auto dim : make_range(3u))
       {
-        _params.push_back(&_fft_problem.getAxis(dim));
-        _params.push_back(&_fft_problem.getReciprocalAxis(dim));
+        _params.push_back(&_tensor_problem.getAxis(dim));
+        _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
       }
 
       fp.AddConstant("pi", libMesh::pi);

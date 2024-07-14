@@ -14,16 +14,16 @@
 /**
  * Mesh generated from parameters
  */
-class FFTMesh : public MooseMesh
+class UniformTensorMesh : public MooseMesh
 {
 public:
   static InputParameters validParams();
 
-  FFTMesh(const InputParameters & parameters);
-  FFTMesh(const FFTMesh & /* other_mesh */) = default;
+  UniformTensorMesh(const InputParameters & parameters);
+  UniformTensorMesh(const UniformTensorMesh & /* other_mesh */) = default;
 
   // No copy
-  FFTMesh & operator=(const FFTMesh & other_mesh) = delete;
+  UniformTensorMesh & operator=(const UniformTensorMesh & other_mesh) = delete;
 
   virtual std::unique_ptr<MooseMesh> safeClone() const override;
 

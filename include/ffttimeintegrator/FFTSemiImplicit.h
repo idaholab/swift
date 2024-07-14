@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTTimeIntegrator.h"
+#include "TensorTimeIntegrator.h"
 
 /**
- * FFTTimeIntegrator object (this is mostly a compute object)
+ * TensorTimeIntegrator object (this is mostly a compute object)
  */
-class FFTSemiImplicit : public FFTTimeIntegrator
+class FFTSemiImplicit : public TensorTimeIntegrator
 {
 public:
   static InputParameters validParams();

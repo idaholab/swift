@@ -12,20 +12,20 @@
 #include "GeneralPostprocessor.h"
 #include "torch/torch.h"
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * Postprocessor that operates on a buffer
  */
-class FFTPostprocessor : public GeneralPostprocessor
+class TensorPostprocessor : public GeneralPostprocessor
 {
 public:
   static InputParameters validParams();
 
-  FFTPostprocessor(const InputParameters & parameters);
+  TensorPostprocessor(const InputParameters & parameters);
 
 protected:
-  FFTProblem & _fft_problem;
+  TensorProblem & _tensor_problem;
 
   /// The buffer this postprocessor is operating on
   const torch::Tensor & _u;

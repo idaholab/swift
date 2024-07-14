@@ -25,9 +25,9 @@ TEST(BenchmarkParsedTensors, Time)
   std::string variables = "a, b, c";
 
   const std::size_t N = 2000;
-  auto A = MooseFFT::createBuffer({N, N}, {6.0, 6.0});
-  auto B = MooseFFT::createBuffer({N, N});
-  auto C = MooseFFT::createBuffer({N, N});
+  auto A = MooseTensor::createBuffer({N, N}, {6.0, 6.0});
+  auto B = MooseTensor::createBuffer({N, N});
+  auto C = MooseTensor::createBuffer({N, N});
 
   auto & a = A.data();
   auto & b = B.data();
@@ -81,7 +81,7 @@ TEST(BenchmarkParsedTensors, Time)
 
     auto t2 = high_resolution_clock::now();
 
-    MooseFFT::printTensorInfo(F1.Eval(params));
+    MooseTensor::printTensorInfo(F1.Eval(params));
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;
@@ -98,7 +98,7 @@ TEST(BenchmarkParsedTensors, Time)
 
     auto t2 = high_resolution_clock::now();
 
-    MooseFFT::printTensorInfo(F2.Eval(params));
+    MooseTensor::printTensorInfo(F2.Eval(params));
 
     /* Getting number of milliseconds as a double. */
     duration<double, std::milli> ms_double = t2 - t1;

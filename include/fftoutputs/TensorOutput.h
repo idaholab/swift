@@ -13,17 +13,17 @@
 #include "torch/torch.h"
 #include <thread>
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * Direct buffer output
  */
-class FFTOutput : public MooseObject
+class TensorOutput : public MooseObject
 {
 public:
   static InputParameters validParams();
 
-  FFTOutput(const InputParameters & parameters);
+  TensorOutput(const InputParameters & parameters);
 
   virtual void init() {}
 
@@ -33,7 +33,7 @@ public:
 protected:
   virtual void output() = 0;
 
-  FFTProblem & _fft_problem;
+  TensorProblem & _tensor_problem;
 
   std::thread _output_thread;
 

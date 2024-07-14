@@ -11,19 +11,19 @@
 
 #include "MooseObjectAction.h"
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * This class adds an FFTBuffer object.
  * The FFTBuffer is a structured grid object using a libtorch tensor to store data
  * in real space. A reciprocal space representation is automatically created on demand.
  */
-class AddFFTBufferAction : public MooseObjectAction
+class AddTensorBufferAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();
 
-  AddFFTBufferAction(const InputParameters & parameters);
+  AddTensorBufferAction(const InputParameters & parameters);
 
   virtual void act() override;
 };

@@ -7,21 +7,21 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTProblem.h"
-#include "FFTMesh.h"
+#include "TensorProblem.h"
+#include "UniformTensorMesh.h"
 
 #include "TensorOperator.h"
 #include "TensorInitialCondition.h"
-#include "FFTTimeIntegrator.h"
-#include "FFTOutput.h"
+#include "TensorTimeIntegrator.h"
+#include "TensorOutput.h"
 
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
 
-registerMooseObject("SwiftApp", FFTProblem);
+registerMooseObject("SwiftApp", TensorProblem);
 
 InputParameters
-FFTProblem::validParams()
+TensorProblem::validParams()
 {
   InputParameters params = FEProblem::validParams();
   params.addClassDescription(
@@ -35,15 +35,15 @@ FFTProblem::validParams()
   return params;
 }
 
-FFTProblem::FFTProblem(const InputParameters & parameters)
+TensorProblem::TensorProblem(const InputParameters & parameters)
   : FEProblem(parameters),
-    _fft_mesh(dynamic_cast<FFTMesh *>(&_mesh)),
-    _options(MooseFFT::floatTensorOptions()),
+    _fft_mesh(dynamic_cast<UniformTensorMesh *>(&_mesh)),
+    _options(MooseTensor::floatTensorOptions()),
     _debug(getParam<bool>("print_debug_output")),
     _substeps(getParam<unsigned int>("spectral_solve_substeps"))
 {
   if (!_fft_mesh)
-    mooseError("FFTProblem must be used with an FFTMesh");
+    mooseError("TensorProblem must be used with an UniformTensorMesh");
   _dim = _fft_mesh->getDim();
 
   // make sure AuxVariables are contiguous in teh solution vector
@@ -54,7 +54,7 @@ FFTProblem::FFTProblem(const InputParameters & parameters)
     mooseError("FFT problems can only be run in serial at this time.");
 }
 
-FFTProblem::~FFTProblem()
+TensorProblem::~TensorProblem()
 {
   // wait for outputs to be completed (otherwise resources might get freed that the output thread
   // depends on)
@@ -63,7 +63,7 @@ FFTProblem::~FFTProblem()
 }
 
 void
-FFTProblem::init()
+TensorProblem::init()
 {
   // get grid geometry
   for (const auto dim : make_range(3))
@@ -159,11 +159,12 @@ FFTProblem::init()
   std::string variable_mapping;
   for (const auto & [buffer_name, tuple] : _buffer_to_var)
     variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
-  mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
+  if (!variable_mapping.empty())
+    mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
 }
 
 void
-FFTProblem::execute(const ExecFlagType & exec_type)
+TensorProblem::execute(const ExecFlagType & exec_type)
 {
   if (exec_type == EXEC_INITIAL)
   {
@@ -174,7 +175,7 @@ FFTProblem::execute(const ExecFlagType & exec_type)
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
-    // if the time step changed and the current timeintegrator does not support variable timestep
+    // if the time step changed and the current time integrator does not support variable time step
     // size, we clear the histories
     if (dt() != dtOld())
       for (auto & [name, max_states] : _old_fft_buffer)
@@ -225,7 +226,7 @@ FFTProblem::execute(const ExecFlagType & exec_type)
 }
 
 void
-FFTProblem::updateDOFMap()
+TensorProblem::updateDOFMap()
 {
   TIME_SECTION("update", 3, "Updating FFT DOF Map", true);
 
@@ -311,7 +312,7 @@ FFTProblem::updateDOFMap()
 }
 
 void
-FFTProblem::mapBuffersToAux()
+TensorProblem::mapBuffersToAux()
 {
   // nothing to map?
   if (_buffer_to_var.empty())
@@ -374,7 +375,7 @@ FFTProblem::mapBuffersToAux()
 }
 
 void
-FFTProblem::advanceState()
+TensorProblem::advanceState()
 {
   FEProblem::advanceState();
 
@@ -394,11 +395,11 @@ FFTProblem::advanceState()
 }
 
 void
-FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & parameters)
+TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)
 {
   // add buffer
   if (_fft_buffer.find(buffer_name) != _fft_buffer.end())
-    mooseError("FFTBuffer '", buffer_name, "' already exists in the system");
+    mooseError("TensorBuffer '", buffer_name, "' already exists in the system");
   _fft_buffer.try_emplace(buffer_name);
 
   // store variable mapping
@@ -426,12 +427,12 @@ FFTProblem::addFFTBuffer(const std::string & buffer_name, InputParameters & para
 }
 
 void
-FFTProblem::addFFTCompute(const std::string & compute_name,
-                          const std::string & name,
-                          InputParameters & parameters)
+TensorProblem::addFFTCompute(const std::string & compute_name,
+                             const std::string & name,
+                             InputParameters & parameters)
 {
-  // Add a pointer to the FFTProblem class
-  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+  // Add a pointer to the TensorProblem class
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // Create the object
   auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
@@ -440,12 +441,12 @@ FFTProblem::addFFTCompute(const std::string & compute_name,
 }
 
 void
-FFTProblem::addFFTIC(const std::string & ic_name,
-                     const std::string & name,
-                     InputParameters & parameters)
+TensorProblem::addFFTIC(const std::string & ic_name,
+                        const std::string & name,
+                        InputParameters & parameters)
 {
-  // Add a pointer to the FFTProblem class
-  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+  // Add a pointer to the TensorProblem class
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // Create the object
   auto ic_object = _factory.create<TensorInitialCondition>(ic_name, name, parameters, 0);
@@ -454,12 +455,12 @@ FFTProblem::addFFTIC(const std::string & ic_name,
 }
 
 void
-FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
-                                 const std::string & name,
-                                 InputParameters & parameters)
+TensorProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
+                                    const std::string & name,
+                                    InputParameters & parameters)
 {
-  // Add a pointer to the FFTProblem class
-  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+  // Add a pointer to the TensorProblem class
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // check that we have no other TI that advances the same buffer
   const auto & output_buffer = parameters.get<FFTOutputBufferName>("buffer");
@@ -475,27 +476,27 @@ FFTProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
 
   // Create the object
   auto time_integrator_object =
-      _factory.create<FFTTimeIntegrator>(time_integrator_name, name, parameters, 0);
-  logAdd("FFTTimeIntegrator", name, time_integrator_name);
+      _factory.create<TensorTimeIntegrator>(time_integrator_name, name, parameters, 0);
+  logAdd("TensorTimeIntegrator", name, time_integrator_name);
   _time_integrators.push_back(time_integrator_object);
 }
 
 void
-FFTProblem::addFFTOutput(const std::string & output_name,
-                         const std::string & name,
-                         InputParameters & parameters)
+TensorProblem::addFFTOutput(const std::string & output_name,
+                            const std::string & name,
+                            InputParameters & parameters)
 {
-  // Add a pointer to the FFTProblem class
-  parameters.addPrivateParam<FFTProblem *>("_fft_problem", this);
+  // Add a pointer to the TensorProblem class
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // Create the object
-  auto output_object = _factory.create<FFTOutput>(output_name, name, parameters, 0);
+  auto output_object = _factory.create<TensorOutput>(output_name, name, parameters, 0);
   logAdd("TensorInitialCondition", name, output_name);
   _outputs.push_back(output_object);
 }
 
 torch::Tensor &
-FFTProblem::getBuffer(const std::string & buffer_name)
+TensorProblem::getBuffer(const std::string & buffer_name)
 {
   auto it = _fft_buffer.find(buffer_name);
   if (it == _fft_buffer.end())
@@ -504,7 +505,7 @@ FFTProblem::getBuffer(const std::string & buffer_name)
 }
 
 const std::vector<torch::Tensor> &
-FFTProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
+TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
 {
   auto it = _old_fft_buffer.find(buffer_name);
   if (it == _old_fft_buffer.end())
@@ -522,7 +523,7 @@ FFTProblem::getBufferOld(const std::string & buffer_name, unsigned int max_state
 }
 
 const torch::Tensor &
-FFTProblem::getCPUBuffer(const std::string & buffer_name)
+TensorProblem::getCPUBuffer(const std::string & buffer_name)
 {
   // does the buffer we request to copy to the CPU actually exist?
   if (_fft_buffer.find(buffer_name) == _fft_buffer.end())
@@ -542,7 +543,7 @@ FFTProblem::getCPUBuffer(const std::string & buffer_name)
 }
 
 const torch::Tensor &
-FFTProblem::getAxis(std::size_t component) const
+TensorProblem::getAxis(std::size_t component) const
 {
   if (component < 3)
     return _axis[component];
@@ -550,7 +551,7 @@ FFTProblem::getAxis(std::size_t component) const
 }
 
 const torch::Tensor &
-FFTProblem::getReciprocalAxis(std::size_t component) const
+TensorProblem::getReciprocalAxis(std::size_t component) const
 {
   if (component < 3)
     return _reciprocal_axis[component];
@@ -558,7 +559,7 @@ FFTProblem::getReciprocalAxis(std::size_t component) const
 }
 
 torch::Tensor
-FFTProblem::fft(torch::Tensor t) const
+TensorProblem::fft(torch::Tensor t) const
 {
   switch (_dim)
   {
@@ -574,7 +575,7 @@ FFTProblem::fft(torch::Tensor t) const
 }
 
 torch::Tensor
-FFTProblem::ifft(torch::Tensor t) const
+TensorProblem::ifft(torch::Tensor t) const
 {
   switch (_dim)
   {
@@ -590,7 +591,7 @@ FFTProblem::ifft(torch::Tensor t) const
 }
 
 torch::Tensor
-FFTProblem::align(torch::Tensor t, unsigned int dim) const
+TensorProblem::align(torch::Tensor t, unsigned int dim) const
 {
   if (dim >= _dim)
     mooseError("Unsupported alignment dimension requested dimension");

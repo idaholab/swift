@@ -34,5 +34,5 @@ void
 ConstantTensorIC::computeBuffer()
 {
   const auto scalar = getParam<Real>("real");
-  _u = torch::tensor({scalar}, MooseFFT::floatTensorOptions());
+  _u = torch::tensor({scalar}, MooseTensor::floatTensorOptions());
 }

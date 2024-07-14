@@ -8,6 +8,8 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "FFTElasticChemicalPotential.h"
+#include "SwiftUtils.h"
+#include "TensorProblem.h"
 
 registerMooseObject("SwiftApp", FFTElasticChemicalPotential);
 
@@ -15,7 +17,7 @@ InputParameters
 FFTElasticChemicalPotential::validParams()
 {
   InputParameters params = TensorOperator::validParams();
-  params.addClassDescription("FFT based elastici strain energy chemical potential solve.");
+  params.addClassDescription("FFT based elastic strain energy chemical potential solve.");
   params.addParam<std::vector<FFTInputBufferName>>("displacements", "Displacements");
   params.addParam<FFTInputBufferName>("cbar", "FFT of concentration buffer");
   params.addRequiredParam<Real>("mu", "Lame mu");
@@ -27,7 +29,7 @@ FFTElasticChemicalPotential::validParams()
 FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters & parameters)
   : TensorOperator(parameters),
     _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
-                            MooseFFT::floatTensorOptions().dtype(torch::kComplexDouble))),
+                            MooseTensor::floatTensorOptions().dtype(torch::kComplexDouble))),
     _mu(getParam<Real>("mu")),
     _lambda(getParam<Real>("lambda")),
     _e0(getParam<Real>("e0")),
@@ -37,7 +39,7 @@ FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters &
   for (const auto & name : getParam<std::vector<FFTOutputBufferName>>("displacements"))
     _displacements.push_back(&getInputBufferByName(name));
 
-  if (_fft_problem.getDim() != _displacements.size())
+  if (_tensor_problem.getDim() != _displacements.size())
     paramError("displacements", "Need one displacement variable per mesh dimension");
 }
 
@@ -50,9 +52,9 @@ FFTElasticChemicalPotential::computeBuffer()
   const auto kz = _two_pi_i * _k;
 
   // FFT displacements
-  auto ux = _fft_problem.fft(*_displacements[0]);
-  auto uy = _fft_problem.fft(*_displacements[1]);
-  auto uz = _fft_problem.fft(*_displacements[2]);
+  auto ux = _tensor_problem.fft(*_displacements[0]);
+  auto uy = _tensor_problem.fft(*_displacements[1]);
+  auto uz = _tensor_problem.fft(*_displacements[2]);
 
   // mu mech bar
   _u = -_e0 * (_e0 * (9.0 * _lambda * _cbar + _mu * 6.0 * _cbar) -

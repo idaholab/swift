@@ -7,7 +7,7 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTMesh.h"
+#include "UniformTensorMesh.h"
 
 #include "MooseApp.h"
 
@@ -15,10 +15,10 @@
 #include "libmesh/string_to_enum.h"
 #include "libmesh/unstructured_mesh.h"
 
-registerMooseObject("SwiftApp", FFTMesh);
+registerMooseObject("SwiftApp", UniformTensorMesh);
 
 InputParameters
-FFTMesh::validParams()
+UniformTensorMesh::validParams()
 {
   InputParameters params = MooseMesh::validParams();
 
@@ -39,7 +39,7 @@ FFTMesh::validParams()
   return params;
 }
 
-FFTMesh::FFTMesh(const InputParameters & parameters)
+UniformTensorMesh::UniformTensorMesh(const InputParameters & parameters)
   : MooseMesh(parameters),
     _dim(getParam<MooseEnum>("dim")),
     _nx(getParam<unsigned int>("nx")),
@@ -70,17 +70,17 @@ FFTMesh::FFTMesh(const InputParameters & parameters)
 }
 
 void
-FFTMesh::prepared(bool state)
+UniformTensorMesh::prepared(bool state)
 {
   MooseMesh::prepared(state);
 
   // Fall back on scanning the mesh for coordinates instead of using input parameters for queries
   if (!state)
-    mooseError("FFTMesh must not be modified");
+    mooseError("UniformTensorMesh must not be modified");
 }
 
 unsigned int
-FFTMesh::getElementsInDimension(unsigned int component) const
+UniformTensorMesh::getElementsInDimension(unsigned int component) const
 {
   switch (component)
   {
@@ -96,13 +96,13 @@ FFTMesh::getElementsInDimension(unsigned int component) const
 }
 
 Real
-FFTMesh::getMinInDimension(unsigned int) const
+UniformTensorMesh::getMinInDimension(unsigned int) const
 {
   return 0.0;
 }
 
 Real
-FFTMesh::getMaxInDimension(unsigned int component) const
+UniformTensorMesh::getMaxInDimension(unsigned int component) const
 {
   switch (component)
   {
@@ -118,13 +118,13 @@ FFTMesh::getMaxInDimension(unsigned int component) const
 }
 
 std::unique_ptr<MooseMesh>
-FFTMesh::safeClone() const
+UniformTensorMesh::safeClone() const
 {
   return _app.getFactory().copyConstruct(*this);
 }
 
 void
-FFTMesh::buildMesh()
+UniformTensorMesh::buildMesh()
 {
   auto dummy = getParam<bool>("dummy_mesh");
 

@@ -16,7 +16,7 @@
 
 #include "torch/torch.h"
 
-class FFTProblem;
+class TensorProblem;
 
 /**
  * TensorOperatorBase object
@@ -44,7 +44,7 @@ protected:
   std::set<std::string> _requested_buffers;
   std::set<std::string> _supplied_buffers;
 
-  FFTProblem & _fft_problem;
+  TensorProblem & _tensor_problem;
 
   /// axes
   const torch::Tensor &_x, &_y, &_z;

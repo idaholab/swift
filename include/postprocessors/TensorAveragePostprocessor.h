@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "FFTPostprocessor.h"
+#include "TensorPostprocessor.h"
 
 /**
  * Compute the average of an FFT buffer
  */
-class FFTAveragePostprocessor : public FFTPostprocessor
+class TensorAveragePostprocessor : public TensorPostprocessor
 {
 public:
   static InputParameters validParams();
 
-  FFTAveragePostprocessor(const InputParameters & parameters);
+  TensorAveragePostprocessor(const InputParameters & parameters);
 
   virtual void initialize() override {}
   virtual void execute() override;

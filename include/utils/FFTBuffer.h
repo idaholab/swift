@@ -17,7 +17,7 @@
 
 using neml2::TorchShapeRef;
 
-namespace MooseFFT
+namespace MooseTensor
 {
 
 template <typename T, std::size_t D>

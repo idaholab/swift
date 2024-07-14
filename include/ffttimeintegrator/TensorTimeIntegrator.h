@@ -12,14 +12,14 @@
 #include "TensorOperator.h"
 
 /**
- * FFTTimeIntegrator object (this is mostly a compute object)
+ * TensorTimeIntegrator object (this is mostly a compute object)
  */
-class FFTTimeIntegrator : public TensorOperator
+class TensorTimeIntegrator : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  FFTTimeIntegrator(const InputParameters & parameters);
+  TensorTimeIntegrator(const InputParameters & parameters);
 
 protected:
   const std::vector<torch::Tensor> & getBufferOld(const std::string & param,

@@ -15,7 +15,7 @@
 
 TEST(FFTBufferTest, Gradient)
 {
-  auto A = MooseFFT::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
+  auto A = MooseTensor::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
 
   auto & a = A.data();
   auto [x, y] = A.getAxis();
@@ -38,7 +38,7 @@ TEST(FFTBufferTest, Gradient)
 
 TEST(FFTBufferTest, 2DAxis)
 {
-  auto A = MooseFFT::createBuffer({3, 4});
+  auto A = MooseTensor::createBuffer({3, 4});
   A.min() = {0.0, 0.0};
   A.max() = {3.0 * 4.0 * 5.0, 4.0 * 5.0 * 6.0};
 
@@ -60,20 +60,20 @@ TEST(FFTBufferTest, 2DAxis)
     EXPECT_TRUE(torch::equal(yt, yg));
   };
 
-  xCompare(MooseFFT::Interval::CLOSED, {0.0, 30.0, 60.0});
-  xCompare(MooseFFT::Interval::OPEN, {15.0, 30.0, 45.0});
-  xCompare(MooseFFT::Interval::LEFT_OPEN, {20.0, 40.0, 60.0});
-  xCompare(MooseFFT::Interval::RIGHT_OPEN, {0.0, 20.0, 40.0});
+  xCompare(MooseTensor::Interval::CLOSED, {0.0, 30.0, 60.0});
+  xCompare(MooseTensor::Interval::OPEN, {15.0, 30.0, 45.0});
+  xCompare(MooseTensor::Interval::LEFT_OPEN, {20.0, 40.0, 60.0});
+  xCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 20.0, 40.0});
 
-  yCompare(MooseFFT::Interval::CLOSED, {0.0, 40.0, 80.0, 120.0});
-  yCompare(MooseFFT::Interval::OPEN, {24.0, 48.0, 72.0, 96.0});
-  yCompare(MooseFFT::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
-  yCompare(MooseFFT::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
+  yCompare(MooseTensor::Interval::CLOSED, {0.0, 40.0, 80.0, 120.0});
+  yCompare(MooseTensor::Interval::OPEN, {24.0, 48.0, 72.0, 96.0});
+  yCompare(MooseTensor::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
+  yCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
 
 TEST(FFTBufferTest, 1DAxis)
 {
-  auto A = MooseFFT::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
+  auto A = MooseTensor::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
 
   const auto xCompare = [&A](auto interval, torch::detail::TensorDataContainer gold)
   {
@@ -83,10 +83,10 @@ TEST(FFTBufferTest, 1DAxis)
     EXPECT_TRUE(torch::equal(xt, xg));
   };
 
-  xCompare(MooseFFT::Interval::CLOSED, {0.0, 40.0, 80.0, 120.0});
-  xCompare(MooseFFT::Interval::OPEN, {24.0, 48.0, 72.0, 96.0});
-  xCompare(MooseFFT::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
-  xCompare(MooseFFT::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
+  xCompare(MooseTensor::Interval::CLOSED, {0.0, 40.0, 80.0, 120.0});
+  xCompare(MooseTensor::Interval::OPEN, {24.0, 48.0, 72.0, 96.0});
+  xCompare(MooseTensor::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
+  xCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
 
 #else

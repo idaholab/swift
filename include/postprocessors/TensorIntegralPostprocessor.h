@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "FFTPostprocessor.h"
+#include "TensorPostprocessor.h"
 
 /**
  * Compute the integral of an FFT buffer
  */
-class FFTIntegralPostprocessor : public FFTPostprocessor
+class TensorIntegralPostprocessor : public TensorPostprocessor
 {
 public:
   static InputParameters validParams();
 
-  FFTIntegralPostprocessor(const InputParameters & parameters);
+  TensorIntegralPostprocessor(const InputParameters & parameters);
 
   virtual void initialize() override {}
   virtual void execute() override;

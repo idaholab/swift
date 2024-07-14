@@ -8,14 +8,14 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "FFTSemiImplicit.h"
-#include "FFTProblem.h"
+#include "TensorProblem.h"
 
 registerMooseObject("SwiftApp", FFTSemiImplicit);
 
 InputParameters
 FFTSemiImplicit::validParams()
 {
-  InputParameters params = FFTTimeIntegrator::validParams();
+  InputParameters params = TensorTimeIntegrator::validParams();
   params.addClassDescription("Semi-implicit time integrator.");
   params.addRequiredParam<FFTInputBufferName>(
       "reciprocal_buffer", "Buffer with the reciprocal of the integrated buffer");
@@ -29,7 +29,7 @@ FFTSemiImplicit::validParams()
 }
 
 FFTSemiImplicit::FFTSemiImplicit(const InputParameters & parameters)
-  : FFTTimeIntegrator(parameters),
+  : TensorTimeIntegrator(parameters),
     _history_size(getParam<unsigned int>("history_size")),
     _reciprocal_buffer(getInputBuffer("reciprocal_buffer")),
     _linear_reciprocal(getInputBuffer("linear_reciprocal")),
@@ -55,5 +55,5 @@ FFTSemiImplicit::computeBuffer()
             (2.0 * _dt) * (2.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
            (3.0 - (2.0 * _dt) * _linear_reciprocal);
 
-  _u = _fft_problem.ifft(ubar);
+  _u = _tensor_problem.ifft(ubar);
 }

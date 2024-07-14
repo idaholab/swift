@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "FFTOutput.h"
+#include "TensorOutput.h"
 #include "pugixml.h"
 #include <thread>
 
@@ -20,12 +20,12 @@
 /**
  * Postprocessor that operates on a buffer
  */
-class FFTRawXDMFOut : public FFTOutput
+class XDMFTensorOutput : public TensorOutput
 {
 public:
   static InputParameters validParams();
 
-  FFTRawXDMFOut(const InputParameters & parameters);
+  XDMFTensorOutput(const InputParameters & parameters);
 
   virtual void init() override;
 

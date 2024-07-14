@@ -7,13 +7,13 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTOutput.h"
+#include "TensorOutput.h"
 #include "MooseError.h"
 #include "SwiftTypes.h"
-#include "FFTProblem.h"
+#include "TensorProblem.h"
 
 InputParameters
-FFTOutput::validParams()
+TensorOutput::validParams()
 {
   InputParameters params = MooseObject::validParams();
   params.addRequiredParam<std::vector<FFTInputBufferName>>("buffer", "The buffers to output");
@@ -23,30 +23,31 @@ FFTOutput::validParams()
       "with Outputs/file_base when available. Otherwise, MOOSE uses input file name and this "
       "object name for a master input or uses master file_base, the subapp name and this object "
       "name for a subapp input to set it.");
-  params.registerBase("FFTOutput");
-  params.addPrivateParam<FFTProblem *>("_fft_problem", nullptr);
-  params.addClassDescription("FFTOutput object.");
+  params.registerBase("TensorOutput");
+  params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
+  params.addClassDescription("TensorOutput object.");
   return params;
 }
 
-FFTOutput::FFTOutput(const InputParameters & parameters)
-  : MooseObject(parameters), _fft_problem(*getCheckedPointerParam<FFTProblem *>("_fft_problem"))
+TensorOutput::TensorOutput(const InputParameters & parameters)
+  : MooseObject(parameters),
+    _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem"))
 {
   for (const auto & name : getParam<std::vector<FFTInputBufferName>>("buffer"))
-    _out_buffers[name] = &_fft_problem.getCPUBuffer(name);
+    _out_buffers[name] = &_tensor_problem.getCPUBuffer(name);
 }
 
 void
-FFTOutput::startOutput()
+TensorOutput::startOutput()
 {
   if (_output_thread.joinable())
     mooseError("Output thread is already running. Must call waitForCompletion() first. This is a "
                "code error.");
-  _output_thread = std::move(std::thread(&FFTOutput::output, this));
+  _output_thread = std::move(std::thread(&TensorOutput::output, this));
 }
 
 void
-FFTOutput::waitForCompletion()
+TensorOutput::waitForCompletion()
 {
   if (_output_thread.joinable())
     _output_thread.join();

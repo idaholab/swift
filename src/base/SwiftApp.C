@@ -16,7 +16,7 @@
 
 #include <cstdlib>
 
-namespace MooseFFT
+namespace MooseTensor
 {
 static struct SwiftGlobalSettings
 {
@@ -27,7 +27,6 @@ static struct SwiftGlobalSettings
       _torch_device = std::string(env);
     else
       _torch_device = "";
-    mooseInfo("static init ", _torch_device);
   }
   std::string _torch_device;
 } swift_global_settings;
@@ -55,7 +54,7 @@ SwiftApp::validParams()
 SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
-  MooseFFT::swift_global_settings._torch_device = parameters.get<std::string>("torch_device");
+  MooseTensor::swift_global_settings._torch_device = parameters.get<std::string>("torch_device");
 }
 
 SwiftApp::~SwiftApp() {}
@@ -68,38 +67,38 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   Registry::registerActionsTo(af, {"SwiftApp"});
 
   // FFTBuffer Actions
-  registerSyntaxTask("AddFFTBufferAction", "FFTBuffers/*", "add_fft_buffer");
+  registerSyntaxTask("AddTensorBufferAction", "FFTBuffers/*", "add_fft_buffer");
   syntax.registerSyntaxType("FFTBuffers/*", "FFTInputBufferName");
   syntax.registerSyntaxType("FFTBuffers/*", "FFTOutputBufferName");
   registerMooseObjectTask("add_fft_buffer", FFTBuffer, false);
   addTaskDependency("add_fft_buffer", "add_aux_variable");
 
   // TensorOperator Actions
-  registerSyntaxTask("AddFFTObjectAction", "FFTComputes/*", "add_fft_compute");
+  registerSyntaxTask("AddTensorObjectAction", "FFTComputes/*", "add_tensor_compute");
   syntax.registerSyntaxType("FFTComputes/*", "FFTComputeName");
-  registerMooseObjectTask("add_fft_compute", TensorOperator, false);
-  addTaskDependency("add_fft_compute", "add_fft_buffer");
+  registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
+  addTaskDependency("add_tensor_compute", "add_fft_buffer");
 
   // TensorICs Actions
-  registerSyntaxTask("AddFFTObjectAction", "TensorICs/*", "add_fft_ic");
+  registerSyntaxTask("AddTensorObjectAction", "TensorICs/*", "add_tensor_ic");
   syntax.registerSyntaxType("TensorICs/*", "FFTICName");
-  registerMooseObjectTask("add_fft_ic", TensorInitialCondition, false);
-  addTaskDependency("add_fft_ic", "add_fft_compute");
+  registerMooseObjectTask("add_tensor_ic", TensorInitialCondition, false);
+  addTaskDependency("add_tensor_ic", "add_tensor_compute");
 
   // TensorICs Actions
-  registerSyntaxTask("AddFFTObjectAction", "FFTTimeIntegrators/*", "add_fft_time_integrator");
+  registerSyntaxTask("AddTensorObjectAction", "FFTTimeIntegrators/*", "add_tensor_time_integrator");
   syntax.registerSyntaxType("FFTTimeIntegrators/*", "FFTTimeIntegratorName");
-  registerMooseObjectTask("add_fft_time_integrator", FFTTimeIntegrator, false);
-  addTaskDependency("add_fft_time_integrator", "add_fft_ic");
+  registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
+  addTaskDependency("add_tensor_time_integrator", "add_tensor_ic");
 
   // FFTOutputs Actions
-  registerSyntaxTask("AddFFTObjectAction", "FFTOutputs/*", "add_fft_output");
+  registerSyntaxTask("AddTensorObjectAction", "FFTOutputs/*", "add_tensor_output");
   syntax.registerSyntaxType("FFTOutputs/*", "FFTOutputName");
-  registerMooseObjectTask("add_fft_output", FFTOutput, false);
-  addTaskDependency("add_fft_output", "add_fft_time_integrator");
+  registerMooseObjectTask("add_tensor_output", TensorOutput, false);
+  addTaskDependency("add_tensor_output", "add_tensor_time_integrator");
 
   // make sure all this gets run before `add_mortar_variable`
-  addTaskDependency("add_mortar_variable", "add_fft_output");
+  addTaskDependency("add_mortar_variable", "add_tensor_output");
 }
 
 void

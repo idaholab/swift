@@ -1,5 +1,5 @@
 [Mesh]
-  type = FFTMesh
+  type = UniformTensorMesh
   dim = 3
   nx = 200
   ny = 200
@@ -139,7 +139,7 @@
 []
 
 [Problem]
-  type = FFTProblem
+  type = TensorProblem
   spectral_solve_substeps = 1000
 []
 

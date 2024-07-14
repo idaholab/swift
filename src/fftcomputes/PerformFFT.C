@@ -31,7 +31,7 @@ void
 PerformFFT::computeBuffer()
 {
   if (_forward)
-    _u = _fft_problem.fft(_input);
+    _u = _tensor_problem.fft(_input);
   else
-    _u = _fft_problem.ifft(_input);
+    _u = _tensor_problem.ifft(_input);
 }

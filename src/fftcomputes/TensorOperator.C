@@ -9,7 +9,7 @@
 
 #include "TensorOperator.h"
 #include "FFTBuffer.h"
-#include "FFTProblem.h"
+#include "TensorProblem.h"
 
 InputParameters
 TensorOperator::validParams()
