@@ -12,7 +12,10 @@
 #ifdef NEML2_ENABLED
 
 #include "ParsedTensor.h"
-#include "libmesh/extrasrc/fptypes.hh"
+
+// We commit a copy until the libMesh conda package is updated beyond June 7th.
+#include "fptypes.h"
+// #include "libmesh/extrasrc/fptypes.hh"
 
 ParsedTensor::ParsedTensor() : FunctionParserAD(), _data(*getParserData())
 {

@@ -14,7 +14,10 @@
 #include "ParsedJITTensor.h"
 #include "Conversion.h"
 #include "SwiftUtils.h"
-#include "libmesh/extrasrc/fptypes.hh"
+
+// We commit a copy until the libMesh conda package is updated beyond June 7th.
+#include "fptypes.h"
+// #include "libmesh/extrasrc/fptypes.hh"
 
 #include <torch/csrc/autograd/generated/variable_factories.h>
 #include <torch/csrc/jit/frontend/ir_emitter.h>
