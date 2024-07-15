@@ -319,12 +319,7 @@ ParsedJITTensor::setupTensors()
     _constant_immed.push_back(_graph->insertConstant(immed));
 
   // math constants
-  const auto const_log10 = _graph->insertConstant(std::log(10.0));
-  const auto const_pi = _graph->insertConstant(libMesh::pi);
-  const auto const_minus_one = _graph->insertConstant(-1.0);
-  const auto const_minus_one_half = _graph->insertConstant(-0.5);
   const auto const_one_third = _graph->insertConstant(1.0 / 3.0);
-  const auto const_two = _graph->insertConstant(2.0);
 
   // create input nodes
   _input.clear();
@@ -386,9 +381,7 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::cos, {s[sp]});
         break;
       case cTan:
-        // no native a10 tan operator?
-        s[sp] = _graph->insert(
-            aten::div, {_graph->insert(aten::sin, {s[sp]}), _graph->insert(aten::cos, {s[sp]})});
+        s[sp] = _graph->insert(aten::tan, {s[sp]});
         break;
 
       case cSinCos:
@@ -420,11 +413,11 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::log2, {s[sp]});
         break;
       case cLog10:
-        s[sp] = _graph->insert(aten::div, {_graph->insert(aten::log, {s[sp]}), const_log10});
+        s[sp] = _graph->insert(aten::log10, {s[sp]});
         break;
 
       case cNeg:
-        s[sp] = _graph->insert(aten::mul, {s[sp], const_minus_one});
+        s[sp] = _graph->insert(aten::neg, {s[sp]});
         break;
 
       case cSqr:
@@ -434,7 +427,7 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::sqrt, {s[sp]});
         break;
       case cRSqrt:
-        s[sp] = _graph->insert(aten::pow, {s[sp], const_minus_one_half});
+        s[sp] = _graph->insert(aten::rsqrt, {s[sp]});
         break;
       case cPow:
         --sp;
@@ -444,7 +437,7 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::exp, {s[sp]});
         break;
       case cExp2:
-        s[sp] = _graph->insert(aten::pow, {const_two, s[sp]});
+        s[sp] = _graph->insert(aten::exp2, {s[sp]});
         break;
       case cCbrt:
         s[sp] = _graph->insert(aten::pow, {s[sp], const_one_third});
