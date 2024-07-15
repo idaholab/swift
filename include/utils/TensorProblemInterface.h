@@ -17,7 +17,7 @@ class TensorProblemInterface
 public:
   TensorProblemInterface(MooseObject * moose_object)
     : _tensor_problem(
-          [this, moose_object]()
+          [moose_object]()
           {
             auto tensor_problem = dynamic_cast<TensorProblem *>(
                 moose_object->parameters().getCheckedPointerParam<SubProblem *>("_subproblem"));

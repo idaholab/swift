@@ -123,7 +123,7 @@ protected:
   std::array<Real, 3> _grid_spacing;
 
   /// domain shape
-  std::vector<long int> _shape_storage;
+  std::vector<at::indexing::TensorIndex> _shape_storage;
   torch::IntArrayRef _shape;
 
   /// real space axes

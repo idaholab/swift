@@ -38,23 +38,24 @@ ProjectTensorAux::computeValue()
 
   Point p = isNodal() ? (*_current_node + shift) : _current_elem->centroid();
 
+  using at::indexing::TensorIndex;
   switch (_dim)
   {
     case 1:
-      return _cpu_buffer.index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0]})
+      return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0])})
           .item<double>();
 
     case 2:
       return _cpu_buffer
-          .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
-                  static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1]})
+          .index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0]),
+                  TensorIndex(int64_t(p(1) / _grid_spacing[1]) % _n[1])})
           .item<double>();
 
     case 3:
       return _cpu_buffer
-          .index({static_cast<long int>(p(0) / _grid_spacing[0]) % _n[0],
-                  static_cast<long int>(p(1) / _grid_spacing[1]) % _n[1],
-                  static_cast<long int>(p(2) / _grid_spacing[2]) % _n[2]})
+          .index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0]),
+                  TensorIndex(int64_t(p(1) / _grid_spacing[1]) % _n[1]),
+                  TensorIndex(int64_t(p(2) / _grid_spacing[2]) % _n[2])})
           .item<double>();
   }
 
