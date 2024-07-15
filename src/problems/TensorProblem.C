@@ -73,24 +73,7 @@ TensorProblem::init()
     _grid_spacing[dim] = _max[dim] / _n[dim];
   }
 
-  switch (_dim)
-  {
-    case 1:
-      _shape_storage = {_n[0]};
-      break;
-
-    case 2:
-      _shape_storage = {_n[0], _n[1]};
-      break;
-
-    case 3:
-      _shape_storage = {_n[0], _n[1], _n[2]};
-      break;
-
-    default:
-      mooseError("Unsupported mesh dimension");
-  }
-  _shape = _shape_storage;
+  _shape = torch::IntArrayRef(_n.data(), _dim);
 
   // initialize tensors (assuming all scalar for now, but in the future well have an FFTBufferBase
   // pointer as well)
@@ -436,7 +419,7 @@ TensorProblem::addFFTCompute(const std::string & compute_name,
 
   // Create the object
   auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
-  logAdd("TensorOperator", name, compute_name);
+  logAdd("TensorOperator", name, compute_name, parameters);
   _computes.push_back(compute_object);
 }
 
@@ -450,7 +433,7 @@ TensorProblem::addFFTIC(const std::string & ic_name,
 
   // Create the object
   auto ic_object = _factory.create<TensorInitialCondition>(ic_name, name, parameters, 0);
-  logAdd("TensorInitialCondition", name, ic_name);
+  logAdd("TensorInitialCondition", name, ic_name, parameters);
   _ics.push_back(ic_object);
 }
 
@@ -477,7 +460,7 @@ TensorProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
   // Create the object
   auto time_integrator_object =
       _factory.create<TensorTimeIntegrator>(time_integrator_name, name, parameters, 0);
-  logAdd("TensorTimeIntegrator", name, time_integrator_name);
+  logAdd("TensorTimeIntegrator", name, time_integrator_name, parameters);
   _time_integrators.push_back(time_integrator_object);
 }
 
@@ -491,7 +474,7 @@ TensorProblem::addFFTOutput(const std::string & output_name,
 
   // Create the object
   auto output_object = _factory.create<TensorOutput>(output_name, name, parameters, 0);
-  logAdd("TensorInitialCondition", name, output_name);
+  logAdd("TensorInitialCondition", name, output_name, parameters);
   _outputs.push_back(output_object);
 }
 

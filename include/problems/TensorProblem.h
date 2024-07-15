@@ -69,7 +69,7 @@ public:
   const unsigned int & getDim() const { return _dim; }
   const Real & getSubDt() const { return _sub_dt; }
 
-  const std::array<unsigned int, 3> & getGridSize() const { return _n; }
+  const std::array<int64_t, 3> & getGridSize() const { return _n; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
@@ -114,7 +114,7 @@ protected:
   unsigned int _dim;
 
   /// Number of elements in x, y, z direction
-  std::array<unsigned int, 3> _n;
+  std::array<int64_t, 3> _n;
 
   /// The max values for x,y,z component
   std::array<Real, 3> _max;
@@ -123,7 +123,6 @@ protected:
   std::array<Real, 3> _grid_spacing;
 
   /// domain shape
-  std::vector<at::indexing::TensorIndex> _shape_storage;
   torch::IntArrayRef _shape;
 
   /// real space axes

@@ -31,6 +31,6 @@ protected:
   const torch::Tensor & _cpu_buffer;
 
   const unsigned int & _dim;
-  const std::array<unsigned int, 3> & _n;
+  const std::array<int64_t, 3> & _n;
   const std::array<Real, 3> & _grid_spacing;
 };
