@@ -14,22 +14,43 @@
 #include "MooseUtils.h"
 #include "Moose.h"
 
-#ifdef CUDART_VERSION
-#error "CUDA AVAILABLE"
-#endif
-
 namespace MooseTensor
 {
 
 struct TorchDeviceSingleton
 {
-  TorchDeviceSingleton()
-    : _device(torchDevice().empty() ? (torch::cuda::is_available() ? "cuda" : "cpu")
-                                    : torchDevice())
+  static bool isSupported(torch::Dtype dtype, torch::Device device)
   {
+    try
+    {
+      auto tensor = torch::rand({1}, torch::dtype(dtype).device(device));
+      return true;
+    }
+    catch (const std::exception &)
+    {
+      return false;
+    }
   }
+
+  TorchDeviceSingleton()
+    : _device_string(torchDevice().empty() ? (torch::cuda::is_available()
+                                                  ? "cuda"
+                                                  : (torch::mps::is_available() ? "mps" : "cpu"))
+                                           : torchDevice()),
+    : _device(_device_string),
+      _float_dtype(isSupported(torch::kFloat64) ? torch::kFloat64 : torch::kFloat32),
+      _int_dtype(isSupported(torch::kInt64) ? torch::kInt64 : torch::kInt32)
+  {
+    mooseInfo("Running on '", _device_string, "'.");
+    if (_float_dtype == torch::kFloat64)
+      mooseInfo("Device supports double precision floating point numbers.");
+    else
+      mooseWanring("Running with single precision floating point numbers");
+  }
+
   const torch::Device _device;
-  torch::Device getDevice() const { return _device; }
+  const torch::Dtype _float_dtype;
+  const torch::Dtype _int_dtype;
 };
 
 void
@@ -48,11 +69,11 @@ floatTensorOptions()
 {
   const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
-      .dtype(torch::kFloat64)
+      .dtype(_float_dtype)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(ts.getDevice())
+      .device(ts._device)
       .requires_grad(false);
 }
 
@@ -61,11 +82,11 @@ intTensorOptions()
 {
   const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
-      .dtype(torch::kInt64)
+      .dtype(_int_dtype)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
-      .device(ts.getDevice())
+      .device(ts._device)
       .requires_grad(false);
 }
 

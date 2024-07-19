@@ -10,7 +10,7 @@
 #include "AddTensorBufferAction.h"
 #include "TensorProblem.h"
 
-registerMooseAction("SwiftApp", AddTensorBufferAction, "add_fft_buffer");
+registerMooseAction("SwiftApp", AddTensorBufferAction, "add_tensor_buffer");
 
 InputParameters
 AddTensorBufferAction::validParams()

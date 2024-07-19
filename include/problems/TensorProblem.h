@@ -88,7 +88,7 @@ protected:
   void mapBuffersToAux();
 
   /// FFT Mesh object
-  UniformTensorMesh * _fft_mesh;
+  UniformTensorMesh * _tensor_mesh;
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -103,13 +103,13 @@ protected:
   Real _sub_dt;
 
   /// list of FFTBuffers (i.e. tensors)
-  std::map<std::string, torch::Tensor> _fft_buffer;
+  std::map<std::string, torch::Tensor> _tensor_buffer;
 
   /// list of read-only CPU FFTBuffers (for MOOSE objects and outputs)
-  std::map<std::string, torch::Tensor> _fft_cpu_buffer;
+  std::map<std::string, torch::Tensor> _tensor_cpu_buffer;
 
   /// old buffers (stores max number of states, requested, and states)
-  std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_fft_buffer;
+  std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_tensor_buffer;
 
   unsigned int _dim;
 

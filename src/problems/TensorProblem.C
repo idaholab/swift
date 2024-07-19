@@ -37,14 +37,14 @@ TensorProblem::validParams()
 
 TensorProblem::TensorProblem(const InputParameters & parameters)
   : FEProblem(parameters),
-    _fft_mesh(dynamic_cast<UniformTensorMesh *>(&_mesh)),
+    _tensor_mesh(dynamic_cast<UniformTensorMesh *>(&_mesh)),
     _options(MooseTensor::floatTensorOptions()),
     _debug(getParam<bool>("print_debug_output")),
     _substeps(getParam<unsigned int>("spectral_solve_substeps"))
 {
-  if (!_fft_mesh)
+  if (!_tensor_mesh)
     mooseError("TensorProblem must be used with an UniformTensorMesh");
-  _dim = _fft_mesh->getDim();
+  _dim = _tensor_mesh->getDim();
 
   // make sure AuxVariables are contiguous in teh solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
@@ -68,8 +68,8 @@ TensorProblem::init()
   // get grid geometry
   for (const auto dim : make_range(3))
   {
-    _max[dim] = _fft_mesh->getMaxInDimension(dim);
-    _n[dim] = _fft_mesh->getElementsInDimension(dim);
+    _max[dim] = _tensor_mesh->getMaxInDimension(dim);
+    _n[dim] = _tensor_mesh->getElementsInDimension(dim);
     _grid_spacing[dim] = _max[dim] / _n[dim];
   }
 
@@ -77,7 +77,7 @@ TensorProblem::init()
 
   // initialize tensors (assuming all scalar for now, but in the future well have an FFTBufferBase
   // pointer as well)
-  for (auto pair : _fft_buffer)
+  for (auto pair : _tensor_buffer)
     pair.second = torch::zeros(_shape, _options);
 
   // build real space axes
@@ -161,7 +161,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     // if the time step changed and the current time integrator does not support variable time step
     // size, we clear the histories
     if (dt() != dtOld())
-      for (auto & [name, max_states] : _old_fft_buffer)
+      for (auto & [name, max_states] : _old_tensor_buffer)
         max_states.second.clear();
 
     // update substepping dt
@@ -188,10 +188,10 @@ TensorProblem::execute(const ExecFlagType & exec_type)
       output->waitForCompletion();
 
     // prepare CPU buffers (this is a synchronization barrier for the GPU)
-    for (auto & [name, cpu_buffer] : _fft_cpu_buffer)
+    for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
     {
       // get main buffer (GPU or CPU) - we already verified that it must exist
-      const auto & buffer = _fft_buffer[name];
+      const auto & buffer = _tensor_buffer[name];
       if (buffer.is_cpu())
         cpu_buffer = buffer.clone().contiguous();
       else
@@ -320,7 +320,7 @@ TensorProblem::mapBuffersToAux()
     const long int n1 = is_nodal ? _n[1] + 1 : _n[1];
     const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
 
-    const auto buffer = _fft_cpu_buffer[buffer_name];
+    const auto buffer = _tensor_cpu_buffer[buffer_name];
     std::size_t idx = 0;
     switch (_dim)
     {
@@ -366,14 +366,14 @@ TensorProblem::advanceState()
     return;
 
   // move buffers in time
-  for (auto & [name, max_states] : _old_fft_buffer)
+  for (auto & [name, max_states] : _old_tensor_buffer)
   {
     auto & [max, states] = max_states;
     if (states.size() < max)
       states.push_back(torch::tensor({}, _options));
     for (std::size_t i = states.size() - 1; i > 0; --i)
       states[i] = states[i - 1];
-    states[0] = _fft_buffer[name];
+    states[0] = _tensor_buffer[name];
   }
 }
 
@@ -381,9 +381,9 @@ void
 TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)
 {
   // add buffer
-  if (_fft_buffer.find(buffer_name) != _fft_buffer.end())
+  if (_tensor_buffer.find(buffer_name) != _tensor_buffer.end())
     mooseError("TensorBuffer '", buffer_name, "' already exists in the system");
-  _fft_buffer.try_emplace(buffer_name);
+  _tensor_buffer.try_emplace(buffer_name);
 
   // store variable mapping
   if (parameters.isParamValid("map_to_aux_variable"))
@@ -481,8 +481,8 @@ TensorProblem::addFFTOutput(const std::string & output_name,
 torch::Tensor &
 TensorProblem::getBuffer(const std::string & buffer_name)
 {
-  auto it = _fft_buffer.find(buffer_name);
-  if (it == _fft_buffer.end())
+  auto it = _tensor_buffer.find(buffer_name);
+  if (it == _tensor_buffer.end())
     mooseError("FFTBuffer '", buffer_name, "' does not exist in the system");
   return it->second;
 }
@@ -490,10 +490,10 @@ TensorProblem::getBuffer(const std::string & buffer_name)
 const std::vector<torch::Tensor> &
 TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
 {
-  auto it = _old_fft_buffer.find(buffer_name);
-  if (it == _old_fft_buffer.end())
+  auto it = _old_tensor_buffer.find(buffer_name);
+  if (it == _old_tensor_buffer.end())
   {
-    auto [newit, success] = _old_fft_buffer.emplace(
+    auto [newit, success] = _old_tensor_buffer.emplace(
         buffer_name, std::make_pair(max_states, std::vector<torch::Tensor>{}));
     if (success)
       it = newit;
@@ -509,14 +509,14 @@ const torch::Tensor &
 TensorProblem::getCPUBuffer(const std::string & buffer_name)
 {
   // does the buffer we request to copy to the CPU actually exist?
-  if (_fft_buffer.find(buffer_name) == _fft_buffer.end())
+  if (_tensor_buffer.find(buffer_name) == _tensor_buffer.end())
     mooseError("Buffer '", buffer_name, "' does not exist. Cannot request a CPU copy of it.");
 
   // add it to the list of buffers to be copied
-  auto it = _fft_cpu_buffer.find(buffer_name);
-  if (it == _fft_cpu_buffer.end())
+  auto it = _tensor_cpu_buffer.find(buffer_name);
+  if (it == _tensor_cpu_buffer.end())
   {
-    auto [newit, success] = _fft_cpu_buffer.try_emplace(buffer_name);
+    auto [newit, success] = _tensor_cpu_buffer.try_emplace(buffer_name);
     if (success)
       it = newit;
     else
