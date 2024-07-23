@@ -37,17 +37,18 @@ struct TorchDeviceSingleton
                                                   ? "cuda"
                                                   : (torch::mps::is_available() ? "mps" : "cpu"))
                                            : torchDevice()),
-    : _device(_device_string),
-      _float_dtype(isSupported(torch::kFloat64) ? torch::kFloat64 : torch::kFloat32),
-      _int_dtype(isSupported(torch::kInt64) ? torch::kInt64 : torch::kInt32)
+    _device(_device_string),
+    _float_dtype(isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32),
+    _int_dtype(isSupported(torch::kInt64, _device) ? torch::kInt64 : torch::kInt32)
   {
     mooseInfo("Running on '", _device_string, "'.");
     if (_float_dtype == torch::kFloat64)
       mooseInfo("Device supports double precision floating point numbers.");
     else
-      mooseWanring("Running with single precision floating point numbers");
+      mooseWarning("Running with single precision floating point numbers");
   }
 
+  const std::string _device_string;
   const torch::Device _device;
   const torch::Dtype _float_dtype;
   const torch::Dtype _int_dtype;
@@ -69,7 +70,7 @@ floatTensorOptions()
 {
   const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
-      .dtype(_float_dtype)
+      .dtype(ts._float_dtype)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
@@ -82,7 +83,7 @@ intTensorOptions()
 {
   const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
-      .dtype(_int_dtype)
+      .dtype(ts._int_dtype)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)
