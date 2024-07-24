@@ -37,9 +37,9 @@ struct TorchDeviceSingleton
                                                   ? "cuda"
                                                   : (torch::mps::is_available() ? "mps" : "cpu"))
                                            : torchDevice()),
-    _device(_device_string),
-    _float_dtype(isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32),
-    _int_dtype(isSupported(torch::kInt64, _device) ? torch::kInt64 : torch::kInt32)
+      _device(_device_string),
+      _float_dtype(isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32),
+      _int_dtype(isSupported(torch::kInt64, _device) ? torch::kInt64 : torch::kInt32)
   {
     mooseInfo("Running on '", _device_string, "'.");
     if (_float_dtype == torch::kFloat64)
