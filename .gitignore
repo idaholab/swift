@@ -100,6 +100,7 @@ temp_print_trace.*
 *.data
 *.processor.*
 .clang_complete
+.cache/
 .failed_tests
 failed-unittest
 compile_commands.json
@@ -269,6 +270,8 @@ share/
 
 # Ignore vscode local parameters
 .vscode/*
+*.code-workspace
+
 
 # App Resource file (including modules/)
 /test/moose_test.yaml
