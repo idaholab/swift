@@ -15,6 +15,7 @@
 #include "neml2/tensors/Scalar.h"
 
 #include "libmesh/fparser_ad.hh"
+#include <torch/csrc/jit/ir/ir.h>
 
 namespace torch
 {

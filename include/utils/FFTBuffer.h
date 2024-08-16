@@ -15,7 +15,7 @@
 #include "SwiftUtils.h"
 #include "neml2/tensors/Scalar.h"
 
-using neml2::TorchShapeRef;
+using neml2::TensorShapeRef;
 
 namespace MooseTensor
 {
@@ -27,7 +27,7 @@ template <typename T = neml2::Scalar, std::size_t D>
 FFTBuffer<T, D>
 createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
 {
-  TorchShapeRef nn(n);
+  TensorShapeRef nn(n);
   std::array<Real, D> amin, amax;
   for (std::size_t i = 0; i < D; ++i)
   {
@@ -69,7 +69,7 @@ enum class Interval
 template <typename T, std::size_t D>
 class FFTBuffer
 {
-  FFTBuffer(const TorchShapeRef & batch_shape,
+  FFTBuffer(const TensorShapeRef & batch_shape,
             const std::array<Real, D> & min,
             const std::array<Real, D> & max);
 
@@ -130,7 +130,7 @@ private:
 };
 
 template <typename T, std::size_t D>
-FFTBuffer<T, D>::FFTBuffer(const TorchShapeRef & batch_shape,
+FFTBuffer<T, D>::FFTBuffer(const TensorShapeRef & batch_shape,
                            const std::array<Real, D> & min,
                            const std::array<Real, D> & max)
   : _options(floatTensorOptions()),
