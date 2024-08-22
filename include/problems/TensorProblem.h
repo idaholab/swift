@@ -102,10 +102,10 @@ protected:
   /// substepping timestep
   Real _sub_dt;
 
-  /// list of FFTBuffers (i.e. tensors)
+  /// list of TensorBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _tensor_buffer;
 
-  /// list of read-only CPU FFTBuffers (for MOOSE objects and outputs)
+  /// list of read-only CPU TensorBuffers (for MOOSE objects and outputs)
   std::map<std::string, torch::Tensor> _tensor_cpu_buffer;
 
   /// old buffers (stores max number of states, requested, and states)

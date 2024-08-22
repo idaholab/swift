@@ -16,7 +16,7 @@ InputParameters
 TensorPostprocessor::validParams()
 {
   InputParameters params = GeneralPostprocessor::validParams();
-  params.addClassDescription("A normal Postprocessor acting on an FFT buffer.");
+  params.addClassDescription("A normal Postprocessor acting on a Tensor buffer.");
   params.addRequiredParam<FFTInputBufferName>("buffer", "The buffer this compute is operating on");
   return params;
 }

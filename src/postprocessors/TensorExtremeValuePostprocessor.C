@@ -15,7 +15,7 @@ InputParameters
 TensorExtremeValuePostprocessor::validParams()
 {
   InputParameters params = TensorPostprocessor::validParams();
-  params.addClassDescription("Find extreme values in the FFT buffer");
+  params.addClassDescription("Find extreme values in the Tensor buffer");
   MooseEnum valueType("MIN MAX");
   params.addParam<MooseEnum>("value_type", valueType, "Extreme value type");
   return params;

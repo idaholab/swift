@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "FFTBufferBase.h"
+#include "TensorBufferBase.h"
 
-class ScalarFFTBuffer : public FFTBufferBase
+class ScalarTensorBuffer : public TensorBufferBase
 {
 public:
   static InputParameters validParams();
 
-  ScalarFFTBuffer(const InputParameters & parameters);
+  ScalarTensorBuffer(const InputParameters & parameters);
 };

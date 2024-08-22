@@ -14,8 +14,8 @@
 class TensorProblem;
 
 /**
- * This class adds an FFTBuffer object.
- * The FFTBuffer is a structured grid object using a libtorch tensor to store data
+ * This class adds an TensorBuffer object.
+ * The TensorBuffer is a structured grid object using a libtorch tensor to store data
  * in real space. A reciprocal space representation is automatically created on demand.
  */
 class AddTensorBufferAction : public MooseObjectAction

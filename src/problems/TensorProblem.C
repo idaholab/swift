@@ -75,7 +75,7 @@ TensorProblem::init()
 
   _shape = torch::IntArrayRef(_n.data(), _dim);
 
-  // initialize tensors (assuming all scalar for now, but in the future well have an FFTBufferBase
+  // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
   // pointer as well)
   for (auto pair : _tensor_buffer)
     pair.second = torch::zeros(_shape, _options);
@@ -301,7 +301,7 @@ TensorProblem::mapBuffersToAux()
   if (_buffer_to_var.empty())
     return;
 
-  TIME_SECTION("update", 3, "Mapping FFT buffers to Variables", true);
+  TIME_SECTION("update", 3, "Mapping Tensor buffers to Variables", true);
 
   auto * current_solution = &getAuxiliarySystem().solution();
   auto * solution_vector = dynamic_cast<PetscVector<Number> *>(current_solution);
@@ -483,7 +483,7 @@ TensorProblem::getBuffer(const std::string & buffer_name)
 {
   auto it = _tensor_buffer.find(buffer_name);
   if (it == _tensor_buffer.end())
-    mooseError("FFTBuffer '", buffer_name, "' does not exist in the system");
+    mooseError("TensorBuffer '", buffer_name, "' does not exist in the system");
   return it->second;
 }
 

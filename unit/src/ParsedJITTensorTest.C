@@ -10,7 +10,7 @@
 #ifdef NEML2_ENABLED
 
 #include "ParsedJITTensor.h"
-#include "FFTBuffer.h"
+#include "TensorBuffer.h"
 #include "gtest/gtest.h"
 
 #include <string>
@@ -49,6 +49,6 @@ TEST(ParsedJITTensorTest, Parse)
 
 #else
 
-#warning "NEML2 not found, skipping FFTBuffer unit test."
+#warning "NEML2 not found, skipping TensorBuffer unit test."
 
 #endif

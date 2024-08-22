@@ -12,7 +12,7 @@
 #include "MooseObject.h"
 #include "SwiftTypes.h"
 #include "DependencyResolverInterface.h"
-#include "FFTBufferBase.h"
+#include "TensorBufferBase.h"
 
 #include "torch/torch.h"
 

@@ -9,7 +9,7 @@
   zmax = ${fparse pi*4}
 []
 
-[FFTBuffers]
+[TensorBuffers]
   [eta]
   []
   [eta_bar]

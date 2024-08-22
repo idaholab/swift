@@ -9,11 +9,11 @@
 
 #ifdef NEML2_ENABLED
 
-#include "FFTBuffer.h"
+#include "TensorBuffer.h"
 #include "SwiftUtils.h"
 #include "gtest/gtest.h"
 
-TEST(FFTBufferTest, Gradient)
+TEST(TensorBufferTest, Gradient)
 {
   auto A = MooseTensor::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
 
@@ -36,7 +36,7 @@ TEST(FFTBufferTest, Gradient)
   EXPECT_NEAR((grad_y - dady).abs().max().item<double>(), 0.0, 1e-12);
 }
 
-TEST(FFTBufferTest, 2DAxis)
+TEST(TensorBufferTest, 2DAxis)
 {
   auto A = MooseTensor::createBuffer({3, 4});
   A.min() = {0.0, 0.0};
@@ -71,7 +71,7 @@ TEST(FFTBufferTest, 2DAxis)
   yCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
 
-TEST(FFTBufferTest, 1DAxis)
+TEST(TensorBufferTest, 1DAxis)
 {
   auto A = MooseTensor::createBuffer({4}, {0.0}, {4.0 * 5.0 * 6.0});
 
@@ -91,7 +91,7 @@ TEST(FFTBufferTest, 1DAxis)
 
 #else
 
-#warning "NEML2 not found, skipping FFTBuffer unit test."
+#warning "NEML2 not found, skipping TensorBuffer unit test."
 
 #endif
 

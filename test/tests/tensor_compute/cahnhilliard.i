@@ -9,7 +9,7 @@
   zmax = ${fparse pi*8}
 []
 
-[FFTBuffers]
+[TensorBuffers]
   [c]
     map_to_aux_variable = c
   []

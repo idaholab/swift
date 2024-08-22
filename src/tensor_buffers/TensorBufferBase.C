@@ -9,18 +9,18 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "FFTBufferBase.h"
+#include "TensorBufferBase.h"
 
 InputParameters
-FFTBufferBase::validParams()
+TensorBufferBase::validParams()
 {
   InputParameters params = MooseObject::validParams();
-  params.addClassDescription("FFTBuffer object.");
-  params.registerBase("FFTBuffer");
-  params.registerSystemAttributeName("FFTBuffer"); //?
+  params.addClassDescription("TensorBuffer object.");
+  params.registerBase("TensorBuffer");
+  params.registerSystemAttributeName("TensorBuffer"); //?
   params.addParam<AuxVariableName>("map_to_aux_variable",
                                    "Sync the given AuxVariable to the buffer contents");
   return params;
 }
 
-FFTBufferBase::FFTBufferBase(const InputParameters & parameters) : MooseObject(parameters) {}
+TensorBufferBase::TensorBufferBase(const InputParameters & parameters) : MooseObject(parameters) {}

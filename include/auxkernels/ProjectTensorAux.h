@@ -16,7 +16,7 @@
 class TensorProblem;
 
 /**
- * Map an FFTBuffer to an AuxVariable
+ * Map an TensorBuffer to an AuxVariable
  */
 class ProjectTensorAux : public AuxKernel, public TensorProblemInterface
 {

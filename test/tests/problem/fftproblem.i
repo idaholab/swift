@@ -5,7 +5,7 @@
   ny = 50
 []
 
-[FFTBuffers]
+[TensorBuffers]
   [eta]
   []
   [f]

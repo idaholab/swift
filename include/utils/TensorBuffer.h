@@ -21,10 +21,10 @@ namespace MooseTensor
 {
 
 template <typename T, std::size_t D>
-class FFTBuffer;
+class TensorBuffer;
 
 template <typename T = neml2::Scalar, std::size_t D>
-FFTBuffer<T, D>
+TensorBuffer<T, D>
 createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
 {
   TensorShapeRef nn(n);
@@ -35,11 +35,11 @@ createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
     amax[i] = max[i];
   }
 
-  return FFTBuffer<T, D>(nn, amin, amax);
+  return TensorBuffer<T, D>(nn, amin, amax);
 }
 
 template <typename T = neml2::Scalar, std::size_t D>
-FFTBuffer<T, D>
+TensorBuffer<T, D>
 createBuffer(long int const (&n)[D], Real const (&max)[D])
 {
   Real min[D];
@@ -49,7 +49,7 @@ createBuffer(long int const (&n)[D], Real const (&max)[D])
 }
 
 template <typename T = neml2::Scalar, std::size_t D>
-FFTBuffer<T, D>
+TensorBuffer<T, D>
 createBuffer(long int const (&n)[D])
 {
   Real max[D];
@@ -67,9 +67,9 @@ enum class Interval
 };
 
 template <typename T, std::size_t D>
-class FFTBuffer
+class TensorBuffer
 {
-  FFTBuffer(const TensorShapeRef & batch_shape,
+  TensorBuffer(const TensorShapeRef & batch_shape,
             const std::array<Real, D> & min,
             const std::array<Real, D> & max);
 
@@ -95,7 +95,7 @@ public:
 
   // stream in gnuplot readable format
 
-  friend FFTBuffer<T, D>
+  friend TensorBuffer<T, D>
   createBuffer<T, D>(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D]);
 
 protected:
@@ -130,7 +130,7 @@ private:
 };
 
 template <typename T, std::size_t D>
-FFTBuffer<T, D>::FFTBuffer(const TensorShapeRef & batch_shape,
+TensorBuffer<T, D>::TensorBuffer(const TensorShapeRef & batch_shape,
                            const std::array<Real, D> & min,
                            const std::array<Real, D> & max)
   : _options(floatTensorOptions()),
@@ -147,7 +147,7 @@ FFTBuffer<T, D>::FFTBuffer(const TensorShapeRef & batch_shape,
 
 template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
+TensorBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 {
   if (dim >= D)
     throw std::domain_error("Invalid dimension");
@@ -192,7 +192,7 @@ FFTBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 
 template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::getFrequency(std::size_t dim) const
+TensorBuffer<T, D>::getFrequency(std::size_t dim) const
 {
   if (dim >= D)
     throw std::domain_error("Invalid dimension");
@@ -207,7 +207,7 @@ FFTBuffer<T, D>::getFrequency(std::size_t dim) const
 
 template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::grad(std::size_t dim, T * cached_fft) const
+TensorBuffer<T, D>::grad(std::size_t dim, T * cached_fft) const
 {
   if (dim >= D)
     throw std::domain_error("Invalid dimension");
@@ -220,7 +220,7 @@ FFTBuffer<T, D>::grad(std::size_t dim, T * cached_fft) const
 
 template <typename T, std::size_t D>
 T
-FFTBuffer<T, D>::fft() const
+TensorBuffer<T, D>::fft() const
 {
   if constexpr (D == 1)
 
@@ -235,7 +235,7 @@ FFTBuffer<T, D>::fft() const
 
 template <typename T, std::size_t D>
 T
-FFTBuffer<T, D>::ifft(const T & Abar) const
+TensorBuffer<T, D>::ifft(const T & Abar) const
 {
   if constexpr (D == 1)
 
@@ -250,7 +250,7 @@ FFTBuffer<T, D>::ifft(const T & Abar) const
 
 template <typename T, std::size_t D>
 neml2::Scalar
-FFTBuffer<T, D>::laplace() const
+TensorBuffer<T, D>::laplace() const
 {
   neml2::Scalar cached_fft = fft();
   auto ret = grad(0, &cached_fft);

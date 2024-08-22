@@ -10,7 +10,7 @@
   dummy_mesh = true
 []
 
-[FFTBuffers]
+[TensorBuffers]
   [c]
   []
   [cbar]

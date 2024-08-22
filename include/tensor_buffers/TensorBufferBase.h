@@ -12,10 +12,10 @@
 #include "MooseObject.h"
 #include "SwiftTypes.h"
 
-class FFTBufferBase : public MooseObject
+class TensorBufferBase : public MooseObject
 {
 public:
   static InputParameters validParams();
 
-  FFTBufferBase(const InputParameters & parameters);
+  TensorBufferBase(const InputParameters & parameters);
 };

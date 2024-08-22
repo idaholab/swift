@@ -12,7 +12,7 @@
 #include "TensorPostprocessor.h"
 
 /**
- * Compute the average of an FFT buffer
+ * Compute the average of a Tensor buffer
  */
 class TensorExtremeValuePostprocessor : public TensorPostprocessor
 {

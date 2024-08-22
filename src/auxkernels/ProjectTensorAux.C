@@ -16,7 +16,7 @@ InputParameters
 ProjectTensorAux::validParams()
 {
   InputParameters params = AuxKernel::validParams();
-  params.addClassDescription("Project an FFT buffer onto an auxiliary variable");
+  params.addClassDescription("Project a Tensor buffer onto an auxiliary variable");
   params.addRequiredParam<FFTInputBufferName>("buffer", "The buffer to read from");
   return params;
 }

@@ -12,7 +12,7 @@
 #include "TensorPostprocessor.h"
 
 /**
- * Compute the integral of an FFT buffer
+ * Compute the integral of a Tensor buffer
  */
 class TensorIntegralPostprocessor : public TensorPostprocessor
 {

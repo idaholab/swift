@@ -66,11 +66,11 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   Registry::registerObjectsTo(f, {"SwiftApp"});
   Registry::registerActionsTo(af, {"SwiftApp"});
 
-  // FFTBuffer Actions
-  registerSyntaxTask("AddTensorBufferAction", "FFTBuffers/*", "add_tensor_buffer");
-  syntax.registerSyntaxType("FFTBuffers/*", "FFTInputBufferName");
-  syntax.registerSyntaxType("FFTBuffers/*", "FFTOutputBufferName");
-  registerMooseObjectTask("add_tensor_buffer", FFTBuffer, false);
+  // TensorBuffer Actions
+  registerSyntaxTask("AddTensorBufferAction", "TensorBuffers/*", "add_tensor_buffer");
+  syntax.registerSyntaxType("TensorBuffers/*", "FFTInputBufferName");
+  syntax.registerSyntaxType("TensorBuffers/*", "FFTOutputBufferName");
+  registerMooseObjectTask("add_tensor_buffer", TensorBuffer, false);
   addTaskDependency("add_tensor_buffer", "add_aux_variable");
 
   // TensorOperator Actions
