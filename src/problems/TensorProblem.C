@@ -410,7 +410,7 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters 
 }
 
 void
-TensorProblem::addFFTCompute(const std::string & compute_name,
+TensorProblem::addTensorCompute(const std::string & compute_name,
                              const std::string & name,
                              InputParameters & parameters)
 {
@@ -424,7 +424,7 @@ TensorProblem::addFFTCompute(const std::string & compute_name,
 }
 
 void
-TensorProblem::addFFTIC(const std::string & ic_name,
+TensorProblem::addTensorIC(const std::string & ic_name,
                         const std::string & name,
                         InputParameters & parameters)
 {
@@ -438,7 +438,7 @@ TensorProblem::addFFTIC(const std::string & ic_name,
 }
 
 void
-TensorProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
+TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
                                     const std::string & name,
                                     InputParameters & parameters)
 {
@@ -465,7 +465,7 @@ TensorProblem::addFFTTimeIntegrator(const std::string & time_integrator_name,
 }
 
 void
-TensorProblem::addFFTOutput(const std::string & output_name,
+TensorProblem::addTensorOutput(const std::string & output_name,
                             const std::string & name,
                             InputParameters & parameters)
 {

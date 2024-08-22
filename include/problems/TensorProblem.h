@@ -46,16 +46,16 @@ public:
   void advanceState() override;
 
   virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
-  virtual void addFFTCompute(const std::string & compute_name,
+  virtual void addTensorCompute(const std::string & compute_name,
                              const std::string & name,
                              InputParameters & parameters);
-  virtual void addFFTIC(const std::string & compute_name,
+  virtual void addTensorIC(const std::string & compute_name,
                         const std::string & name,
                         InputParameters & parameters);
-  virtual void addFFTTimeIntegrator(const std::string & time_integrator_name,
+  virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                     const std::string & name,
                                     InputParameters & parameters);
-  virtual void addFFTOutput(const std::string & output_name,
+  virtual void addTensorOutput(const std::string & output_name,
                             const std::string & name,
                             InputParameters & parameters);
 

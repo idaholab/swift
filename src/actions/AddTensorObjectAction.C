@@ -38,14 +38,14 @@ AddTensorObjectAction::act()
   // use addObject<FFTxxxxxx>(_type, _name, _moose_object_pars, /* threaded = */ false) ?
 
   if (_current_task == "add_tensor_compute")
-    tensor_problem->addFFTCompute(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorCompute(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_ic")
-    tensor_problem->addFFTIC(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorIC(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_time_integrator")
-    tensor_problem->addFFTTimeIntegrator(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorTimeIntegrator(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_output")
-    tensor_problem->addFFTOutput(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorOutput(_type, _name, _moose_object_pars);
 }
