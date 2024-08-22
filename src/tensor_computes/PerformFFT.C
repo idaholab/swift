@@ -17,7 +17,7 @@ PerformFFT::validParams()
 {
   InputParameters params = TensorOperator::validParams();
   params.addClassDescription("PerformFFT object.");
-  params.addParam<FFTInputBufferName>("input", "Input buffer name");
+  params.addParam<TensorInputBufferName>("input", "Input buffer name");
   params.addParam<bool>("forward", true, "Forward FFT");
   return params;
 }

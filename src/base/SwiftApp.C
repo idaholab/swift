@@ -68,32 +68,32 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 
   // TensorBuffer Actions
   registerSyntaxTask("AddTensorBufferAction", "TensorBuffers/*", "add_tensor_buffer");
-  syntax.registerSyntaxType("TensorBuffers/*", "FFTInputBufferName");
-  syntax.registerSyntaxType("TensorBuffers/*", "FFTOutputBufferName");
+  syntax.registerSyntaxType("TensorBuffers/*", "TensorInputBufferName");
+  syntax.registerSyntaxType("TensorBuffers/*", "TensorOutputBufferName");
   registerMooseObjectTask("add_tensor_buffer", TensorBuffer, false);
   addTaskDependency("add_tensor_buffer", "add_aux_variable");
 
   // TensorOperator Actions
-  registerSyntaxTask("AddTensorObjectAction", "FFTComputes/*", "add_tensor_compute");
-  syntax.registerSyntaxType("FFTComputes/*", "FFTComputeName");
+  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/*", "add_tensor_compute");
+  syntax.registerSyntaxType("TensorComputes/*", "TensorComputeName");
   registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
   addTaskDependency("add_tensor_compute", "add_tensor_buffer");
 
   // TensorICs Actions
   registerSyntaxTask("AddTensorObjectAction", "TensorICs/*", "add_tensor_ic");
-  syntax.registerSyntaxType("TensorICs/*", "FFTICName");
+  syntax.registerSyntaxType("TensorICs/*", "TensorICName");
   registerMooseObjectTask("add_tensor_ic", TensorInitialCondition, false);
   addTaskDependency("add_tensor_ic", "add_tensor_compute");
 
   // TensorICs Actions
-  registerSyntaxTask("AddTensorObjectAction", "FFTTimeIntegrators/*", "add_tensor_time_integrator");
-  syntax.registerSyntaxType("FFTTimeIntegrators/*", "FFTTimeIntegratorName");
+  registerSyntaxTask("AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
+  syntax.registerSyntaxType("TensorTimeIntegrators/*", "TensorTimeIntegratorName");
   registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
   addTaskDependency("add_tensor_time_integrator", "add_tensor_ic");
 
-  // FFTOutputs Actions
-  registerSyntaxTask("AddTensorObjectAction", "FFTOutputs/*", "add_tensor_output");
-  syntax.registerSyntaxType("FFTOutputs/*", "FFTOutputName");
+  // TensorOutputs Actions
+  registerSyntaxTask("AddTensorObjectAction", "TensorOutputs/*", "add_tensor_output");
+  syntax.registerSyntaxType("TensorOutputs/*", "TensorOutputName");
   registerMooseObjectTask("add_tensor_output", TensorOutput, false);
   addTaskDependency("add_tensor_output", "add_tensor_time_integrator");
 

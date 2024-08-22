@@ -17,8 +17,8 @@ FFTQuasistaticElasticity::validParams()
 {
   InputParameters params = TensorOperatorBase::validParams();
   params.addClassDescription("FFT based monolithic homogeneous quasistatic elasticity solve.");
-  params.addParam<std::vector<FFTOutputBufferName>>("displacements", "Displacements");
-  params.addParam<FFTInputBufferName>("cbar", "FFT of concentration buffer");
+  params.addParam<std::vector<TensorOutputBufferName>>("displacements", "Displacements");
+  params.addParam<TensorInputBufferName>("cbar", "FFT of concentration buffer");
   params.addRequiredParam<Real>("mu", "Lame mu");
   params.addRequiredParam<Real>("lambda", "Lame lambda");
   params.addRequiredParam<Real>("e0", "volumetric eigenstrain");
@@ -34,7 +34,7 @@ FFTQuasistaticElasticity::FFTQuasistaticElasticity(const InputParameters & param
     _e0(getParam<Real>("e0")),
     _cbar(getInputBuffer("cbar"))
 {
-  for (const auto & name : getParam<std::vector<FFTOutputBufferName>>("displacements"))
+  for (const auto & name : getParam<std::vector<TensorOutputBufferName>>("displacements"))
     _displacements.push_back(&getOutputBufferByName(name));
 
   if (_tensor_problem.getDim() != _displacements.size())

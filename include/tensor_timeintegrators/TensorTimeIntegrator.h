@@ -24,7 +24,7 @@ public:
 protected:
   const std::vector<torch::Tensor> & getBufferOld(const std::string & param,
                                                   unsigned int max_states);
-  const std::vector<torch::Tensor> & getBufferOldByName(const FFTInputBufferName & buffer_name,
+  const std::vector<torch::Tensor> & getBufferOldByName(const TensorInputBufferName & buffer_name,
                                                         unsigned int max_states);
 
   const Real & _dt;

@@ -3,27 +3,27 @@
 #include <string>
 
 /// Name of an TensorOperator object
-// DerivativeStringClass(FFTComputeName);
-typedef std::string FFTComputeName;
+// DerivativeStringClass(TensorComputeName);
+typedef std::string TensorComputeName;
 
-/// Name of an FFTIC object
-// DerivativeStringClass(FFTICName);
-typedef std::string FFTICName;
+/// Name of an TensorIC object
+// DerivativeStringClass(TensorICName);
+typedef std::string TensorICName;
 
 /// Name of an TensorTimeIntegrator object
-// DerivativeStringClass(FFTTimeIntegratorName);
-typedef std::string FFTTimeIntegratorName;
+// DerivativeStringClass(TensorTimeIntegratorName);
+typedef std::string TensorTimeIntegratorName;
 
 /// Name of a read-only input TensorBuffer object
-// DerivativeStringClass(FFTInputBufferName);
-typedef std::string FFTInputBufferName;
+// DerivativeStringClass(TensorInputBufferName);
+typedef std::string TensorInputBufferName;
 /// Name of a writable output TensorBuffer object
-// DerivativeStringClass(FFTOutputBufferName);
-typedef std::string FFTOutputBufferName;
+// DerivativeStringClass(TensorOutputBufferName);
+typedef std::string TensorOutputBufferName;
 
 /// Name of an TensorOutput object
-// DerivativeStringClass(FFTOutputName);
-typedef std::string FFTOutputName;
+// DerivativeStringClass(TensorOutputName);
+typedef std::string TensorOutputName;
 
 /// Forward declarations
 class TensorBufferBase;

@@ -87,7 +87,7 @@ protected:
   void updateDOFMap();
   void mapBuffersToAux();
 
-  /// FFT Mesh object
+  /// Tensor Mesh object
   UniformTensorMesh * _tensor_mesh;
 
   /// tensor options

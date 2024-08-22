@@ -19,9 +19,9 @@ ParsedCompute::validParams()
   InputParameters params = TensorOperator::validParams();
   params.addClassDescription("ParsedCompute object.");
   params.addRequiredParam<std::string>("expression", "Parsed expression");
-  params.addParam<std::vector<FFTInputBufferName>>(
+  params.addParam<std::vector<TensorInputBufferName>>(
       "inputs", {}, "Buffer names used in the expression");
-  params.addParam<std::vector<FFTInputBufferName>>(
+  params.addParam<std::vector<TensorInputBufferName>>(
       "derivatives", {}, "List of inputs to take the derivative w.r.t. (or none)");
   params.addParam<bool>(
       "enable_jit", true, "Use operator fusion and just in time compilation (recommended on GPU)");
@@ -39,7 +39,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     _extra_symbols(getParam<bool>("extra_symbols"))
 {
   const auto & expression = getParam<std::string>("expression");
-  const auto & names = getParam<std::vector<FFTInputBufferName>>("inputs");
+  const auto & names = getParam<std::vector<TensorInputBufferName>>("inputs");
 
   // get all input buffers
   for (const auto & name : names)
@@ -74,7 +74,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
       paramError("expression", "Invalid function: ", fp.ErrorMsg());
 
     // take derivatives
-    for (const auto & d : getParam<std::vector<FFTInputBufferName>>("derivatives"))
+    for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
       if (std::find(names.begin(), names.end(), d) != names.end())
       {
         if (fp.AutoDiff(d) != -1)

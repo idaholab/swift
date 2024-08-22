@@ -38,11 +38,11 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
 const torch::Tensor &
 TensorOperatorBase::getInputBuffer(const std::string & param)
 {
-  return getInputBufferByName(getParam<FFTInputBufferName>(param));
+  return getInputBufferByName(getParam<TensorInputBufferName>(param));
 }
 
 const torch::Tensor &
-TensorOperatorBase::getInputBufferByName(const FFTInputBufferName & buffer_name)
+TensorOperatorBase::getInputBufferByName(const TensorInputBufferName & buffer_name)
 {
   _requested_buffers.insert(buffer_name);
   return _tensor_problem.getBuffer(buffer_name);
@@ -51,11 +51,11 @@ TensorOperatorBase::getInputBufferByName(const FFTInputBufferName & buffer_name)
 torch::Tensor &
 TensorOperatorBase::getOutputBuffer(const std::string & param)
 {
-  return getOutputBufferByName(getParam<FFTOutputBufferName>(param));
+  return getOutputBufferByName(getParam<TensorOutputBufferName>(param));
 }
 
 torch::Tensor &
-TensorOperatorBase::getOutputBufferByName(const FFTOutputBufferName & buffer_name)
+TensorOperatorBase::getOutputBufferByName(const TensorOutputBufferName & buffer_name)
 {
   _supplied_buffers.insert(buffer_name);
   return _tensor_problem.getBuffer(buffer_name);

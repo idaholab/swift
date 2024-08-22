@@ -17,7 +17,7 @@ TensorPostprocessor::validParams()
 {
   InputParameters params = GeneralPostprocessor::validParams();
   params.addClassDescription("A normal Postprocessor acting on a Tensor buffer.");
-  params.addRequiredParam<FFTInputBufferName>("buffer", "The buffer this compute is operating on");
+  params.addRequiredParam<TensorInputBufferName>("buffer", "The buffer this compute is operating on");
   return params;
 }
 
@@ -28,9 +28,9 @@ TensorPostprocessor::TensorPostprocessor(const InputParameters & parameters)
         {
           auto tensor_problem = dynamic_cast<TensorProblem *>(&_fe_problem);
           if (!tensor_problem)
-            mooseError("FFTPostprocessors require a TensorProblem.");
+            mooseError("TensorPostprocessors require a TensorProblem.");
           return std::ref(*tensor_problem);
         }()),
-    _u(_tensor_problem.getBuffer(getParam<FFTInputBufferName>("buffer")))
+    _u(_tensor_problem.getBuffer(getParam<TensorInputBufferName>("buffer")))
 {
 }

@@ -17,14 +17,14 @@ ProjectTensorAux::validParams()
 {
   InputParameters params = AuxKernel::validParams();
   params.addClassDescription("Project a Tensor buffer onto an auxiliary variable");
-  params.addRequiredParam<FFTInputBufferName>("buffer", "The buffer to read from");
+  params.addRequiredParam<TensorInputBufferName>("buffer", "The buffer to read from");
   return params;
 }
 
 ProjectTensorAux::ProjectTensorAux(const InputParameters & parameters)
   : AuxKernel(parameters),
     TensorProblemInterface(this),
-    _cpu_buffer(_tensor_problem.getCPUBuffer(getParam<FFTInputBufferName>("buffer"))),
+    _cpu_buffer(_tensor_problem.getCPUBuffer(getParam<TensorInputBufferName>("buffer"))),
     _dim(_tensor_problem.getDim()),
     _n(_tensor_problem.getGridSize()),
     _grid_spacing(_tensor_problem.getGridSpacing())

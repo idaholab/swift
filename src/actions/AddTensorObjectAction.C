@@ -33,9 +33,9 @@ AddTensorObjectAction::act()
 {
   auto tensor_problem = std::dynamic_pointer_cast<TensorProblem>(_problem);
   if (!tensor_problem)
-    mooseError("FFT objects are only supported if the problem class is set to `TensorProblem`");
+    mooseError("Tensor objects are only supported if the problem class is set to `TensorProblem`");
 
-  // use addObject<FFTxxxxxx>(_type, _name, _moose_object_pars, /* threaded = */ false) ?
+  // use addObject<Tensorxxxxxx>(_type, _name, _moose_object_pars, /* threaded = */ false) ?
 
   if (_current_task == "add_tensor_compute")
     tensor_problem->addTensorCompute(_type, _name, _moose_object_pars);

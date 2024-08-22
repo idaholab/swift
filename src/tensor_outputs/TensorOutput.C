@@ -16,7 +16,7 @@ InputParameters
 TensorOutput::validParams()
 {
   InputParameters params = MooseObject::validParams();
-  params.addRequiredParam<std::vector<FFTInputBufferName>>("buffer", "The buffers to output");
+  params.addRequiredParam<std::vector<TensorInputBufferName>>("buffer", "The buffers to output");
   params.addParam<std::string>(
       "file_base",
       "The desired solution output name without an extension. If not provided, MOOSE sets it "
@@ -33,7 +33,7 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
   : MooseObject(parameters),
     _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem"))
 {
-  for (const auto & name : getParam<std::vector<FFTInputBufferName>>("buffer"))
+  for (const auto & name : getParam<std::vector<TensorInputBufferName>>("buffer"))
     _out_buffers[name] = &_tensor_problem.getCPUBuffer(name);
 }
 

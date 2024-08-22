@@ -30,7 +30,7 @@
   []
 []
 
-[FFTComputes]
+[TensorComputes]
   [eta_bar]
     type = PerformFFT
     buffer = eta_bar
@@ -44,7 +44,7 @@
   []
 []
 
-[FFTTimeIntegrators]
+[TensorTimeIntegrators]
   [eta]
     type = FFTSemiImplicit
     buffer = eta

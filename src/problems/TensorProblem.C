@@ -27,7 +27,7 @@ TensorProblem::validParams()
   params.addClassDescription(
       "A normal Problem object that adds the ability to perform spectral solves.");
   params.set<bool>("skip_nl_system_check") = true;
-  params.addParam<bool>("print_debug_output", false, "Show FFT specific debug outputs");
+  params.addParam<bool>("print_debug_output", false, "Show Tensor specific debug outputs");
   params.addParam<unsigned int>(
       "spectral_solve_substeps",
       1,
@@ -51,7 +51,7 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
 
   // this should only be run in serial, there is no COMM for the torch stuff yet
   if (comm().size() > 1)
-    mooseError("FFT problems can only be run in serial at this time.");
+    mooseError("Tensor problems can only be run in serial at this time.");
 }
 
 TensorProblem::~TensorProblem()
@@ -110,7 +110,7 @@ TensorProblem::init()
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
-  // dependency resolution of FFTComputes
+  // dependency resolution of TensorComputes
   DependencyResolverInterface::sort(_computes);
 
   // show computes
@@ -211,7 +211,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
 void
 TensorProblem::updateDOFMap()
 {
-  TIME_SECTION("update", 3, "Updating FFT DOF Map", true);
+  TIME_SECTION("update", 3, "Updating Tensor DOF Map", true);
 
   // variable mapping
   const auto & aux = getAuxiliarySystem();
@@ -446,9 +446,9 @@ TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // check that we have no other TI that advances the same buffer
-  const auto & output_buffer = parameters.get<FFTOutputBufferName>("buffer");
+  const auto & output_buffer = parameters.get<TensorOutputBufferName>("buffer");
   for (const auto & ti : _time_integrators)
-    if (ti->parameters().get<FFTOutputBufferName>("buffer") == output_buffer)
+    if (ti->parameters().get<TensorOutputBufferName>("buffer") == output_buffer)
       mooseError("Buffer '",
                  output_buffer,
                  "' is already advanced by time integrator '",

@@ -60,7 +60,7 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
         "output_mode", "Specify one output mode per buffer.", output_mode.size(), " != ", nbuffers);
   else
   {
-    const auto & buffer_name = getParam<std::vector<FFTInputBufferName>>("buffer");
+    const auto & buffer_name = getParam<std::vector<TensorInputBufferName>>("buffer");
     for (const auto i : make_range(nbuffers))
       _is_cell_data[buffer_name[i]] = (output_mode[i] == "CELL");
   }

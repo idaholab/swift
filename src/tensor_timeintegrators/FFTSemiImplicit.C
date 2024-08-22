@@ -17,11 +17,11 @@ FFTSemiImplicit::validParams()
 {
   InputParameters params = TensorTimeIntegrator::validParams();
   params.addClassDescription("Semi-implicit time integrator.");
-  params.addRequiredParam<FFTInputBufferName>(
+  params.addRequiredParam<TensorInputBufferName>(
       "reciprocal_buffer", "Buffer with the reciprocal of the integrated buffer");
-  params.addRequiredParam<FFTInputBufferName>(
+  params.addRequiredParam<TensorInputBufferName>(
       "linear_reciprocal", "Buffer with the reciprocal of the linear prefactor (e.g. kappa*k^2)");
-  params.addRequiredParam<FFTInputBufferName>(
+  params.addRequiredParam<TensorInputBufferName>(
       "nonlinear_reciprocal", "Buffer with the reciprocal of the non-linear contribution");
   params.addParam<unsigned int>(
       "history_size", 1, "How many old states to use (determines time integration order).");

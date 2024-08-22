@@ -27,11 +27,11 @@ TensorTimeIntegrator::TensorTimeIntegrator(const InputParameters & parameters)
 const std::vector<torch::Tensor> &
 TensorTimeIntegrator::getBufferOld(const std::string & param, unsigned int max_states)
 {
-  return getBufferOldByName(getParam<FFTInputBufferName>(param), max_states);
+  return getBufferOldByName(getParam<TensorInputBufferName>(param), max_states);
 }
 
 const std::vector<torch::Tensor> &
-TensorTimeIntegrator::getBufferOldByName(const FFTInputBufferName & buffer_name,
+TensorTimeIntegrator::getBufferOldByName(const TensorInputBufferName & buffer_name,
                                       unsigned int max_states)
 {
   return _tensor_problem.getBufferOld(buffer_name, max_states);

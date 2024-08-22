@@ -107,7 +107,7 @@ compile_commands.json
 build
 framework/contrib/libtorch
 
-# FFT output
+# Tensor output
 *.xmf
 *.h5
 
@@ -271,7 +271,6 @@ share/
 # Ignore vscode local parameters
 .vscode/*
 *.code-workspace
-
 
 # App Resource file (including modules/)
 /test/moose_test.yaml

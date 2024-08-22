@@ -18,8 +18,8 @@ FFTElasticChemicalPotential::validParams()
 {
   InputParameters params = TensorOperator::validParams();
   params.addClassDescription("FFT based elastic strain energy chemical potential solve.");
-  params.addParam<std::vector<FFTInputBufferName>>("displacements", "Displacements");
-  params.addParam<FFTInputBufferName>("cbar", "FFT of concentration buffer");
+  params.addParam<std::vector<TensorInputBufferName>>("displacements", "Displacements");
+  params.addParam<TensorInputBufferName>("cbar", "FFT of concentration buffer");
   params.addRequiredParam<Real>("mu", "Lame mu");
   params.addRequiredParam<Real>("lambda", "Lame lambda");
   params.addRequiredParam<Real>("e0", "volumetric eigenstrain");
@@ -36,7 +36,7 @@ FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters &
     _cbar(getInputBuffer("cbar"))
 
 {
-  for (const auto & name : getParam<std::vector<FFTOutputBufferName>>("displacements"))
+  for (const auto & name : getParam<std::vector<TensorOutputBufferName>>("displacements"))
     _displacements.push_back(&getInputBufferByName(name));
 
   if (_tensor_problem.getDim() != _displacements.size())

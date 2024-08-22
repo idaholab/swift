@@ -42,7 +42,7 @@
   []
 []
 
-[FFTOutputs]
+[TensorOutputs]
   [xdmf]
     type = XDMFTensorOutput
     buffer = 'c disp_x disp_y disp_z mu mumech'
@@ -88,7 +88,7 @@
   []
 []
 
-[FFTComputes]
+[TensorComputes]
   [mu]
     # chemical potential (real space)
     type = ParsedCompute
@@ -146,7 +146,7 @@
   []
 []
 
-[FFTTimeIntegrators]
+[TensorTimeIntegrators]
   [c]
     type = FFTSemiImplicit
     buffer = c

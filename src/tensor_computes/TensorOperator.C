@@ -15,7 +15,7 @@ InputParameters
 TensorOperator::validParams()
 {
   InputParameters params = TensorOperatorBase::validParams();
-  params.addRequiredParam<FFTOutputBufferName>("buffer", "The buffer this compute is writing to");
+  params.addRequiredParam<TensorOutputBufferName>("buffer", "The buffer this compute is writing to");
   params.addClassDescription("TensorOperator object.");
   return params;
 }

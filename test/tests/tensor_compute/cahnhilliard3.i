@@ -28,7 +28,7 @@
   []
 []
 
-[FFTOutputs]
+[TensorOutputs]
   [xdmf]
     type = XDMFTensorOutput
     buffer = 'c mu'
@@ -56,7 +56,7 @@
   []
 []
 
-[FFTComputes]
+[TensorComputes]
   [mu]
     type = ParsedCompute
     buffer = mu
@@ -85,7 +85,7 @@
   []
 []
 
-[FFTTimeIntegrators]
+[TensorTimeIntegrators]
   [c]
     type = FFTSemiImplicit
     buffer = c

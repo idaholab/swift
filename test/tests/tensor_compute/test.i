@@ -34,7 +34,7 @@
   []
 []
 
-[FFTComputes]
+[TensorComputes]
   [f]
     type = ParsedCompute
     buffer = f
@@ -55,7 +55,7 @@
   []
 []
 
-[FFTTimeIntegrators]
+[TensorTimeIntegrators]
   [eta]
     type = FFTSemiImplicit
     buffer = eta

@@ -36,10 +36,10 @@ public:
 
 protected:
   const torch::Tensor & getInputBuffer(const std::string & param);
-  const torch::Tensor & getInputBufferByName(const FFTInputBufferName & buffer_name);
+  const torch::Tensor & getInputBufferByName(const TensorInputBufferName & buffer_name);
 
   torch::Tensor & getOutputBuffer(const std::string & param);
-  torch::Tensor & getOutputBufferByName(const FFTOutputBufferName & buffer_name);
+  torch::Tensor & getOutputBufferByName(const TensorOutputBufferName & buffer_name);
 
   std::set<std::string> _requested_buffers;
   std::set<std::string> _supplied_buffers;
