@@ -14,15 +14,15 @@
 /**
  * Sinusoidal IC
  */
-class ReciprocalLaplacianFactor : public TensorOperator
+class SwiftHohenbergLinear : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  ReciprocalLaplacianFactor(const InputParameters & parameters);
+  SwiftHohenbergLinear(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
-  const Real _factor;
-  const torch::Tensor & _k2;
+  const Real _r;
+  const Real _alpha;
 };

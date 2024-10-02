@@ -24,4 +24,5 @@ public:
   virtual void computeBuffer() override;
 
   const Real _factor;
+  const torch::Tensor & _k2;
 };

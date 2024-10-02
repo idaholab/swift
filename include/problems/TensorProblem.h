@@ -44,6 +44,9 @@ public:
   // move tensors in time
   void advanceState() override;
 
+  // recompute quantities on grid size change
+  virtual void gridChanged();
+
   virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
 
   virtual void addTensorComputeInitialize(const std::string & compute_name,
@@ -77,6 +80,7 @@ public:
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
+  const torch::Tensor & getKSquare() const { return _k2; }
 
   torch::Tensor fft(torch::Tensor t) const;
   torch::Tensor ifft(torch::Tensor t) const;
@@ -141,6 +145,9 @@ protected:
 
   /// reciprocal space axes
   std::array<torch::Tensor, 3> _reciprocal_axis;
+
+  // k-square
+  torch::Tensor _k2;
 
   /// solve objects
   TensorComputeList _computes;

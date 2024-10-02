@@ -40,8 +40,6 @@ AddTensorObjectAction::act()
 
   // use addObject<Tensorxxxxxx>(_type, _name, _moose_object_pars, /* threaded = */ false) ?
 
-  mooseInfoRepeated("AddTensorObjectAction ", _current_task, _type, _name);
-
   if (_current_task == "add_tensor_compute")
     tensor_problem->addTensorComputeSolve(_type, _name, _moose_object_pars);
 

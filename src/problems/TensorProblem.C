@@ -79,32 +79,8 @@ TensorProblem::init()
   for (auto pair : _tensor_buffer)
     pair.second = torch::zeros(_shape, _options);
 
-  // build real space axes
-  for (const auto dim : make_range(3u))
-  {
-    if (dim < _dim)
-      _axis[dim] = align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
-                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
-                                         _n[dim],
-                                         _options),
-                         dim);
-    else
-      _axis[dim] = torch::tensor({0.0}, _options);
-  }
-
-  // build reciprocal space axes
-  for (const auto dim : make_range(3u))
-  {
-    if (dim < _dim)
-    {
-      const auto freq = (dim == _dim - 1)
-                            ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
-                            : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
-      _reciprocal_axis[dim] = align(freq, dim);
-    }
-    else
-      _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
-  }
+  // compute grid dependent quantities
+  gridChanged();
 
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
@@ -381,6 +357,41 @@ TensorProblem::advanceState()
       states[i] = states[i - 1];
     states[0] = _tensor_buffer[name];
   }
+}
+
+void
+TensorProblem::gridChanged()
+{
+  // build real space axes
+  for (const auto dim : make_range(3u))
+  {
+    if (dim < _dim)
+      _axis[dim] = align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
+                                         _n[dim],
+                                         _options),
+                         dim);
+    else
+      _axis[dim] = torch::tensor({0.0}, _options);
+  }
+
+  // build reciprocal space axes
+  for (const auto dim : make_range(3u))
+  {
+    if (dim < _dim)
+    {
+      const auto freq = (dim == _dim - 1)
+                            ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
+                            : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
+      _reciprocal_axis[dim] = align(freq * libMesh::pi, dim);
+    }
+    else
+      _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
+  }
+
+  // k-square buffer
+  _k2 = _reciprocal_axis[0] * _reciprocal_axis[0] + _reciprocal_axis[1] * _reciprocal_axis[1] +
+        _reciprocal_axis[2] * _reciprocal_axis[2];
 }
 
 void

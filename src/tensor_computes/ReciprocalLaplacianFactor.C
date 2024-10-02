@@ -21,12 +21,12 @@ ReciprocalLaplacianFactor::validParams()
 }
 
 ReciprocalLaplacianFactor::ReciprocalLaplacianFactor(const InputParameters & parameters)
-  : TensorOperator(parameters), _factor(getParam<Real>("factor"))
+  : TensorOperator(parameters), _factor(getParam<Real>("factor")), _k2(_tensor_problem.getKSquare())
 {
 }
 
 void
 ReciprocalLaplacianFactor::computeBuffer()
 {
-  _u = -(_i * _i + _j * _j + _k * _k) * (libMesh::pi * libMesh::pi * _factor);
+  _u = -_k2 * _factor;
 }

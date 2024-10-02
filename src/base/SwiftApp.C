@@ -92,7 +92,7 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_postprocessor", TensorOperator, false);
   addTaskDependency("add_tensor_postprocessor", "add_tensor_compute");
 
-  // registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
+  registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
 
   // TensorICs Actions
   registerSyntaxTask("AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");

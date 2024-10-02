@@ -10,19 +10,21 @@
 #pragma once
 
 #include "TensorOperator.h"
+#include "FunctionInterface.h"
+
+class Function;
 
 /**
- * Sinusoidal IC
+ * Constant Tensor
  */
-class ReciprocalLaplacianFactor : public TensorOperator
+class MooseFunctionTensor : public TensorOperator, public FunctionInterface
 {
 public:
   static InputParameters validParams();
 
-  ReciprocalLaplacianFactor(const InputParameters & parameters);
+  MooseFunctionTensor(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
-  const Real _factor;
-  const torch::Tensor & _k2;
+  const Function & _func;
 };

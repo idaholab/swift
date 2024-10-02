@@ -28,8 +28,9 @@ ParsedCompute::validParams()
       "enable_jit", true, "Use operator fusion and just in time compilation (recommended on GPU)");
   params.addParam<bool>("enable_fpoptimizer", true, "Use algebraic optimizer");
   params.addParam<bool>("extra_symbols",
-                        true,
-                        "Provide i (imaginary unit), j,k,l (reciprocal space frequency), x,y,z "
+                        false,
+                        "Provide i (imaginary unit), kx,ky,kz (reciprocal space frequency), k2 "
+                        "(square of the k-vector), x,y,z "
                         "(real space coordinates), and pi,e.");
   return params;
 }
@@ -55,6 +56,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     if (_extra_symbols)
     {
       variables = MooseUtils::join(std::vector<std::string>{variables, "i,x,kx,y,ky,z,kz,k2"}, ",");
+
       _constant_tensors.push_back(torch::tensor(c10::complex<double>(0.0, 1.0)));
       _params.push_back(&_constant_tensors[0]);
 
@@ -64,8 +66,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
         _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
       }
 
-      _k2 = _i * _i + _j * _j + _k * _k;
-      _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
+      _params.push_back(&_tensor_problem.getKSquare());
 
       fp.AddConstant("pi", libMesh::pi);
       fp.AddConstant("e", std::exp(Real(1.0)));
