@@ -10,28 +10,34 @@
 
 #include "PerformFFT.h"
 
-registerMooseObject("SwiftApp", PerformFFT);
+registerMooseObject("SwiftApp", ForwardFFT);
+registerMooseObject("SwiftApp", InverseFFT);
 
+template <bool forward>
 InputParameters
-PerformFFT::validParams()
+PerformFFTTempl<forward>::validParams()
 {
   InputParameters params = TensorOperator::validParams();
   params.addClassDescription("PerformFFT object.");
   params.addParam<TensorInputBufferName>("input", "Input buffer name");
-  params.addParam<bool>("forward", true, "Forward FFT");
   return params;
 }
 
-PerformFFT::PerformFFT(const InputParameters & parameters)
-  : TensorOperator(parameters), _forward(getParam<bool>("forward")), _input(getInputBuffer("input"))
+template <bool forward>
+PerformFFTTempl<forward>::PerformFFTTempl(const InputParameters & parameters)
+  : TensorOperator(parameters), _input(getInputBuffer("input"))
 {
 }
 
+template <bool forward>
 void
-PerformFFT::computeBuffer()
+PerformFFTTempl<forward>::computeBuffer()
 {
-  if (_forward)
+  if constexpr (forward)
     _u = _tensor_problem.fft(_input);
   else
     _u = _tensor_problem.ifft(_input);
 }
+
+template class PerformFFTTempl<true>;
+template class PerformFFTTempl<false>;

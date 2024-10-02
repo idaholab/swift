@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "TensorInitialCondition.h"
+#include "TensorOperator.h"
 
 /**
  * Sinusoidal IC
  */
-class ReciprocalLaplacianFactor : public TensorInitialCondition
+class ReciprocalLaplacianSquareFactor : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  ReciprocalLaplacianFactor(const InputParameters & parameters);
+  ReciprocalLaplacianSquareFactor(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 

@@ -51,9 +51,12 @@ FFTSemiImplicit::computeBuffer()
 
   if (n_old >= 1)
     // compute FFT time update (2nd order) - this probably breaks for adaptive dt!
-    ubar = (4.0 * _reciprocal_buffer - _old_reciprocal_buffer[0] +
-            (2.0 * _dt) * (2.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
-           (3.0 - (2.0 * _dt) * _linear_reciprocal);
+    // ubar = (4.0 * _reciprocal_buffer - _old_reciprocal_buffer[0] +
+    //         (2.0 * _dt) * (2.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
+    //        (3.0 - (2.0 * _dt) * _linear_reciprocal);
+    ubar = (_reciprocal_buffer +
+            _dt / 2.0 * (3.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
+           (1.0 - _dt * _linear_reciprocal);
 
   _u = _tensor_problem.ifft(ubar);
 }

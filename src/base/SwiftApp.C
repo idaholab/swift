@@ -73,23 +73,32 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_buffer", TensorBuffer, false);
   addTaskDependency("add_tensor_buffer", "add_aux_variable");
 
-  // TensorOperator Actions
-  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/*", "add_tensor_compute");
-  syntax.registerSyntaxType("TensorComputes/*", "TensorComputeName");
-  registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
-  addTaskDependency("add_tensor_compute", "add_tensor_buffer");
+  // TensorComputes/Initial Actions
+  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Initialize/*", "add_tensor_ic");
+  syntax.registerSyntaxType("TensorComputes/Initialize/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_ic", TensorOperator, false);
+  addTaskDependency("add_tensor_ic", "add_tensor_buffer");
 
-  // TensorICs Actions
-  registerSyntaxTask("AddTensorObjectAction", "TensorICs/*", "add_tensor_ic");
-  syntax.registerSyntaxType("TensorICs/*", "TensorICName");
-  registerMooseObjectTask("add_tensor_ic", TensorInitialCondition, false);
-  addTaskDependency("add_tensor_ic", "add_tensor_compute");
+  // TensorComputes/Solve Actions
+  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Solve/*", "add_tensor_compute");
+  syntax.registerSyntaxType("TensorComputes/Solve/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
+  addTaskDependency("add_tensor_compute", "add_tensor_ic");
+
+  // TensorComputes/Postprocess Actions
+  registerSyntaxTask(
+      "AddTensorObjectAction", "TensorComputes/Postprocess/*", "add_tensor_postprocessor");
+  syntax.registerSyntaxType("TensorComputes/Postprocess/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_postprocessor", TensorOperator, false);
+  addTaskDependency("add_tensor_postprocessor", "add_tensor_compute");
+
+  // registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
 
   // TensorICs Actions
   registerSyntaxTask("AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
   syntax.registerSyntaxType("TensorTimeIntegrators/*", "TensorTimeIntegratorName");
   registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
-  addTaskDependency("add_tensor_time_integrator", "add_tensor_ic");
+  addTaskDependency("add_tensor_time_integrator", "add_tensor_postprocessor");
 
   // TensorOutputs Actions
   registerSyntaxTask("AddTensorObjectAction", "TensorOutputs/*", "add_tensor_output");

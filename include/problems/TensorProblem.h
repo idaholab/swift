@@ -21,7 +21,6 @@
 
 class UniformTensorMesh;
 class TensorOperatorBase;
-class TensorInitialCondition;
 class TensorTimeIntegrator;
 class TensorOutput;
 
@@ -46,12 +45,17 @@ public:
   void advanceState() override;
 
   virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
-  virtual void addTensorCompute(const std::string & compute_name,
-                             const std::string & name,
-                             InputParameters & parameters);
-  virtual void addTensorIC(const std::string & compute_name,
-                        const std::string & name,
-                        InputParameters & parameters);
+
+  virtual void addTensorComputeInitialize(const std::string & compute_name,
+                                          const std::string & name,
+                                          InputParameters & parameters);
+  virtual void addTensorComputeSolve(const std::string & compute_name,
+                                     const std::string & name,
+                                     InputParameters & parameters);
+  virtual void addTensorComputePostprocess(const std::string & compute_name,
+                                           const std::string & name,
+                                           InputParameters & parameters);
+
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                     const std::string & name,
                                     InputParameters & parameters);
@@ -86,6 +90,13 @@ public:
 protected:
   void updateDOFMap();
   void mapBuffersToAux();
+
+  typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
+
+  virtual void addTensorCompute(const std::string & compute_name,
+                                const std::string & name,
+                                InputParameters & parameters,
+                                TensorComputeList & list);
 
   /// Tensor Mesh object
   UniformTensorMesh * _tensor_mesh;
@@ -131,11 +142,14 @@ protected:
   /// reciprocal space axes
   std::array<torch::Tensor, 3> _reciprocal_axis;
 
-  /// compute objects
-  std::vector<std::shared_ptr<TensorOperatorBase>> _computes;
+  /// solve objects
+  TensorComputeList _computes;
 
-  /// ic objects
-  std::vector<std::shared_ptr<TensorInitialCondition>> _ics;
+  /// initialization objects
+  TensorComputeList _ics;
+
+  /// postprocessing objects
+  TensorComputeList _pps;
 
   ///  time integrator objects
   std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;

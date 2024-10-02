@@ -14,17 +14,22 @@
 /**
  * PerformFFT object
  */
-class PerformFFT : public TensorOperator
+template <bool forward>
+class PerformFFTTempl : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  PerformFFT(const InputParameters & parameters);
+  PerformFFTTempl(const InputParameters & parameters);
 
   void computeBuffer() override;
 
 protected:
-  const bool _forward;
-
   const torch::Tensor & _input;
+
+  using TensorOperator::_tensor_problem;
+  using TensorOperator::_u;
 };
+
+typedef PerformFFTTempl<true> ForwardFFT;
+typedef PerformFFTTempl<false> InverseFFT;

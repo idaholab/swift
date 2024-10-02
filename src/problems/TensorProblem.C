@@ -10,8 +10,7 @@
 #include "TensorProblem.h"
 #include "UniformTensorMesh.h"
 
-#include "TensorOperator.h"
-#include "TensorInitialCondition.h"
+#include "TensorOperatorBase.h"
 #include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
 
@@ -113,6 +112,9 @@ TensorProblem::init()
   // dependency resolution of TensorComputes
   DependencyResolverInterface::sort(_computes);
 
+  // dependency resolution of Tensor Postprocessors
+  DependencyResolverInterface::sort(_pps);
+
   // show computes
   if (_debug)
   {
@@ -181,6 +183,10 @@ TensorProblem::execute(const ExecFlagType & exec_type)
       if (substep < _substeps - 1)
         advanceState();
     }
+
+    // run postprocessing before output
+    for (auto & pp : _pps)
+      pp->computeBuffer();
 
     // wait for prior asynchronous activity on CPU buffers to complete
     // (this is a synchronization barrier for the threaded CPU activity)
@@ -410,31 +416,42 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters 
 }
 
 void
+TensorProblem::addTensorComputeSolve(const std::string & compute_name,
+                                     const std::string & name,
+                                     InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _computes);
+}
+
+void
+TensorProblem::addTensorComputeInitialize(const std::string & compute_name,
+                                          const std::string & name,
+                                          InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _ics);
+}
+
+void
+TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
+                                           const std::string & name,
+                                           InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _pps);
+}
+
+void
 TensorProblem::addTensorCompute(const std::string & compute_name,
-                             const std::string & name,
-                             InputParameters & parameters)
+                                const std::string & name,
+                                InputParameters & parameters,
+                                TensorComputeList & list)
 {
   // Add a pointer to the TensorProblem class
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
 
   // Create the object
   auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
-  logAdd("TensorOperator", name, compute_name, parameters);
-  _computes.push_back(compute_object);
-}
-
-void
-TensorProblem::addTensorIC(const std::string & ic_name,
-                        const std::string & name,
-                        InputParameters & parameters)
-{
-  // Add a pointer to the TensorProblem class
-  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
-
-  // Create the object
-  auto ic_object = _factory.create<TensorInitialCondition>(ic_name, name, parameters, 0);
-  logAdd("TensorInitialCondition", name, ic_name, parameters);
-  _ics.push_back(ic_object);
+  logAdd("TensorOperatorBase", name, compute_name, parameters);
+  list.push_back(compute_object);
 }
 
 void

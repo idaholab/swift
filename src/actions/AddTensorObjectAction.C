@@ -10,9 +10,12 @@
 #include "AddTensorObjectAction.h"
 #include "TensorProblem.h"
 
-registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_compute");
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_ic");
+registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_compute");
+registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_postprocessor");
+
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_time_integrator");
+
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_output");
 
 InputParameters
@@ -37,11 +40,16 @@ AddTensorObjectAction::act()
 
   // use addObject<Tensorxxxxxx>(_type, _name, _moose_object_pars, /* threaded = */ false) ?
 
+  mooseInfoRepeated("AddTensorObjectAction ", _current_task, _type, _name);
+
   if (_current_task == "add_tensor_compute")
-    tensor_problem->addTensorCompute(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorComputeSolve(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_ic")
-    tensor_problem->addTensorIC(_type, _name, _moose_object_pars);
+    tensor_problem->addTensorComputeInitialize(_type, _name, _moose_object_pars);
+
+  if (_current_task == "add_tensor_postprocessor")
+    tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_time_integrator")
     tensor_problem->addTensorTimeIntegrator(_type, _name, _moose_object_pars);

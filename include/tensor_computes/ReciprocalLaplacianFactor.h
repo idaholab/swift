@@ -12,12 +12,16 @@
 #include "TensorOperator.h"
 
 /**
- * TensorInitialCondition object (this is mostly a compute object)
+ * Sinusoidal IC
  */
-class TensorInitialCondition : public TensorOperator
+class ReciprocalLaplacianFactor : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  TensorInitialCondition(const InputParameters & parameters);
+  ReciprocalLaplacianFactor(const InputParameters & parameters);
+
+  virtual void computeBuffer() override;
+
+  const Real _factor;
 };

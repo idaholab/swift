@@ -7,30 +7,28 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "RandomTensorIC.h"
+#include "RandomTensor.h"
 #include "SwiftUtils.h"
 #include "TensorProblem.h"
 
-registerMooseObject("SwiftApp", RandomTensorIC);
+registerMooseObject("SwiftApp", RandomTensor);
 
 InputParameters
-RandomTensorIC::validParams()
+RandomTensor::validParams()
 {
-  InputParameters params = TensorInitialCondition::validParams();
+  InputParameters params = TensorOperator::validParams();
   params.addClassDescription("Uniform random IC with values between `min` and `max`.");
   params.addRequiredParam<Real>("min", "Minimum value.");
   params.addRequiredParam<Real>("max", "Maximum value.");
   return params;
 }
 
-RandomTensorIC::RandomTensorIC(const InputParameters & parameters)
-  : TensorInitialCondition(parameters)
-{
-}
+RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator(parameters) {}
 
 void
-RandomTensorIC::computeBuffer()
+RandomTensor::computeBuffer()
 {
+  mooseInfo("RandomTensor ", name());
   const auto min = getParam<Real>("min");
   const auto max = getParam<Real>("max");
   _u = torch::rand(_tensor_problem.getShape(), MooseTensor::floatTensorOptions()) * (max - min) +

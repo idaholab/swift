@@ -34,6 +34,9 @@ public:
   /// perform the computation
   virtual void computeBuffer() = 0;
 
+  /// called if the simulation cell dimensions change
+  virtual void gridChanged() {}
+
 protected:
   const torch::Tensor & getInputBuffer(const std::string & param);
   const torch::Tensor & getInputBufferByName(const TensorInputBufferName & buffer_name);

@@ -9,17 +9,17 @@
 
 #pragma once
 
-#include "TensorInitialCondition.h"
+#include "TensorOperator.h"
 
 /**
- * Random IC
+ * Constant Tensor
  */
-class RandomTensorIC : public TensorInitialCondition
+class ConstantTensor : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  RandomTensorIC(const InputParameters & parameters);
+  ConstantTensor(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 };

@@ -7,16 +7,16 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "ConstantTensorIC.h"
+#include "ConstantTensor.h"
 #include "SwiftUtils.h"
 
-registerMooseObject("SwiftApp", ConstantTensorIC);
+registerMooseObject("SwiftApp", ConstantTensor);
 
 InputParameters
-ConstantTensorIC::validParams()
+ConstantTensor::validParams()
 {
-  InputParameters params = TensorInitialCondition::validParams();
-  params.addClassDescription("Constant IC.");
+  InputParameters params = TensorOperator::validParams();
+  params.addClassDescription("Constant tensor value.");
   params.addRequiredParam<Real>("real", "Real part of the constant value.");
   params.addParam<Real>(
       "imaginary", 0.0, "Imaginary part of the constant value (only for reciprocal buffers).");
@@ -25,13 +25,10 @@ ConstantTensorIC::validParams()
   return params;
 }
 
-ConstantTensorIC::ConstantTensorIC(const InputParameters & parameters)
-  : TensorInitialCondition(parameters)
-{
-}
+ConstantTensor::ConstantTensor(const InputParameters & parameters) : TensorOperator(parameters) {}
 
 void
-ConstantTensorIC::computeBuffer()
+ConstantTensor::computeBuffer()
 {
   const auto scalar = getParam<Real>("real");
   _u = torch::tensor({scalar}, MooseTensor::floatTensorOptions());

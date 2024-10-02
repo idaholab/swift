@@ -24,14 +24,16 @@ public:
   ParsedCompute(const InputParameters & parameters);
 
   void computeBuffer() override;
+  void gridChanged() override;
 
 protected:
   const bool _use_jit;
-  const bool _extra_symbols;
+  const MultiMooseEnum _extra_symbols;
   std::vector<torch::Tensor> _constant_tensors;
 
   ParsedJITTensor _jit;
   ParsedTensor _no_jit;
 
   std::vector<const torch::Tensor *> _params;
+  const std::vector<TensorInputBufferName> _input_names;
 };

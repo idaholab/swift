@@ -10,6 +10,7 @@
 #include "ParsedCompute.h"
 
 #include "MooseUtils.h"
+#include "MultiMooseEnum.h"
 
 registerMooseObject("SwiftApp", ParsedCompute);
 
@@ -53,7 +54,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     // add extra symbols
     if (_extra_symbols)
     {
-      variables = MooseUtils::join(std::vector<std::string>{variables, "i,x,j,y,k,z,l"}, ",");
+      variables = MooseUtils::join(std::vector<std::string>{variables, "i,x,kx,y,ky,z,kz,k2"}, ",");
       _constant_tensors.push_back(torch::tensor(c10::complex<double>(0.0, 1.0)));
       _params.push_back(&_constant_tensors[0]);
 
@@ -62,6 +63,9 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
         _params.push_back(&_tensor_problem.getAxis(dim));
         _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
       }
+
+      _k2 = _i * _i + _j * _j + _k * _k;
+      _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
 
       fp.AddConstant("pi", libMesh::pi);
       fp.AddConstant("e", std::exp(Real(1.0)));
