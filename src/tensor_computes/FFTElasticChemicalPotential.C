@@ -9,7 +9,7 @@
 
 #include "FFTElasticChemicalPotential.h"
 #include "SwiftUtils.h"
-#include "TensorProblem.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", FFTElasticChemicalPotential);
 
@@ -39,7 +39,7 @@ FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters &
   for (const auto & name : getParam<std::vector<TensorOutputBufferName>>("displacements"))
     _displacements.push_back(&getInputBufferByName(name));
 
-  if (_tensor_problem.getDim() != _displacements.size())
+  if (_domain.getDim() != _displacements.size())
     paramError("displacements", "Need one displacement variable per mesh dimension");
 }
 
@@ -52,9 +52,9 @@ FFTElasticChemicalPotential::computeBuffer()
   const auto kz = _two_pi_i * _k;
 
   // FFT displacements
-  auto ux = _tensor_problem.fft(*_displacements[0]);
-  auto uy = _tensor_problem.fft(*_displacements[1]);
-  auto uz = _tensor_problem.fft(*_displacements[2]);
+  auto ux = _domain.fft(*_displacements[0]);
+  auto uy = _domain.fft(*_displacements[1]);
+  auto uz = _domain.fft(*_displacements[2]);
 
   // mu mech bar
   _u = -_e0 * (_e0 * (9.0 * _lambda * _cbar + _mu * 6.0 * _cbar) -

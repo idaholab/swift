@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "ProjectTensorAux.h"
+#include "DomainAction.h"
 #include "SwiftTypes.h"
 
 registerMooseObject("SwiftApp", ProjectTensorAux);
@@ -24,10 +25,11 @@ ProjectTensorAux::validParams()
 ProjectTensorAux::ProjectTensorAux(const InputParameters & parameters)
   : AuxKernel(parameters),
     TensorProblemInterface(this),
+    DomainInterface(this),
     _cpu_buffer(_tensor_problem.getCPUBuffer(getParam<TensorInputBufferName>("buffer"))),
-    _dim(_tensor_problem.getDim()),
-    _n(_tensor_problem.getGridSize()),
-    _grid_spacing(_tensor_problem.getGridSpacing())
+    _dim(_domain.getDim()),
+    _n(_domain.getGridSize()),
+    _grid_spacing(_domain.getGridSpacing())
 {
 }
 

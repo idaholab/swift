@@ -17,6 +17,7 @@
 #include "torch/torch.h"
 
 class TensorProblem;
+class DomainAction;
 
 /**
  * TensorOperatorBase object
@@ -48,6 +49,7 @@ protected:
   std::set<std::string> _supplied_buffers;
 
   TensorProblem & _tensor_problem;
+  const DomainAction & _domain;
 
   /// axes
   const torch::Tensor &_x, &_y, &_z;

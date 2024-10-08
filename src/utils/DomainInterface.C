@@ -12,15 +12,12 @@
 #include "MooseBase.h"
 #include "MooseApp.h"
 
-DomainInterface::DomainInterface(MooseBase * moose_base)
-  : _awh(moose_base->getMooseApp().actionWarehouse())
-{
-}
+DomainInterface::DomainInterface(MooseBase * moose_base) : _domain(getDomain(moose_base)) {}
 
 const DomainAction &
-DomainInterface::getDomain()
+DomainInterface::getDomain(MooseBase * moose_base)
 {
-  auto actions = _awh.getActions<DomainAction>();
+  auto actions = moose_base->getMooseApp().actionWarehouse().getActions<DomainAction>();
   if (actions.size() != 1)
     mooseError("No [Domain] block found in input.");
   return *actions[0];

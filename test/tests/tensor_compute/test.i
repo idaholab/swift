@@ -22,36 +22,39 @@
   []
 []
 
-[TensorICs]
-  [eta]
-    type = SineIC
-    buffer = eta
-  []
-  [kappa_k2]
-    type = ReciprocalLaplacianFactor
-    factor = 0.2
-    buffer = kappa_k2
-  []
-[]
-
 [TensorComputes]
-  [f]
-    type = ParsedCompute
-    buffer = f
-    enable_jit = true
-    expression = '0.1*(eta+2)^2*(eta-2)^2'
-    derivatives = eta
-    inputs = eta
+  [Initialize]
+    [eta]
+      type = ParsedTensor
+      buffer = eta
+      function = 'sin(x)+sin(y)+sin(z)'
+    []
+    [kappa_k2]
+      type = ReciprocalLaplacianFactor
+      factor = 0.2
+      buffer = kappa_k2
+    []
   []
-  [fbar]
-    type = PerformFFT
-    buffer = fbar
-    input = f
-  []
-  [eta_bar]
-    type = PerformFFT
-    buffer = eta_bar
-    input = eta
+
+  [Solve]
+    [f]
+      type = ParsedCompute
+      buffer = f
+      enable_jit = true
+      expression = '0.1*(eta+2)^2*(eta-2)^2'
+      derivatives = eta
+      inputs = eta
+    []
+    [fbar]
+      type = ForwardFFT
+      buffer = fbar
+      input = f
+    []
+    [eta_bar]
+      type = ForwardFFT
+      buffer = eta_bar
+      input = eta
+    []
   []
 []
 

@@ -9,6 +9,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "FFTQuasistaticElasticity.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", FFTQuasistaticElasticity);
 
@@ -37,7 +38,7 @@ FFTQuasistaticElasticity::FFTQuasistaticElasticity(const InputParameters & param
   for (const auto & name : getParam<std::vector<TensorOutputBufferName>>("displacements"))
     _displacements.push_back(&getOutputBufferByName(name));
 
-  if (_tensor_problem.getDim() != _displacements.size())
+  if (_domain.getDim() != _displacements.size())
     paramError("displacements", "Need one displacement variable per mesh dimension");
 }
 
@@ -49,9 +50,9 @@ FFTQuasistaticElasticity::computeBuffer()
   // const auto & uz = *_displacements[2];
 
   // // FFT displacements
-  // auto uxbar = _tensor_problem.fft(ux);
-  // auto uybar = _tensor_problem.fft(uy);
-  // auto uzbar = _tensor_problem.fft(uz);
+  // auto uxbar = _domain.fft(ux);
+  // auto uybar = _domain.fft(uy);
+  // auto uzbar = _domain.fft(uz);
 
   // strain tensor (in reciprocal space)
   // const auto exx = uxbar * _two_pi_i * _i;
@@ -99,6 +100,6 @@ FFTQuasistaticElasticity::computeBuffer()
   for (const auto i : make_range(3))
   {
     const auto slice = torch::squeeze(x.index({Slice(), Slice(), Slice(), i}), -1);
-    *_displacements[i] = _tensor_problem.ifft(slice);
+    *_displacements[i] = _domain.ifft(slice);
   }
 }

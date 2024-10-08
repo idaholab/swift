@@ -11,6 +11,7 @@
 
 #include "MooseUtils.h"
 #include "MultiMooseEnum.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", ParsedCompute);
 
@@ -62,11 +63,11 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 
       for (const auto dim : make_range(3u))
       {
-        _params.push_back(&_tensor_problem.getAxis(dim));
-        _params.push_back(&_tensor_problem.getReciprocalAxis(dim));
+        _params.push_back(&_domain.getAxis(dim));
+        _params.push_back(&_domain.getReciprocalAxis(dim));
       }
 
-      _params.push_back(&_tensor_problem.getKSquare());
+      _params.push_back(&_domain.getKSquare());
 
       fp.AddConstant("pi", libMesh::pi);
       fp.AddConstant("e", std::exp(Real(1.0)));

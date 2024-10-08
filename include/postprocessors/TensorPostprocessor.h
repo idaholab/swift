@@ -10,6 +10,7 @@
 #pragma once
 
 #include "GeneralPostprocessor.h"
+#include "DomainInterface.h"
 #include "torch/torch.h"
 
 class TensorProblem;
@@ -17,7 +18,7 @@ class TensorProblem;
 /**
  * Postprocessor that operates on a buffer
  */
-class TensorPostprocessor : public GeneralPostprocessor
+class TensorPostprocessor : public GeneralPostprocessor, public DomainInterface
 {
 public:
   static InputParameters validParams();

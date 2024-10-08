@@ -47,6 +47,12 @@ DomainAction::validParams()
   params.addParam<Real>("zmax", 1.0, "Upper Z Coordinate of the generated mesh");
 
   MooseEnum meshmode("DUMMY DOMAIN MANUAL", "DUMMY");
+  meshmode.addDocumentation("DUMMY",
+                            "Create a single element mesh the size of the simulation domain");
+  meshmode.addDocumentation("DOMAIN", "Create a mesh with one element per grid cell");
+  meshmode.addDocumentation("MANUAL",
+                            "Do not auto-generate a mesh. User must add a Mesh block themselves.");
+
   params.addParam<MooseEnum>("mesh_mode", meshmode, "Mesh generation mode.");
 
   params.addRequiredParam<std::vector<std::string>>("device_names", "Compute devices to run on.");
@@ -64,7 +70,8 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _n_global(
         {getParam<unsigned int>("nx"), getParam<unsigned int>("ny"), getParam<unsigned int>("nz")}),
     _max_global({getParam<Real>("xmax"), getParam<Real>("ymax"), getParam<Real>("zmax")}),
-    _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>())
+    _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>()),
+    _shape(torch::IntArrayRef(_n_local.data(), _dim))
 {
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
@@ -174,6 +181,7 @@ DomainAction::partitionSerial()
 {
   _local_axis = _global_axis;
   _local_reciprocal_axis = _global_reciprocal_axis;
+  _n_local = _n_global;
 }
 
 void

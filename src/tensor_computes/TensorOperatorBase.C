@@ -10,6 +10,7 @@
 #include "TensorOperatorBase.h"
 #include "TensorBuffer.h"
 #include "TensorProblem.h"
+#include "DomainAction.h"
 
 InputParameters
 TensorOperatorBase::validParams()
@@ -17,6 +18,7 @@ TensorOperatorBase::validParams()
   InputParameters params = MooseObject::validParams();
   params.registerBase("TensorOperator");
   params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
+  params.addPrivateParam<const DomainAction *>("_domain", nullptr);
   params.addClassDescription("TensorOperatorBase object.");
   return params;
 }
@@ -26,12 +28,13 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
     _requested_buffers(),
     _supplied_buffers(),
     _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem")),
-    _x(_tensor_problem.getAxis(0)),
-    _y(_tensor_problem.getAxis(1)),
-    _z(_tensor_problem.getAxis(2)),
-    _i(_tensor_problem.getReciprocalAxis(0)),
-    _j(_tensor_problem.getReciprocalAxis(1)),
-    _k(_tensor_problem.getReciprocalAxis(2))
+    _domain(*getCheckedPointerParam<const DomainAction *>("_domain")),
+    _x(_domain.getAxis(0)),
+    _y(_domain.getAxis(1)),
+    _z(_domain.getAxis(2)),
+    _i(_domain.getReciprocalAxis(0)),
+    _j(_domain.getReciprocalAxis(1)),
+    _k(_domain.getReciprocalAxis(2))
 {
 }
 

@@ -13,6 +13,7 @@
 #include "TensorOperatorBase.h"
 #include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
+#include "DomainAction.h"
 
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
@@ -37,13 +38,13 @@ TensorProblem::validParams()
 TensorProblem::TensorProblem(const InputParameters & parameters)
   : FEProblem(parameters),
     DomainInterface(this),
-    _domain(getDomain()),
     _options(MooseTensor::floatTensorOptions()),
     _debug(getParam<bool>("print_debug_output")),
     _substeps(getParam<unsigned int>("spectral_solve_substeps")),
     _dim(_domain.getDim()),
     _grid_spacing(_domain.getGridSpacing()),
-    _n((_domain.getGridSize()))
+    _n((_domain.getGridSize())),
+    _shape(_domain.getShape())
 {
   // make sure AuxVariables are contiguous in teh solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
@@ -60,7 +61,6 @@ TensorProblem::~TensorProblem()
 void
 TensorProblem::init()
 {
-  _shape = torch::IntArrayRef(getGridSize().data(), _dim);
 
   // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
   // pointer as well)
@@ -415,8 +415,9 @@ TensorProblem::addTensorCompute(const std::string & compute_name,
                                 InputParameters & parameters,
                                 TensorComputeList & list)
 {
-  // Add a pointer to the TensorProblem class
+  // Add a pointer to the TensorProblem and the Domain
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
   auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
@@ -429,8 +430,9 @@ TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
                                     const std::string & name,
                                     InputParameters & parameters)
 {
-  // Add a pointer to the TensorProblem class
+  // Add a pointer to the TensorProblem and the Domain
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // check that we have no other TI that advances the same buffer
   const auto & output_buffer = parameters.get<TensorOutputBufferName>("buffer");
@@ -456,8 +458,9 @@ TensorProblem::addTensorOutput(const std::string & output_name,
                             const std::string & name,
                             InputParameters & parameters)
 {
-  // Add a pointer to the TensorProblem class
+  // Add a pointer to the TensorProblem and the Domain
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
   auto output_object = _factory.create<TensorOutput>(output_name, name, parameters, 0);

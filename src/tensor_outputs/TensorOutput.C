@@ -11,6 +11,7 @@
 #include "MooseError.h"
 #include "SwiftTypes.h"
 #include "TensorProblem.h"
+#include "DomainAction.h"
 
 InputParameters
 TensorOutput::validParams()
@@ -25,13 +26,15 @@ TensorOutput::validParams()
       "name for a subapp input to set it.");
   params.registerBase("TensorOutput");
   params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
+  params.addPrivateParam<const DomainAction *>("_domain", nullptr);
   params.addClassDescription("TensorOutput object.");
   return params;
 }
 
 TensorOutput::TensorOutput(const InputParameters & parameters)
   : MooseObject(parameters),
-    _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem"))
+    _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem")),
+    _domain(*getCheckedPointerParam<const DomainAction *>("_domain"))
 {
   for (const auto & name : getParam<std::vector<TensorInputBufferName>>("buffer"))
     _out_buffers[name] = &_tensor_problem.getCPUBuffer(name);

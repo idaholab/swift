@@ -12,10 +12,13 @@
   []
 []
 
-[TensorICs]
-  [eta]
-    type = SineIC
-    buffer = eta
+[TensorComputes]
+  [Initialize]
+    [eta]
+      type = ParsedTensor
+      buffer = eta
+      function = 'sin(x)+sin(y)+sin(z)'
+    []
   []
 []
 

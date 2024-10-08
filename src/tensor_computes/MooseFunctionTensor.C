@@ -10,6 +10,7 @@
 #include "MooseFunctionTensor.h"
 #include "Function.h"
 #include "SwiftUtils.h"
+#include "TensorProblem.h"
 
 registerMooseObject("SwiftApp", MooseFunctionTensor);
 
@@ -33,10 +34,10 @@ MooseFunctionTensor::computeBuffer()
 {
   auto buffer = torch::zeros(_tensor_problem.getShape(), torch::kDouble);
 
-  const auto & n = _tensor_problem.getGridSize();
-  const auto & dx = _tensor_problem.getGridSpacing();
+  const auto & n = _domain.getGridSize();
+  const auto & dx = _domain.getGridSpacing();
 
-  switch (_tensor_problem.getDim())
+  switch (_domain.getDim())
   {
     {
       case 1:

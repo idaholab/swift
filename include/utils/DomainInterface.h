@@ -17,8 +17,10 @@ class DomainInterface
 {
 public:
   DomainInterface(MooseBase * moose_base);
-  const DomainAction & getDomain();
 
 protected:
-  ActionWarehouse & _awh;
+  const DomainAction & _domain;
+
+private:
+  const DomainAction & getDomain(MooseBase * moose_base);
 };

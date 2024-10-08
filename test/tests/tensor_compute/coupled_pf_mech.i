@@ -1,5 +1,4 @@
-[Mesh]
-  type = UniformTensorMesh
+[Domain]
   dim = 3
   nx = 128
   ny = 128
@@ -7,7 +6,10 @@
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
   zmax = ${fparse pi*4}
-  dummy_mesh = true
+
+  device_names = 'cuda'
+
+  mesh_mode = DUMMY
 []
 
 [TensorBuffers]
@@ -51,98 +53,99 @@
   []
 []
 
-[TensorICs]
-  [c]
-    type = RandomTensorIC
-    buffer = c
-    min = 0.44
-    max = 0.56
-  []
-  [disp_x]
-    type = RandomTensorIC
-    buffer = disp_x
-    min = 0
-    max = 0
-  []
-  [disp_y]
-    type = RandomTensorIC
-    buffer = disp_y
-    min = 0
-    max = 0
-  []
-  [disp_z]
-    type = RandomTensorIC
-    buffer = disp_z
-    min = 0
-    max = 0
-  []
-  [Mbar]
-    type = ReciprocalLaplacianFactor
-    factor = 0.2 # Mobility
-    buffer = Mbar
-  []
-  [kappabarbar]
-    type = ReciprocalLaplacianSquareFactor
-    factor = -0.001 # kappa
-    buffer = kappabarbar
-  []
-[]
-
 [TensorComputes]
-  [mu]
-    # chemical potential (real space)
-    type = ParsedCompute
-    buffer = mu
-    enable_jit = true
-    expression = '0.1*c^2*(c-1)^2' # + c*sin(x/2)*0.005'
-    extra_symbols = true
-    derivatives = c
-    inputs = c
-  []
-  [mubar]
-    # chemical potential (reciprocal space)
-    type = PerformFFT
-    buffer = mubar
-    input = mu
-  []
-  [mumechbar]
-    # mechanical chemical potential (reciprocal space)
-    type = FFTElasticChemicalPotential
-    buffer = mumechbar
-    cbar = cbar
-    displacements = 'disp_x disp_y disp_z'
-    lambda = 100
-    mu = 50
-    e0 = 0.02
-  []
-  [mumech]
-    # chemical potential (reciprocal space)
-    type = PerformFFT
-    forward = false
-    buffer = mumech
-    input = mumechbar
-  []
-
-  [Mbarmubar]
-    type = ParsedCompute
-    buffer = Mbarmubar
-    enable_jit = true
-    expression = 'Mbar*(mubar+mumechbar)'
-    inputs = 'Mbar mubar mumechbar'
-  []
-  [cbar]
-    type = PerformFFT
-    buffer = cbar
-    input = c
+  [Initialize]
+    [c]
+      type = RandomTensor
+      buffer = c
+      min = 0.44
+      max = 0.56
+    []
+    [disp_x]
+      type = RandomTensor
+      buffer = disp_x
+      min = 0
+      max = 0
+    []
+    [disp_y]
+      type = RandomTensor
+      buffer = disp_y
+      min = 0
+      max = 0
+    []
+    [disp_z]
+      type = RandomTensor
+      buffer = disp_z
+      min = 0
+      max = 0
+    []
+    [Mbar]
+      type = ReciprocalLaplacianFactor
+      factor = 0.2 # Mobility
+      buffer = Mbar
+    []
+    [kappabarbar]
+      type = ReciprocalLaplacianSquareFactor
+      factor = -0.001 # kappa
+      buffer = kappabarbar
+    []
   []
 
-  [qsmech]
-    type = FFTQuasistaticElasticity
-    displacements = 'disp_x disp_y disp_z'
-    cbar = cbar
-    lambda = 100
-    mu = 50
-    e0 = 0.02
+  [Solve]
+    [mu]
+      # chemical potential (real space)
+      type = ParsedCompute
+      buffer = mu
+      enable_jit = true
+      expression = '0.1*c^2*(c-1)^2' # + c*sin(x/2)*0.005'
+      extra_symbols = true
+      derivatives = c
+      inputs = c
+    []
+    [mubar]
+      # chemical potential (reciprocal space)
+      type = ForwardFFT
+      buffer = mubar
+      input = mu
+    []
+    [mumechbar]
+      # mechanical chemical potential (reciprocal space)
+      type = FFTElasticChemicalPotential
+      buffer = mumechbar
+      cbar = cbar
+      displacements = 'disp_x disp_y disp_z'
+      lambda = 100
+      mu = 50
+      e0 = 0.02
+    []
+    [mumech]
+      # chemical potential (reciprocal space)
+      type = InverseFFT
+      buffer = mumech
+      input = mumechbar
+    []
+
+    [Mbarmubar]
+      type = ParsedCompute
+      buffer = Mbarmubar
+      enable_jit = true
+      expression = 'Mbar*(mubar+mumechbar)'
+      inputs = 'Mbar mubar mumechbar'
+    []
+    [cbar]
+      type = ForwardFFT
+      buffer = cbar
+      input = c
+    []
+
+    [qsmech]
+      type = FFTQuasistaticElasticity
+      displacements = 'disp_x disp_y disp_z'
+      cbar = cbar
+      lambda = 100
+      mu = 50
+      e0 = 0.02
+    []
   []
 []
 

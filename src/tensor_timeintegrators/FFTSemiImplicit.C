@@ -9,6 +9,7 @@
 
 #include "FFTSemiImplicit.h"
 #include "TensorProblem.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", FFTSemiImplicit);
 
@@ -58,5 +59,5 @@ FFTSemiImplicit::computeBuffer()
             _dt / 2.0 * (3.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0])) /
            (1.0 - _dt * _linear_reciprocal);
 
-  _u = _tensor_problem.ifft(ubar);
+  _u = _domain.ifft(ubar);
 }

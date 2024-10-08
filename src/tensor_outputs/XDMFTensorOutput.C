@@ -40,7 +40,7 @@ XDMFTensorOutput::validParams()
 
 XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   : TensorOutput(parameters),
-    _dim(_tensor_problem.getDim()),
+    _dim(_domain.getDim()),
     _file_base(_app.getOutputFileBase(true)),
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
@@ -75,10 +75,10 @@ XDMFTensorOutput::init()
   std::vector<Real> dgrid;
   for (const auto i : make_range(_dim))
   {
-    _ndata[0].push_back(_tensor_problem.getGridSize()[i]);
-    _ndata[1].push_back(_tensor_problem.getGridSize()[i] + 1);
-    _nnode.push_back(_tensor_problem.getGridSize()[i] + 1);
-    dgrid.push_back(_tensor_problem.getGridSpacing()[i]);
+    _ndata[0].push_back(_domain.getGridSize()[i]);
+    _ndata[1].push_back(_domain.getGridSize()[i] + 1);
+    _nnode.push_back(_domain.getGridSize()[i] + 1);
+    dgrid.push_back(_domain.getGridSpacing()[i]);
     origin.push_back(0.0);
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");

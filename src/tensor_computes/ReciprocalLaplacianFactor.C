@@ -21,7 +21,7 @@ ReciprocalLaplacianFactor::validParams()
 }
 
 ReciprocalLaplacianFactor::ReciprocalLaplacianFactor(const InputParameters & parameters)
-  : TensorOperator(parameters), _factor(getParam<Real>("factor")), _k2(_tensor_problem.getKSquare())
+  : TensorOperator(parameters), _factor(getParam<Real>("factor")), _k2(_domain.getKSquare())
 {
 }
 

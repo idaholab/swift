@@ -36,6 +36,8 @@ public:
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
+  const torch::Tensor & getKSquare() const { return _k2; }
+  const torch::IntArrayRef  & getShape() const { return _shape; }
 
   torch::Tensor fft(torch::Tensor t) const;
   torch::Tensor ifft(torch::Tensor t) const;
@@ -68,6 +70,9 @@ protected:
   /// global number of grid points in real space
   const std::array<int64_t, 3> _n_global;
 
+  /// local number of grid points in real space
+  std::array<int64_t, 3> _n_local;
+
   /// global domain length in each dimension
   const std::array<Real, 3> _max_global;
 
@@ -84,7 +89,9 @@ protected:
   std::array<torch::Tensor, 3> _global_reciprocal_axis;
   std::array<torch::Tensor, 3> _local_reciprocal_axis;
 
-    // k-square
+  /// k-square
   torch::Tensor _k2;
 
+  /// domain shape
+  torch::IntArrayRef _shape;
 };

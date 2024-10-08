@@ -74,21 +74,7 @@ public:
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
 
-  const unsigned int & getDim() const { return _domain.getDim(); }
   const Real & getSubDt() const { return _sub_dt; }
-
-  const std::array<int64_t, 3> & getGridSize() const { return _domain.getGridSize(); }
-  const std::array<Real, 3> & getGridSpacing() const { return _domain.getGridSpacing(); }
-  const torch::Tensor & getAxis(std::size_t component) const { return _domain.getAxis(component); }
-  const torch::Tensor & getReciprocalAxis(std::size_t component) const
-  {
-    return _domain.getReciprocalAxis(component);
-  }
-
-  const torch::Tensor & getKSquare() const { return _domain.getKSquare(); }
-
-  torch::Tensor fft(torch::Tensor t) const { return _domain.fft(t); }
-  torch::Tensor ifft(torch::Tensor t) const { return _domain.ifft(t); }
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -106,9 +92,6 @@ protected:
                                 const std::string & name,
                                 InputParameters & parameters,
                                 TensorComputeList & list);
-
-  /// Domain
-  const DomainAction & _domain;
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -140,7 +123,7 @@ protected:
   const std::array<int64_t, 3> & _n;
 
   /// domain shape
-  torch::IntArrayRef _shape;
+  const torch::IntArrayRef & _shape;
 
   /// solve objects
   TensorComputeList _computes;

@@ -1,10 +1,13 @@
-[Mesh]
-  type = UniformTensorMesh
+[Domain]
   dim = 2
   nx = 400
   ny = 400
   xmax = ${fparse pi*2*30}
   ymax = ${fparse pi*2*30}
+
+  device_names = 'cuda'
+
+  mesh_mode = DOMAIN
 []
 
 [TensorBuffers]

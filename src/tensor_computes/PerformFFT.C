@@ -9,6 +9,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "PerformFFT.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", ForwardFFT);
 registerMooseObject("SwiftApp", InverseFFT);
@@ -34,9 +35,9 @@ void
 PerformFFTTempl<forward>::computeBuffer()
 {
   if constexpr (forward)
-    _u = _tensor_problem.fft(_input);
+    _u = _domain.fft(_input);
   else
-    _u = _tensor_problem.ifft(_input);
+    _u = _domain.ifft(_input);
 }
 
 template class PerformFFTTempl<true>;

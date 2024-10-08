@@ -14,6 +14,7 @@
 #include <thread>
 
 class TensorProblem;
+class DomainAction;
 
 /**
  * Direct buffer output
@@ -34,6 +35,7 @@ protected:
   virtual void output() = 0;
 
   TensorProblem & _tensor_problem;
+  const DomainAction & _domain;
 
   std::thread _output_thread;
 

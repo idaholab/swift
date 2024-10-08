@@ -23,6 +23,7 @@ TensorPostprocessor::validParams()
 
 TensorPostprocessor::TensorPostprocessor(const InputParameters & parameters)
   : GeneralPostprocessor(parameters),
+    DomainInterface(this),
     _tensor_problem(
         [this]()
         {

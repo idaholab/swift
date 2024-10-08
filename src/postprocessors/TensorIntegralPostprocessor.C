@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "TensorIntegralPostprocessor.h"
+#include "DomainAction.h"
 #include "TensorProblem.h"
 #include "UniformTensorMesh.h"
 
@@ -31,12 +32,8 @@ TensorIntegralPostprocessor::execute()
 {
   _integral = _u.sum().cpu().item<double>();
 
-  const auto mesh = dynamic_cast<const UniformTensorMesh *>(&_tensor_problem.mesh());
-  if (!mesh)
-    mooseError("An UniformTensorMesh is required");
-
-  for (const auto dim : make_range(mesh->getDim()))
-    _integral *= mesh->getMaxInDimension(dim);
+  for (const auto dim : make_range(_domain.getDim()))
+    _integral *= _domain.getDomainSize()[dim];
 }
 
 PostprocessorValue

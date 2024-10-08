@@ -1,11 +1,15 @@
-[Mesh]
-  type = UniformTensorMesh
+[Domain]
   dim = 2
   nx = 50
   ny = 50
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
+
+  device_names = 'cuda'
+
+  mesh_mode = DOMAIN
 []
+
 
 [TensorBuffers]
   [eta]
@@ -18,29 +22,31 @@
   []
 []
 
-[TensorICs]
-  [eta]
-    type = SineIC
-    buffer = eta
-  []
-  [zero]
-    type = ConstantTensorIC
-    buffer = zero
-    real = 0
-  []
-[]
-
 [TensorComputes]
-  [eta_bar]
-    type = PerformFFT
-    buffer = eta_bar
-    input = eta
+  [Initialize]
+    [eta]
+      type = ParsedTensor
+      buffer = eta
+      function = 'sin(x)+sin(y)+sin(z)'
+    []
+    [zero]
+      type = ConstantTensor
+      buffer = zero
+      real = 0
+    []
   []
-  [eta_2]
-    type = PerformFFT
-    buffer = eta2
-    input = eta_bar
-    forward = false
+
+  [Solve]
+    [eta_bar]
+      type = ForwardFFT
+      buffer = eta_bar
+      input = eta
+    []
+    [eta_2]
+      type = InverseFFT
+      buffer = eta2
+      input = eta_bar
+    []
   []
 []
 

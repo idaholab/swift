@@ -11,6 +11,7 @@
 
 #include "AuxKernel.h"
 #include "TensorProblemInterface.h"
+#include "DomainInterface.h"
 #include "torch/torch.h"
 
 class TensorProblem;
@@ -18,7 +19,7 @@ class TensorProblem;
 /**
  * Map an TensorBuffer to an AuxVariable
  */
-class ProjectTensorAux : public AuxKernel, public TensorProblemInterface
+class ProjectTensorAux : public AuxKernel, public TensorProblemInterface, public DomainInterface
 {
 public:
   static InputParameters validParams();
