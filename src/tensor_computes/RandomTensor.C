@@ -23,12 +23,13 @@ RandomTensor::validParams()
   return params;
 }
 
-RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator(parameters) {}
+RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator(parameters)
+{
+}
 
 void
 RandomTensor::computeBuffer()
 {
-  mooseInfo("RandomTensor ", name());
   const auto min = getParam<Real>("min");
   const auto max = getParam<Real>("max");
   _u = torch::rand(_tensor_problem.getShape(), MooseTensor::floatTensorOptions()) * (max - min) +

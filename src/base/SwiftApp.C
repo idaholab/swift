@@ -12,6 +12,7 @@
 #include "AppFactory.h"
 #include "ModulesApp.h"
 #include "MooseSyntax.h"
+#include "DomainAction.h"
 #include "SwiftUtils.h"
 
 #include <cstdlib>
@@ -60,11 +61,20 @@ SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 SwiftApp::~SwiftApp() {}
 
 void
+SwiftApp::setTorchDevice(std::string device, const MooseTensor::Key<DomainAction> &)
+{
+  MooseTensor::swift_global_settings._torch_device = device;
+}
+
+void
 SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 {
   ModulesApp::registerAllObjects<SwiftApp>(f, af, syntax);
   Registry::registerObjectsTo(f, {"SwiftApp"});
   Registry::registerActionsTo(af, {"SwiftApp"});
+
+  // ComputeDevice Action
+  registerSyntax("DomainAction", "Domain");
 
   // TensorBuffer Actions
   registerSyntaxTask("AddTensorBufferAction", "TensorBuffers/*", "add_tensor_buffer");

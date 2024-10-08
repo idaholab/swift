@@ -12,6 +12,7 @@
 #ifdef NEML2_ENABLED
 
 #include "FEProblem.h"
+#include "DomainInterface.h"
 #include "SwiftTypes.h"
 
 #include "AuxiliarySystem.h"
@@ -27,7 +28,7 @@ class TensorOutput;
 /**
  * Problem for solving eigenvalue problems
  */
-class TensorProblem : public FEProblem
+class TensorProblem : public FEProblem, public DomainInterface
 {
 public:
   static InputParameters validParams();
@@ -73,17 +74,21 @@ public:
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
 
-  const unsigned int & getDim() const { return _dim; }
+  const unsigned int & getDim() const { return _domain.getDim(); }
   const Real & getSubDt() const { return _sub_dt; }
 
-  const std::array<int64_t, 3> & getGridSize() const { return _n; }
-  const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
-  const torch::Tensor & getAxis(std::size_t component) const;
-  const torch::Tensor & getReciprocalAxis(std::size_t component) const;
-  const torch::Tensor & getKSquare() const { return _k2; }
+  const std::array<int64_t, 3> & getGridSize() const { return _domain.getGridSize(); }
+  const std::array<Real, 3> & getGridSpacing() const { return _domain.getGridSpacing(); }
+  const torch::Tensor & getAxis(std::size_t component) const { return _domain.getAxis(component); }
+  const torch::Tensor & getReciprocalAxis(std::size_t component) const
+  {
+    return _domain.getReciprocalAxis(component);
+  }
 
-  torch::Tensor fft(torch::Tensor t) const;
-  torch::Tensor ifft(torch::Tensor t) const;
+  const torch::Tensor & getKSquare() const { return _domain.getKSquare(); }
+
+  torch::Tensor fft(torch::Tensor t) const { return _domain.fft(t); }
+  torch::Tensor ifft(torch::Tensor t) const { return _domain.ifft(t); }
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -102,8 +107,8 @@ protected:
                                 InputParameters & parameters,
                                 TensorComputeList & list);
 
-  /// Tensor Mesh object
-  UniformTensorMesh * _tensor_mesh;
+  /// Domain
+  const DomainAction & _domain;
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -126,28 +131,16 @@ protected:
   /// old buffers (stores max number of states, requested, and states)
   std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_tensor_buffer;
 
-  unsigned int _dim;
-
-  /// Number of elements in x, y, z direction
-  std::array<int64_t, 3> _n;
-
-  /// The max values for x,y,z component
-  std::array<Real, 3> _max;
+  const unsigned int & _dim;
 
   /// grid spacing
-  std::array<Real, 3> _grid_spacing;
+  const std::array<Real, 3> & _grid_spacing;
+
+  /// global grid size
+  const std::array<int64_t, 3> & _n;
 
   /// domain shape
   torch::IntArrayRef _shape;
-
-  /// real space axes
-  std::array<torch::Tensor, 3> _axis;
-
-  /// reciprocal space axes
-  std::array<torch::Tensor, 3> _reciprocal_axis;
-
-  // k-square
-  torch::Tensor _k2;
 
   /// solve objects
   TensorComputeList _computes;

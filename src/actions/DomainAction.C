@@ -1,0 +1,320 @@
+//* This file is part of the MOOSE framework
+//* https://www.mooseframework.org
+//*
+//* All rights reserved, see COPYRIGHT for full restrictions
+//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
+#include "DomainAction.h"
+#include "TensorProblem.h"
+#include "MooseEnum.h"
+#include "SetupMeshAction.h"
+#include "SwiftApp.h"
+
+// run this early, before any objects are constructed
+registerMooseAction("SwiftApp", DomainAction, "meta_action");
+registerMooseAction("SwiftApp", DomainAction, "add_mesh_generator");
+
+InputParameters
+DomainAction::validParams()
+{
+  InputParameters params = Action::validParams();
+  params.addClassDescription("Set up the domain and compute devices.");
+
+  MooseEnum dims("1=1 2 3");
+  params.addRequiredParam<MooseEnum>("dim", dims, "Problem dimension");
+
+  MooseEnum parmode("NONE FFT_SLAB FFT_PENCIL", "NONE");
+  parmode.addDocumentation("NONE", "Serial execution without domain decomposition.");
+  parmode.addDocumentation("FFT_SLAB",
+                           "Slab decomposition with X-Z slabs stacked along the Y direction in "
+                           "real space and Y-Z slabs stacked along the X direction in Fourier "
+                           "space. This requires one all-to-all communication per FFT.");
+  parmode.addDocumentation(
+      "FFT_PENCIL",
+      "Pencil decomposition (3D only). Three 1D FFTs in pencil arrays along the X, Y, and lastly Z "
+      "direction. Thie requires two many-to-many communications per FFT.");
+
+  params.addParam<MooseEnum>("parallel_mode", parmode, "Parallelization mode.");
+
+  params.addParam<unsigned int>("nx", 1, "Number of elements in the X direction");
+  params.addParam<unsigned int>("ny", 1, "Number of elements in the Y direction");
+  params.addParam<unsigned int>("nz", 1, "Number of elements in the Z direction");
+  params.addParam<Real>("xmax", 1.0, "Upper X Coordinate of the generated mesh");
+  params.addParam<Real>("ymax", 1.0, "Upper Y Coordinate of the generated mesh");
+  params.addParam<Real>("zmax", 1.0, "Upper Z Coordinate of the generated mesh");
+
+  MooseEnum meshmode("DUMMY DOMAIN MANUAL", "DUMMY");
+  params.addParam<MooseEnum>("mesh_mode", meshmode, "Mesh generation mode.");
+
+  params.addRequiredParam<std::vector<std::string>>("device_names", "Compute devices to run on.");
+  params.addParam<std::vector<unsigned int>>(
+      "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
+  return params;
+}
+
+DomainAction::DomainAction(const InputParameters & parameters)
+  : Action(parameters),
+    _device_names(getParam<std::vector<std::string>>("device_names")),
+    _device_weights(getParam<std::vector<unsigned int>>("device_weights")),
+    _parallel_mode(getParam<MooseEnum>("parallel_mode").getEnum<ParallelMode>()),
+    _dim(getParam<MooseEnum>("dim")),
+    _n_global(
+        {getParam<unsigned int>("nx"), getParam<unsigned int>("ny"), getParam<unsigned int>("nz")}),
+    _max_global({getParam<Real>("xmax"), getParam<Real>("ymax"), getParam<Real>("zmax")}),
+    _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>())
+{
+  if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
+    paramError("parallel_mode", "NONE requires the application to run in serial.");
+
+  // determine the processor name
+  char name[MPI_MAX_PROCESSOR_NAME + 1];
+  int len;
+  MPI_Get_processor_name(name, &len);
+  name[len] = 0;
+
+  // gather all processor names
+  std::vector<std::string> host_names;
+  _communicator.allgather(std::string(name), host_names);
+
+  // get the local rank on the current processor (used for compute device assignment)
+  const auto rank = _communicator.rank();
+  std::map<std::string, unsigned int> host_rank_count;
+
+  for (const auto & host_name : host_names)
+  {
+    if (host_rank_count.find(name) == host_rank_count.end())
+      host_rank_count[host_name] = 0;
+    _local_ranks.push_back(host_rank_count[host_name]);
+    host_rank_count[host_name]++;
+  }
+
+  for (const auto i : index_range(host_names))
+    std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+
+  // pick a compute device for a list of available devices
+  auto swift_app = dynamic_cast<SwiftApp *>(&_app);
+  if (!swift_app)
+    mooseError("This action requires a SwftApp object to be present.");
+  swift_app->setTorchDevice(_device_names[_local_ranks[rank] % _device_names.size()], {});
+
+  // process weights
+  if (_device_weights.empty())
+    _device_weights.assign(1, _device_names.size());
+
+  if (_device_weights.size() != _device_names.size())
+    mooseError("Specify one weight per device or none at all");
+
+  // domain partitioning
+  gridChanged();
+}
+
+void
+DomainAction::gridChanged()
+{
+  auto options = MooseTensor::floatTensorOptions();
+
+  // get grid geometry
+  for (const auto dim : make_range(3))
+    _grid_spacing[dim] = _max_global[dim] / _n_global[dim];
+
+  // build real space axes
+  for (const auto dim : make_range(3u))
+  {
+    if (dim < _dim)
+      _global_axis[dim] =
+          align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+                                c10::Scalar(_max_global[dim] - _grid_spacing[dim] / 2.0),
+                                _n_global[dim],
+                                options),
+                dim);
+    else
+      _global_axis[dim] = torch::tensor({0.0}, options);
+  }
+
+  // build reciprocal space axes
+  for (const auto dim : make_range(3u))
+  {
+    if (dim < _dim)
+    {
+      const auto freq = (dim == _dim - 1)
+                            ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing[dim], options)
+                            : torch::fft::fftfreq(_n_global[dim], _grid_spacing[dim], options);
+      _global_reciprocal_axis[dim] = align(freq * libMesh::pi, dim);
+    }
+    else
+      _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
+  }
+
+  switch (_parallel_mode)
+  {
+    case ParallelMode::NONE:
+      partitionSerial();
+      break;
+
+    case ParallelMode::FFT_SLAB:
+      partitionSlabs();
+      break;
+
+    case ParallelMode::FFT_PENCIL:
+      partitionPencils();
+      break;
+  }
+
+  // k-square buffer
+  _k2 = _local_reciprocal_axis[0] * _local_reciprocal_axis[0] +
+        _local_reciprocal_axis[1] * _local_reciprocal_axis[1] +
+        _local_reciprocal_axis[2] * _local_reciprocal_axis[2];
+}
+
+void
+DomainAction::partitionSerial()
+{
+  _local_axis = _global_axis;
+  _local_reciprocal_axis = _global_reciprocal_axis;
+}
+
+void
+DomainAction::partitionSlabs()
+{
+}
+
+void
+DomainAction::partitionPencils()
+{
+  paramError("parallel_mode", "Not implemented yet!");
+}
+
+void
+DomainAction::act()
+{
+  if (_current_task == "meta_action" && _mesh_mode != MeshMode::MANUAL)
+  {
+    // check if a SetupMesh action exists
+    auto mesh_actions = _awh.getActions<SetupMeshAction>();
+    // for (const auto & ma : mesh_actions)
+    //   mooseInfoRepeated(ma->name());
+    if (mesh_actions.size() > 0)
+      paramError("mesh_mode", "Do not specify a [Mesh] block unless mesh_mode is set to MANUAL");
+
+    // otherwise create one
+    auto & af = _app.getActionFactory();
+    InputParameters action_params = af.getValidParams("SetupMeshAction");
+    auto action = std::static_pointer_cast<MooseObjectAction>(
+        af.create("SetupMeshAction", "Mesh", action_params));
+    _app.actionWarehouse().addActionBlock(action);
+  }
+
+  // add a DomainMeshGenerator
+  if (_current_task == "add_mesh_generator" && _mesh_mode != MeshMode::MANUAL)
+  {
+    // Don't do mesh generators when recovering or when the user has requested for us not to
+    if ((_app.isRecovering() && _app.isUltimateMaster()) || _app.masterMesh())
+      return;
+
+    const MeshGeneratorName name = "domain_mesh_generator";
+    auto params = _factory.getValidParams("DomainMeshGenerator");
+
+    params.set<MooseEnum>("dim") = _dim;
+    params.set<Real>("xmax") = _max_global[0];
+    params.set<Real>("ymax") = _max_global[1];
+    params.set<Real>("zmax") = _max_global[2];
+
+    if (_mesh_mode == MeshMode::DOMAIN)
+    {
+      params.set<unsigned int>("nx") = _n_global[0];
+      params.set<unsigned int>("ny") = _n_global[1];
+      params.set<unsigned int>("nz") = _n_global[2];
+    }
+    else if (_mesh_mode == MeshMode::DUMMY)
+    {
+      params.set<unsigned int>("nx") = 1;
+      params.set<unsigned int>("ny") = 1;
+      params.set<unsigned int>("nz") = 1;
+    }
+    else
+      mooseError("Internal error");
+
+    _app.addMeshGenerator("DomainMeshGenerator", name, params);
+  }
+}
+
+const torch::Tensor &
+DomainAction::getAxis(std::size_t component) const
+{
+  if (component < 3)
+    return _local_axis[component];
+  mooseError("Invalid component");
+}
+
+const torch::Tensor &
+DomainAction::getReciprocalAxis(std::size_t component) const
+{
+  if (component < 3)
+    return _local_reciprocal_axis[component];
+  mooseError("Invalid component");
+}
+
+torch::Tensor
+DomainAction::fft(torch::Tensor t) const
+{
+  switch (_dim)
+  {
+    case 1:
+      return torch::fft::rfft(t);
+    case 2:
+      return torch::fft::rfft2(t);
+    case 3:
+      return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+}
+
+torch::Tensor
+DomainAction::ifft(torch::Tensor t) const
+{
+  switch (_dim)
+  {
+    case 1:
+      return torch::fft::irfft(t);
+    case 2:
+      return torch::fft::irfft2(t);
+    case 3:
+      return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+}
+
+torch::Tensor
+DomainAction::align(torch::Tensor t, unsigned int dim) const
+{
+  if (dim >= _dim)
+    mooseError("Unsupported alignment dimension requested dimension");
+
+  switch (_dim)
+  {
+    case 1:
+      return t;
+
+    case 2:
+      if (dim == 0)
+        return torch::unsqueeze(t, 1);
+      else
+        return torch::unsqueeze(t, 0);
+
+    case 3:
+      if (dim == 0)
+        return t.unsqueeze(1).unsqueeze(2);
+      else if (dim == 1)
+        return t.unsqueeze(0).unsqueeze(2);
+      else
+        return t.unsqueeze(0).unsqueeze(0);
+
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+}

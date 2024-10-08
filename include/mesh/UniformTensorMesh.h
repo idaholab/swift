@@ -10,6 +10,7 @@
 #pragma once
 
 #include "MooseMesh.h"
+#include "DomainInterface.h"
 
 /**
  * Mesh generated from parameters

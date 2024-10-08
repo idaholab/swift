@@ -16,6 +16,15 @@
 namespace MooseTensor
 {
 
+/// Passkey pattern key template
+template <typename T>
+class Key
+{
+  friend T;
+  Key() {}
+  Key(Key const &) {}
+};
+
 void printTensorInfo(const torch::Tensor & x);
 
 const torch::TensorOptions floatTensorOptions();

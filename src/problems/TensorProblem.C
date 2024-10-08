@@ -36,21 +36,17 @@ TensorProblem::validParams()
 
 TensorProblem::TensorProblem(const InputParameters & parameters)
   : FEProblem(parameters),
-    _tensor_mesh(dynamic_cast<UniformTensorMesh *>(&_mesh)),
+    DomainInterface(this),
+    _domain(getDomain()),
     _options(MooseTensor::floatTensorOptions()),
     _debug(getParam<bool>("print_debug_output")),
-    _substeps(getParam<unsigned int>("spectral_solve_substeps"))
+    _substeps(getParam<unsigned int>("spectral_solve_substeps")),
+    _dim(_domain.getDim()),
+    _grid_spacing(_domain.getGridSpacing()),
+    _n((_domain.getGridSize()))
 {
-  if (!_tensor_mesh)
-    mooseError("TensorProblem must be used with an UniformTensorMesh");
-  _dim = _tensor_mesh->getDim();
-
   // make sure AuxVariables are contiguous in teh solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
-
-  // this should only be run in serial, there is no COMM for the torch stuff yet
-  if (comm().size() > 1)
-    mooseError("Tensor problems can only be run in serial at this time.");
 }
 
 TensorProblem::~TensorProblem()
@@ -64,15 +60,7 @@ TensorProblem::~TensorProblem()
 void
 TensorProblem::init()
 {
-  // get grid geometry
-  for (const auto dim : make_range(3))
-  {
-    _max[dim] = _tensor_mesh->getMaxInDimension(dim);
-    _n[dim] = _tensor_mesh->getElementsInDimension(dim);
-    _grid_spacing[dim] = _max[dim] / _n[dim];
-  }
-
-  _shape = torch::IntArrayRef(_n.data(), _dim);
+  _shape = torch::IntArrayRef(getGridSize().data(), _dim);
 
   // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
   // pointer as well)
@@ -362,36 +350,7 @@ TensorProblem::advanceState()
 void
 TensorProblem::gridChanged()
 {
-  // build real space axes
-  for (const auto dim : make_range(3u))
-  {
-    if (dim < _dim)
-      _axis[dim] = align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
-                                         c10::Scalar(_max[dim] - _grid_spacing[dim] / 2.0),
-                                         _n[dim],
-                                         _options),
-                         dim);
-    else
-      _axis[dim] = torch::tensor({0.0}, _options);
-  }
-
-  // build reciprocal space axes
-  for (const auto dim : make_range(3u))
-  {
-    if (dim < _dim)
-    {
-      const auto freq = (dim == _dim - 1)
-                            ? torch::fft::rfftfreq(_n[dim], _grid_spacing[dim], _options)
-                            : torch::fft::fftfreq(_n[dim], _grid_spacing[dim], _options);
-      _reciprocal_axis[dim] = align(freq * libMesh::pi, dim);
-    }
-    else
-      _reciprocal_axis[dim] = torch::tensor({0.0}, _options);
-  }
-
-  // k-square buffer
-  _k2 = _reciprocal_axis[0] * _reciprocal_axis[0] + _reciprocal_axis[1] * _reciprocal_axis[1] +
-        _reciprocal_axis[2] * _reciprocal_axis[2];
+  // _domain.gridChanged();
 }
 
 void
@@ -551,82 +510,4 @@ TensorProblem::getCPUBuffer(const std::string & buffer_name)
       mooseError("Failed to insert read-only CPU buffer");
   }
   return it->second;
-}
-
-const torch::Tensor &
-TensorProblem::getAxis(std::size_t component) const
-{
-  if (component < 3)
-    return _axis[component];
-  mooseError("Invalid component");
-}
-
-const torch::Tensor &
-TensorProblem::getReciprocalAxis(std::size_t component) const
-{
-  if (component < 3)
-    return _reciprocal_axis[component];
-  mooseError("Invalid component");
-}
-
-torch::Tensor
-TensorProblem::fft(torch::Tensor t) const
-{
-  switch (_dim)
-  {
-    case 1:
-      return torch::fft::rfft(t);
-    case 2:
-      return torch::fft::rfft2(t);
-    case 3:
-      return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
-    default:
-      mooseError("Unsupported mesh dimension");
-  }
-}
-
-torch::Tensor
-TensorProblem::ifft(torch::Tensor t) const
-{
-  switch (_dim)
-  {
-    case 1:
-      return torch::fft::irfft(t);
-    case 2:
-      return torch::fft::irfft2(t);
-    case 3:
-      return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
-    default:
-      mooseError("Unsupported mesh dimension");
-  }
-}
-
-torch::Tensor
-TensorProblem::align(torch::Tensor t, unsigned int dim) const
-{
-  if (dim >= _dim)
-    mooseError("Unsupported alignment dimension requested dimension");
-
-  switch (_dim)
-  {
-    case 1:
-      return t;
-
-    case 2:
-      if (dim == 0)
-        return torch::unsqueeze(t, 1);
-      else
-        return torch::unsqueeze(t, 0);
-
-    case 3:
-      if (dim == 0)
-        return t.unsqueeze(1).unsqueeze(2);
-      else if (dim == 1)
-        return t.unsqueeze(0).unsqueeze(2);
-      else
-        return t.unsqueeze(0).unsqueeze(0);
-
-    default:
-      mooseError("Unsupported mesh dimension");
-  }
 }
