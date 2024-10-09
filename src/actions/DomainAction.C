@@ -71,7 +71,11 @@ DomainAction::DomainAction(const InputParameters & parameters)
         {getParam<unsigned int>("nx"), getParam<unsigned int>("ny"), getParam<unsigned int>("nz")}),
     _max_global({getParam<Real>("xmax"), getParam<Real>("ymax"), getParam<Real>("zmax")}),
     _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>()),
-    _shape(torch::IntArrayRef(_n_local.data(), _dim))
+    _shape(torch::IntArrayRef(_n_local.data(), _dim)),
+    _rank(_communicator.rank()),
+    _n_rank(_communicator.size()),
+    _send_tensor(_n_rank),
+    _recv_tensor(_n_rank)
 {
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
@@ -94,7 +98,6 @@ DomainAction::DomainAction(const InputParameters & parameters)
   _communicator.allgather(std::string(name), host_names);
 
   // get the local rank on the current processor (used for compute device assignment)
-  const auto rank = _communicator.rank();
   std::map<std::string, unsigned int> host_rank_count;
 
   for (const auto & host_name : host_names)
@@ -119,7 +122,7 @@ DomainAction::DomainAction(const InputParameters & parameters)
   auto swift_app = dynamic_cast<SwiftApp *>(&_app);
   if (!swift_app)
     mooseError("This action requires a SwftApp object to be present.");
-  swift_app->setTorchDevice(_device_names[_local_ranks[rank] % _device_names.size()], {});
+  swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
 
   // domain partitioning
   gridChanged();
@@ -160,6 +163,9 @@ DomainAction::gridChanged()
     }
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
+
+    // get reciprocal axis size
+    _n_reciprocal_global[dim] = _global_reciprocal_axis[dim].sizes()[dim];
   }
 
   switch (_parallel_mode)
@@ -186,14 +192,11 @@ DomainAction::gridChanged()
 void
 DomainAction::partitionSerial()
 {
-  // number of ranks
-  const auto nrank = _communicator.size();
-
   // goes along the full dimension for each rank
   for (const auto d : make_range(3u))
   {
-    _local_begin[d].resize(nrank);
-    _local_end[d].resize(nrank);
+    _local_begin[d].resize(_n_rank);
+    _local_end[d].resize(_n_rank);
     for (const auto i : make_range(_communicator.size()))
     {
       _local_begin[d][i] = 0;
@@ -203,8 +206,8 @@ DomainAction::partitionSerial()
 
   // to do, make those slices depmendent on local begin/end
   _local_axis = _global_axis;
-  _local_reciprocal_axis = _global_reciprocal_axis;
   _n_local = _n_global;
+  _local_reciprocal_axis = _global_reciprocal_axis;
 }
 
 void
@@ -212,10 +215,6 @@ DomainAction::partitionSlabs()
 {
   if (_dim < 2)
     paramError("dim", "Dimension must be 2 or 3 for slab decomposition.");
-
-  // number of ranks
-  const auto nrank = _communicator.size();
-  const auto rank = _communicator.rank();
 
   // partition x and y dimensions
   for (const auto d : make_range(2u))
@@ -228,14 +227,14 @@ DomainAction::partitionSlabs()
     for (const auto & weight : _local_weights)
       remaining_total_weight += weight;
 
-    std::vector<int64_t> n(nrank);
-    for (const auto i : make_range(nrank - 1))
+    std::vector<int64_t> n(_n_rank);
+    for (const auto i : make_range(_n_rank - 1))
     {
       if (remaining_total_weight == 0)
         mooseError("Internal partitioning error. remaining_total_weight ",
                    remaining_total_weight,
                    " == 0 ",
-                   rank);
+                   _rank);
 
       // assign at least one layer
       n[i] = std::max((remaining_layers * _local_weights[i]) / remaining_total_weight, int64_t(1));
@@ -246,27 +245,41 @@ DomainAction::partitionSlabs()
         mooseError("Internal partitioning error. remaining_layers ",
                    remaining_layers,
                    "  <= 0 ",
-                   rank,
+                   _rank,
                    ' ',
                    i);
     }
-    n[nrank - 1] = remaining_layers;
+    n[_n_rank - 1] = remaining_layers;
 
     // this processor
-    _n_local[d] = n[rank];
+    _n_local[d] = n[_rank];
 
     for (const auto & nl : n)
       std::cout << "partition " << d << ' ' << nl << '\n';
   }
 
   // goes along the full dimension for each rank
-  _local_begin[2].resize(nrank);
-  _local_end[2].resize(nrank);
+  _local_begin[2].resize(_n_rank);
+  _local_end[2].resize(_n_rank);
   for (const auto i : make_range(_communicator.size()))
   {
     _local_begin[2][i] = 0;
     _local_end[2][i] = _n_global[2];
   }
+
+  // slice the real space into x-z slabs stacked in y direction
+  _local_axis[0] = _global_axis[0].slice(0, 0, _n_global[0]);
+  _local_axis[1] = _global_axis[1].slice(1, _local_begin[1][_rank], _local_end[1][_rank]);
+  _local_axis[2] = _global_axis[2].slice(2, 0, _n_global[2]);
+  _n_local[0] = _n_global[0];
+  _n_local[1] = _local_end[1][_rank] - _local_begin[1][_rank];
+  _n_local[2] = _n_global[2];
+
+  // slice the reciprocal space into y-z slices stacked in x direction
+  _local_reciprocal_axis[0] =
+      _global_reciprocal_axis[0].slice(0, 0, _local_begin[0][_rank], _local_end[0][_rank]);
+  _local_reciprocal_axis[1] = _global_reciprocal_axis[1].slice(1, 0, _n_reciprocal_global[1]);
+  _local_reciprocal_axis[2] = _global_reciprocal_axis[2].slice(2, 0, _n_reciprocal_global[2]);
 }
 
 void
@@ -348,7 +361,23 @@ DomainAction::getReciprocalAxis(std::size_t component) const
 }
 
 torch::Tensor
-DomainAction::fft(torch::Tensor t) const
+DomainAction::fft(const torch::Tensor & t) const
+{
+  switch (_parallel_mode)
+  {
+    case ParallelMode::NONE:
+      return fftSerial(t);
+
+    case ParallelMode::FFT_SLAB:
+      return fftSlab(t);
+
+    case ParallelMode::FFT_PENCIL:
+      return fftPencil(t);
+  }
+}
+
+torch::Tensor
+DomainAction::fftSerial(const torch::Tensor & t) const
 {
   switch (_dim)
   {
@@ -364,7 +393,62 @@ DomainAction::fft(torch::Tensor t) const
 }
 
 torch::Tensor
-DomainAction::ifft(torch::Tensor t) const
+DomainAction::fftSlab(const torch::Tensor & t) const
+{
+  if (_dim == 1)
+    mooseError("Unsupported mesh dimension");
+
+  // 2D transform the local slab
+  auto slab = torch::fft::fft2(t);
+
+  // send
+  std::vector<MPI_Request> send_request;
+  for (const auto & i : make_range(_n_rank))
+    if (i != _rank)
+    {
+      send_tensor[i] = slab.slice(0, _local_begin[0][i], _local_end[0][i]).contiguous().cpu();
+      auto data_ptr = send_tensor[i].data_ptr<double>();
+      MPI_Isend(
+          data_ptr, send_tensor[i].numel(), MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &send_request[i]);
+    }
+
+  // receive
+  MPI_Status recv_status;
+  for (const auto & i : make_range(_n_rank))
+    if (i != _rank)
+    {
+      MPI_Recv(&recv_data[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, &recv_status);
+    }
+
+  switch (_dim)
+  {
+    case 1:
+      return torch::fft::rfft(t);
+    case 2:
+    case 3:
+      return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
+    default:
+      mooseError("Unsupported mesh dimension");
+  }
+
+  // Wait for all non-blocking sends to complete
+  for (const auto & i : make_range(_n_rank))
+    if (i != rank)
+    {
+      MPI_Wait(&send_requests[i], MPI_STATUS_IGNORE);
+    }
+}
+
+torch::Tensor
+DomainAction::fftPencil(const torch::Tensor & t) const
+{
+  if (_dim != 3)
+    mooseError("Unsupported mesh dimension");
+  paramError("parallel_mode", "Not implemented yet!");
+}
+
+torch::Tensor
+DomainAction::ifft(const torch::Tensor & t) const
 {
   switch (_dim)
   {

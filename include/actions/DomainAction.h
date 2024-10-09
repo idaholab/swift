@@ -32,6 +32,7 @@ public:
 
   const unsigned int & getDim() const { return _dim; }
   const std::array<int64_t, 3> & getGridSize() const { return _n_global; }
+  const std::array<int64_t, 3> & getReciprocalGridSize() const { return _n_reciprocal_global; }
   const std::array<Real, 3> & getDomainSize() const { return _max_global; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
@@ -39,8 +40,8 @@ public:
   const torch::Tensor & getKSquare() const { return _k2; }
   const torch::IntArrayRef  & getShape() const { return _shape; }
 
-  torch::Tensor fft(torch::Tensor t) const;
-  torch::Tensor ifft(torch::Tensor t) const;
+  torch::Tensor fft(const torch::Tensor & t) const;
+  torch::Tensor ifft(const torch::Tensor & t) const;
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -51,6 +52,10 @@ protected:
   void partitionSerial();
   void partitionSlabs();
   void partitionPencils();
+
+  torch::Tensor fftSerial(const torch::Tensor & t) const;
+  torch::Tensor fftSlab(const torch::Tensor & t) const;
+  torch::Tensor fftPencil(const torch::Tensor & t) const;
 
   /// device names to be used on the nodes
   const std::vector<std::string> _device_names;
@@ -70,6 +75,9 @@ protected:
 
   /// global number of grid points in real space
   const std::array<int64_t, 3> _n_global;
+
+  /// global number of grid points in real space
+  std::array<int64_t, 3> _n_reciprocal_global;
 
   /// local number of grid points in real space
   std::array<int64_t, 3> _n_local;
@@ -99,4 +107,15 @@ protected:
 
   /// domain shape
   torch::IntArrayRef _shape;
+
+  /// MPI rank
+  unsigned int _rank;
+
+  /// number of MPI ranks
+  unsigned int _n_rank;
+
+  /// send buffer
+  std::vector<torch::Tensor> _send_tensor;
+  /// receive buffer
+  std::vector<torch::Tensor> _recv_tensor;
 };
