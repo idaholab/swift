@@ -9,8 +9,6 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "FEProblem.h"
 #include "DomainInterface.h"
 #include "SwiftTypes.h"
@@ -146,5 +144,3 @@ protected:
   std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
       _buffer_to_var;
 };
-
-#endif

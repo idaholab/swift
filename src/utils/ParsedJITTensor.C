@@ -9,8 +9,6 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "ParsedJITTensor.h"
 #include "Conversion.h"
 #include "SwiftUtils.h"
@@ -484,7 +482,7 @@ makeStack(Inputs &&... inputs)
 }
 }
 
-neml2::Scalar
+torch::Tensor
 ParsedJITTensor::Eval(const std::vector<const torch::Tensor *> & params)
 {
   using namespace torch::jit;
@@ -510,5 +508,3 @@ ParsedJITTensor::Eval(const std::vector<const torch::Tensor *> & params)
 
   return stack[0].toTensor();
 }
-
-#endif

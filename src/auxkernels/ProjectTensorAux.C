@@ -9,6 +9,7 @@
 
 #include "ProjectTensorAux.h"
 #include "DomainAction.h"
+#include "TensorProblem.h"
 #include "SwiftTypes.h"
 
 registerMooseObject("SwiftApp", ProjectTensorAux);

@@ -9,13 +9,9 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
-#include "NEML2Utils.h"
-#include "neml2/tensors/Scalar.h"
-
 #include "libmesh/fparser_ad.hh"
 #include <torch/csrc/jit/ir/ir.h>
+#include "torch/torch.h"
 
 namespace torch
 {
@@ -36,7 +32,7 @@ public:
   void setupTensors();
 
   /// overload for torch tensors
-  neml2::Scalar Eval(const std::vector<const torch::Tensor *> & params);
+  torch::Tensor Eval(const std::vector<const torch::Tensor *> & params);
 
   /// print IR for debugging
   void print() { _graph->dump(); }
@@ -55,5 +51,3 @@ protected:
 
   const Data & _data;
 };
-
-#endif

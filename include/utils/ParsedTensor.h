@@ -9,12 +9,8 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
-#include "NEML2Utils.h"
-#include "neml2/tensors/Scalar.h"
-
 #include "libmesh/fparser_ad.hh"
+#include "torch/torch.h"
 
 class ParsedTensor : public FunctionParserAD
 {
@@ -24,7 +20,7 @@ public:
   void setupTensors();
 
   /// overload for torch tensors
-  neml2::Scalar Eval(const std::vector<const torch::Tensor *> & params);
+  torch::Tensor Eval(const std::vector<const torch::Tensor *> & params);
 
 protected:
   /// dummy function for fourier transforms (those are executed in
@@ -32,15 +28,13 @@ protected:
   static Real fp_dummy(const Real *);
 
   /// we'll need a stack pool to make this thread safe
-  std::vector<neml2::Scalar> s;
+  std::vector<torch::Tensor> s;
 
   /// immediate values converted to tensors
-  std::vector<neml2::Scalar> tensor_immed;
+  std::vector<torch::Tensor> tensor_immed;
 
   const Data & _data;
 
   std::size_t _mFFT;
   std::size_t _miFFT;
 };
-
-#endif

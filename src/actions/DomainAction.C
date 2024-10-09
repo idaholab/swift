@@ -406,10 +406,10 @@ DomainAction::fftSlab(const torch::Tensor & t) const
   for (const auto & i : make_range(_n_rank))
     if (i != _rank)
     {
-      send_tensor[i] = slab.slice(0, _local_begin[0][i], _local_end[0][i]).contiguous().cpu();
-      auto data_ptr = send_tensor[i].data_ptr<double>();
+      _send_tensor[i] = slab.slice(0, _local_begin[0][i], _local_end[0][i]).contiguous().cpu();
+      auto data_ptr = _send_tensor[i].data_ptr<double>();
       MPI_Isend(
-          data_ptr, send_tensor[i].numel(), MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &send_request[i]);
+          data_ptr, _send_tensor[i].numel(), MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &send_request[i]);
     }
 
   // receive
@@ -417,7 +417,7 @@ DomainAction::fftSlab(const torch::Tensor & t) const
   for (const auto & i : make_range(_n_rank))
     if (i != _rank)
     {
-      MPI_Recv(&recv_data[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, &recv_status);
+      // MPI_Recv(&recv_data[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, &recv_status);
     }
 
   switch (_dim)
@@ -433,14 +433,12 @@ DomainAction::fftSlab(const torch::Tensor & t) const
 
   // Wait for all non-blocking sends to complete
   for (const auto & i : make_range(_n_rank))
-    if (i != rank)
-    {
-      MPI_Wait(&send_requests[i], MPI_STATUS_IGNORE);
-    }
+    if (i != _rank)
+      MPI_Wait(&send_request[i], MPI_STATUS_IGNORE);
 }
 
 torch::Tensor
-DomainAction::fftPencil(const torch::Tensor & t) const
+DomainAction::fftPencil(const torch::Tensor & /*t*/) const
 {
   if (_dim != 3)
     mooseError("Unsupported mesh dimension");

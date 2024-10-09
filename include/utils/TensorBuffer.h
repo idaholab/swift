@@ -9,12 +9,11 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "NEML2Utils.h"
 #include "SwiftUtils.h"
 #include "neml2/tensors/Scalar.h"
 
+#if 0
 using neml2::TensorShapeRef;
 
 namespace MooseTensor
@@ -264,5 +263,4 @@ TensorBuffer<T, D>::laplace() const
   return ret;
 }
 }
-
 #endif

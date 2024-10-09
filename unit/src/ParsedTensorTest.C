@@ -7,8 +7,6 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifdef NEML2_ENABLED
-
 #include "ParsedTensor.h"
 #include "TensorBuffer.h"
 #include "gtest/gtest.h"
@@ -46,9 +44,3 @@ TEST(ParsedTensorTest, Parse)
   // compare parsed result tensor to compiled expression
   EXPECT_NEAR((F.Eval(params) - gold).abs().max().item<double>(), 0.0, 1e-12);
 }
-
-#else
-
-#warning "NEML2 not found, skipping TensorBuffer unit test."
-
-#endif

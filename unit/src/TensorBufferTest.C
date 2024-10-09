@@ -7,8 +7,6 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifdef NEML2_ENABLED
-
 #include "TensorBuffer.h"
 #include "SwiftUtils.h"
 #include "gtest/gtest.h"
@@ -88,10 +86,3 @@ TEST(TensorBufferTest, 1DAxis)
   xCompare(MooseTensor::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
   xCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
-
-#else
-
-#warning "NEML2 not found, skipping TensorBuffer unit test."
-
-#endif
-

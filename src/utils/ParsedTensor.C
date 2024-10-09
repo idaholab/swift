@@ -9,8 +9,6 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "ParsedTensor.h"
 #include "libmesh/extrasrc/fptypes.hh"
 
@@ -37,10 +35,10 @@ ParsedTensor::setupTensors()
   // convert immediate data
   tensor_immed.clear();
   for (const auto & i : _data.mImmed)
-    tensor_immed.push_back(neml2::Scalar(i, neml2::default_tensor_options()));
+    tensor_immed.push_back(torch::Tensor(i, MooseTensor::floatTensorOptions()));
 }
 
-neml2::Scalar
+torch::Tensor
 ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
 {
   using namespace FUNCTIONPARSERTYPES;
@@ -314,7 +312,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
       }
       case cLog2by:
         --sp;
-        s[sp] = neml2::Scalar(torch::log(s[sp]) / std::log(2.0)) * s[sp + 1];
+        s[sp] = (torch::log(s[sp]) / std::log(2.0)) * s[sp + 1];
         break;
       case cNop:
         break;
@@ -382,5 +380,3 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
 
   return s[sp];
 }
-
-#endif

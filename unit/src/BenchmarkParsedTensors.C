@@ -7,8 +7,6 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#ifdef NEML2_ENABLED
-
 #include "ParsedTensor.h"
 #include "ParsedJITTensor.h"
 #include "TensorBuffer.h"
@@ -105,9 +103,3 @@ TEST(BenchmarkParsedTensors, Time)
     Moose::out << "    JIT : " << ms_double.count() << "ms\n";
   }
 }
-
-#else
-
-#warning "NEML2 not found, skipping TensorBuffer unit test."
-
-#endif
