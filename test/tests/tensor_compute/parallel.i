@@ -2,6 +2,8 @@
   device_names = "cuda:1 cuda:0 cpu"
   device_weights = "10 10 1"
 
+  parallel_mode = FFT_SLAB
+
   dim = 2
   nx = 400
   ny = 400

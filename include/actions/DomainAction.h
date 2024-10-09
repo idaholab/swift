@@ -63,6 +63,7 @@ protected:
 
   /// host local ranks of all procs
   std::vector<unsigned int> _local_ranks;
+  std::vector<unsigned int> _local_weights;
 
   /// The dimension of the mesh
   const unsigned int _dim;
@@ -72,6 +73,10 @@ protected:
 
   /// local number of grid points in real space
   std::array<int64_t, 3> _n_local;
+
+  /// local begin/end indixes along each direction for slabs/pencils
+  std::array<std::vector<int64_t>, 3> _local_begin;
+  std::array<std::vector<int64_t>, 3> _local_end;
 
   /// global domain length in each dimension
   const std::array<Real, 3> _max_global;

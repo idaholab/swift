@@ -76,6 +76,13 @@ DomainAction::DomainAction(const InputParameters & parameters)
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
 
+  // process weights
+  if (_device_weights.empty())
+    _device_weights.assign(1, _device_names.size());
+
+  if (_device_weights.size() != _device_names.size())
+    mooseError("Specify one weight per device or none at all");
+
   // determine the processor name
   char name[MPI_MAX_PROCESSOR_NAME + 1];
   int len;
@@ -94,8 +101,15 @@ DomainAction::DomainAction(const InputParameters & parameters)
   {
     if (host_rank_count.find(name) == host_rank_count.end())
       host_rank_count[host_name] = 0;
-    _local_ranks.push_back(host_rank_count[host_name]);
-    host_rank_count[host_name]++;
+
+    auto & local_rank = host_rank_count[host_name];
+    _local_ranks.push_back(local_rank);
+    _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
+
+    std::cout << "Process on " << host_name << ' ' << local_rank << ' '
+              << _device_weights[local_rank % _device_weights.size()] << '\n';
+
+    local_rank++;
   }
 
   for (const auto i : index_range(host_names))
@@ -106,13 +120,6 @@ DomainAction::DomainAction(const InputParameters & parameters)
   if (!swift_app)
     mooseError("This action requires a SwftApp object to be present.");
   swift_app->setTorchDevice(_device_names[_local_ranks[rank] % _device_names.size()], {});
-
-  // process weights
-  if (_device_weights.empty())
-    _device_weights.assign(1, _device_names.size());
-
-  if (_device_weights.size() != _device_names.size())
-    mooseError("Specify one weight per device or none at all");
 
   // domain partitioning
   gridChanged();
@@ -179,6 +186,22 @@ DomainAction::gridChanged()
 void
 DomainAction::partitionSerial()
 {
+  // number of ranks
+  const auto nrank = _communicator.size();
+
+  // goes along the full dimension for each rank
+  for (const auto d : make_range(3u))
+  {
+    _local_begin[d].resize(nrank);
+    _local_end[d].resize(nrank);
+    for (const auto i : make_range(_communicator.size()))
+    {
+      _local_begin[d][i] = 0;
+      _local_end[d][i] = _n_global[d];
+    }
+  }
+
+  // to do, make those slices depmendent on local begin/end
   _local_axis = _global_axis;
   _local_reciprocal_axis = _global_reciprocal_axis;
   _n_local = _n_global;
@@ -187,11 +210,70 @@ DomainAction::partitionSerial()
 void
 DomainAction::partitionSlabs()
 {
+  if (_dim < 2)
+    paramError("dim", "Dimension must be 2 or 3 for slab decomposition.");
+
+  // number of ranks
+  const auto nrank = _communicator.size();
+  const auto rank = _communicator.rank();
+
+  // partition x and y dimensions
+  for (const auto d : make_range(2u))
+  {
+    // total number of layers
+    int64_t remaining_layers = _n_global[d];
+
+    // total weight
+    int64_t remaining_total_weight = 0;
+    for (const auto & weight : _local_weights)
+      remaining_total_weight += weight;
+
+    std::vector<int64_t> n(nrank);
+    for (const auto i : make_range(nrank - 1))
+    {
+      if (remaining_total_weight == 0)
+        mooseError("Internal partitioning error. remaining_total_weight ",
+                   remaining_total_weight,
+                   " == 0 ",
+                   rank);
+
+      // assign at least one layer
+      n[i] = std::max((remaining_layers * _local_weights[i]) / remaining_total_weight, int64_t(1));
+      remaining_total_weight -= _local_weights[i];
+      remaining_layers -= n[i];
+
+      if (remaining_layers <= 0)
+        mooseError("Internal partitioning error. remaining_layers ",
+                   remaining_layers,
+                   "  <= 0 ",
+                   rank,
+                   ' ',
+                   i);
+    }
+    n[nrank - 1] = remaining_layers;
+
+    // this processor
+    _n_local[d] = n[rank];
+
+    for (const auto & nl : n)
+      std::cout << "partition " << d << ' ' << nl << '\n';
+  }
+
+  // goes along the full dimension for each rank
+  _local_begin[2].resize(nrank);
+  _local_end[2].resize(nrank);
+  for (const auto i : make_range(_communicator.size()))
+  {
+    _local_begin[2][i] = 0;
+    _local_end[2][i] = _n_global[2];
+  }
 }
 
 void
 DomainAction::partitionPencils()
 {
+  if (_dim < 3)
+    paramError("dim", "Dimension must be 3 for pencil decomposition.");
   paramError("parallel_mode", "Not implemented yet!");
 }
 
