@@ -35,7 +35,7 @@ ParsedTensor::setupTensors()
   // convert immediate data
   tensor_immed.clear();
   for (const auto & i : _data.mImmed)
-    tensor_immed.push_back(torch::Tensor(i, MooseTensor::floatTensorOptions()));
+    tensor_immed.push_back(torch::tensor(i, MooseTensor::floatTensorOptions()));
 }
 
 torch::Tensor

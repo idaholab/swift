@@ -13,6 +13,8 @@
 #include "SetupMeshAction.h"
 #include "SwiftApp.h"
 
+#include <initializer_list>
+
 // run this early, before any objects are constructed
 registerMooseAction("SwiftApp", DomainAction, "meta_action");
 registerMooseAction("SwiftApp", DomainAction, "add_mesh_generator");
@@ -216,70 +218,81 @@ DomainAction::partitionSlabs()
   if (_dim < 2)
     paramError("dim", "Dimension must be 2 or 3 for slab decomposition.");
 
-  // partition x and y dimensions
-  for (const auto d : make_range(2u))
+  // x is partitioned along a halved dimension due to the use of rfft
+  _n_local_all[0] = partitionHepler(_global_reciprocal_axis[0].sizes()[0], _device_weights);
+
+  // y is partitioned along the y realspace axis
+  _n_local_all[1] = partitionHepler(_global_axis[1].sizes()[1], _device_weights);
+
+  // z is not partitioned at all
+  _n_local_all[2].asign(_n_rank, _n_global[2]);
+
+  // set begin/end for x and y
+  for (const auto d : {0, 1})
   {
-    // total number of layers
-    int64_t remaining_layers = _n_global[d];
+    _local_begin[d].resize(_n_rank);
+    _local_end[d].resize(_n_rank);
 
     // total weight
     int64_t remaining_total_weight = 0;
     for (const auto & weight : _local_weights)
       remaining_total_weight += weight;
 
-    std::vector<int64_t> n(_n_rank);
+    _n_local_all[d].resize(_n_rank);
+    _local_begin[d][0] = 0;
     for (const auto i : make_range(_n_rank - 1))
     {
-      if (remaining_total_weight == 0)
-        mooseError("Internal partitioning error. remaining_total_weight ",
-                   remaining_total_weight,
-                   " == 0 ",
-                   _rank);
 
-      // assign at least one layer
-      n[i] = std::max((remaining_layers * _local_weights[i]) / remaining_total_weight, int64_t(1));
+      _n_local_all[d][i] = n;
       remaining_total_weight -= _local_weights[i];
-      remaining_layers -= n[i];
+      remaining_layers -= n;
 
-      if (remaining_layers <= 0)
-        mooseError("Internal partitioning error. remaining_layers ",
-                   remaining_layers,
-                   "  <= 0 ",
-                   _rank,
-                   ' ',
-                   i);
+      _local_begin[d][i + 1] = _local_end[d][i] = _local_begin[d][i] + n;
     }
-    n[_n_rank - 1] = remaining_layers;
-
-    // this processor
-    _n_local[d] = n[_rank];
-
-    for (const auto & nl : n)
-      std::cout << "partition " << d << ' ' << nl << '\n';
+    _n_local_all[d][_n_rank - 1] = remaining_layers;
+    _local_end[d][_n_rank - 1] = _local_begin[d][_n_rank - 1] + remaining_layers;
   }
 
-  // goes along the full dimension for each rank
+  // z goes along the full dimension for each rank
   _local_begin[2].resize(_n_rank);
   _local_end[2].resize(_n_rank);
+  _n_local_all[2].resize(_n_rank);
   for (const auto i : make_range(_communicator.size()))
   {
     _local_begin[2][i] = 0;
     _local_end[2][i] = _n_global[2];
+    _n_local_all[2][i] = _n_global[2];
   }
 
   // slice the real space into x-z slabs stacked in y direction
   _local_axis[0] = _global_axis[0].slice(0, 0, _n_global[0]);
   _local_axis[1] = _global_axis[1].slice(1, _local_begin[1][_rank], _local_end[1][_rank]);
-  _local_axis[2] = _global_axis[2].slice(2, 0, _n_global[2]);
   _n_local[0] = _n_global[0];
   _n_local[1] = _local_end[1][_rank] - _local_begin[1][_rank];
-  _n_local[2] = _n_global[2];
 
   // slice the reciprocal space into y-z slices stacked in x direction
   _local_reciprocal_axis[0] =
       _global_reciprocal_axis[0].slice(0, 0, _local_begin[0][_rank], _local_end[0][_rank]);
   _local_reciprocal_axis[1] = _global_reciprocal_axis[1].slice(1, 0, _n_reciprocal_global[1]);
-  _local_reciprocal_axis[2] = _global_reciprocal_axis[2].slice(2, 0, _n_reciprocal_global[2]);
+
+  _n_local[2] = _n_global[2];
+
+  // special casing this should not be neccessary
+  if (_dim == 3)
+  {
+    _local_axis[2] = _global_axis[2].slice(2, 0, _n_global[2]);
+    _local_reciprocal_axis[2] = _global_reciprocal_axis[2].slice(2, 0, _n_reciprocal_global[2]);
+  }
+  else
+  {
+    _local_axis[2] = _global_axis[2];
+    _local_reciprocal_axis[2] = _global_reciprocal_axis[2];
+  }
+
+  // allocate receive buffer
+  for (const auto i : make_range(_communicator.size()))
+    if (i != _rank)
+      _recv_data[i].resize(_n_local_all[0][_rank] * _n_local_all[1][i] * _n_local_all[2][i]);
 }
 
 void
@@ -374,6 +387,7 @@ DomainAction::fft(const torch::Tensor & t) const
     case ParallelMode::FFT_PENCIL:
       return fftPencil(t);
   }
+  mooseError("Not implemented");
 }
 
 torch::Tensor
@@ -395,46 +409,59 @@ DomainAction::fftSerial(const torch::Tensor & t) const
 torch::Tensor
 DomainAction::fftSlab(const torch::Tensor & t) const
 {
+  mooseInfoRepeated("fftSlab");
   if (_dim == 1)
     mooseError("Unsupported mesh dimension");
 
+  MooseTensor::printTensorInfo(t);
+
   // 2D transform the local slab
-  auto slab = torch::fft::fft2(t);
+  auto slab =
+      _dim == 3 ? torch::fft::fft2(t, c10::nullopt, {0, 2}) : torch::fft::fft(t, c10::nullopt, 0);
+  MooseTensor::printTensorInfo(slab);
 
   // send
-  std::vector<MPI_Request> send_request;
+  std::vector<MPI_Request> send_requests(_n_rank, MPI_REQUEST_NULL);
   for (const auto & i : make_range(_n_rank))
     if (i != _rank)
     {
       _send_tensor[i] = slab.slice(0, _local_begin[0][i], _local_end[0][i]).contiguous().cpu();
+      MooseTensor::printTensorInfo(_send_tensor[i]);
+
       auto data_ptr = _send_tensor[i].data_ptr<double>();
       MPI_Isend(
-          data_ptr, _send_tensor[i].numel(), MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &send_request[i]);
+          data_ptr, _send_tensor[i].numel(), MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &send_requests[i]);
     }
+    else
+      // keep the local slice on device
+      _recv_tensor[i] = slab.slice(0, _local_begin[0][i], _local_end[0][i]);
 
   // receive
   MPI_Status recv_status;
   for (const auto & i : make_range(_n_rank))
     if (i != _rank)
-    {
-      // MPI_Recv(&recv_data[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, &recv_status);
-    }
-
-  switch (_dim)
-  {
-    case 1:
-      return torch::fft::rfft(t);
-    case 2:
-    case 3:
-      return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
-    default:
-      mooseError("Unsupported mesh dimension");
-  }
+      MPI_Recv(_recv_data[i].data(), 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, &recv_status);
 
   // Wait for all non-blocking sends to complete
   for (const auto & i : make_range(_n_rank))
     if (i != _rank)
-      MPI_Wait(&send_request[i], MPI_STATUS_IGNORE);
+    {
+      // 2d _n_local_all[0][_rank] * _n_local_all[1][i] * _n_local_all[2][i]
+      _recv_tensor[i] =
+          torch::from_blob(_recv_data[i].data(),
+                           {_n_local_all[0][_rank], _n_local_all[1][i]},
+                           torch::kFloat64)
+              .to(MooseTensor::floatTensorOptions()); // todo: take care of 32 but floats as well!
+    }
+
+  // stack
+  auto t2 = torch::vstack(_recv_tensor);
+
+  // Wait for all non-blocking sends to complete
+  MPI_Waitall(_n_rank, send_requests.data(), MPI_STATUSES_IGNORE);
+
+  // transfor along y direction
+  return torch::fft::rfft(t2, c10::nullopt, 1);
 }
 
 torch::Tensor
@@ -448,6 +475,8 @@ DomainAction::fftPencil(const torch::Tensor & /*t*/) const
 torch::Tensor
 DomainAction::ifft(const torch::Tensor & t) const
 {
+  mooseInfoRepeated("ifft");
+
   switch (_dim)
   {
     case 1:

@@ -38,7 +38,7 @@ public:
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
   const torch::Tensor & getKSquare() const { return _k2; }
-  const torch::IntArrayRef  & getShape() const { return _shape; }
+  const torch::IntArrayRef & getShape() const { return _shape; }
 
   torch::Tensor fft(const torch::Tensor & t) const;
   torch::Tensor ifft(const torch::Tensor & t) const;
@@ -56,6 +56,10 @@ protected:
   torch::Tensor fftSerial(const torch::Tensor & t) const;
   torch::Tensor fftSlab(const torch::Tensor & t) const;
   torch::Tensor fftPencil(const torch::Tensor & t) const;
+
+  template <typename T>
+  std::vector<int64_t>
+  partitionHepler(int64_t total, const std::vector<T> & weights);
 
   /// device names to be used on the nodes
   const std::vector<std::string> _device_names;
@@ -85,11 +89,12 @@ protected:
   /// local begin/end indixes along each direction for slabs/pencils
   std::array<std::vector<int64_t>, 3> _local_begin;
   std::array<std::vector<int64_t>, 3> _local_end;
+  std::array<std::vector<int64_t>, 3> _n_local_all;
 
   /// global domain length in each dimension
   const std::array<Real, 3> _max_global;
 
-  const enum class MeshMode { DUMMY, DOMAIN, MANUAL} _mesh_mode;
+  const enum class MeshMode { DUMMY, DOMAIN, MANUAL } _mesh_mode;
 
   /// grid spacing
   std::array<Real, 3> _grid_spacing;
@@ -114,8 +119,44 @@ protected:
   /// number of MPI ranks
   unsigned int _n_rank;
 
-  /// send buffer
-  std::vector<torch::Tensor> _send_tensor;
+  /// send tensors
+  mutable std::vector<torch::Tensor> _send_tensor;
   /// receive buffer
-  std::vector<torch::Tensor> _recv_tensor;
+  mutable std::vector<std::vector<double>> _recv_data;
+  /// receive tensors
+  mutable std::vector<torch::Tensor> _recv_tensor;
 };
+
+template <typename T>
+std::vector<int64_t>
+DomainAction::partitionHepler(int64_t total, const std::vector<T> & weights)
+{
+  std::vector<int64_t> ns;
+
+  T remaining_total_weight = 0;
+  for (const auto w : weights)
+    remaining_total_weight += w;
+
+  for (const auto w : weights)
+  {
+    if (remaining_total_weight == 0)
+      mooseError("Internal partitioning error. remaining_total_weight ",
+                 remaining_total_weight,
+                 " == 0 ",
+                 _rank);
+
+    // assign at least one layer
+    const auto n = std::max((total * w) / remaining_total_weight, int64_t(1));
+    ns.push_back(n);
+
+    remaining_total_weight -= w;
+
+    if (total < n)
+      mooseError("Internal partitioning error.");
+
+    total -= n;
+  }
+
+  // add remainsder to last slice
+  ns.back() += total;
+}

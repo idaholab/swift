@@ -11,7 +11,7 @@
 
 #include "NEML2Utils.h"
 #include "SwiftUtils.h"
-#include "neml2/tensors/Scalar.h"
+// #include "neml2/tensors/Scalar.h"
 
 #if 0
 using neml2::TensorShapeRef;
@@ -22,7 +22,7 @@ namespace MooseTensor
 template <typename T, std::size_t D>
 class TensorBuffer;
 
-template <typename T = neml2::Scalar, std::size_t D>
+template <typename T = torch::Tensor, std::size_t D>
 TensorBuffer<T, D>
 createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
 {
@@ -37,7 +37,7 @@ createBuffer(long int const (&n)[D], Real const (&min)[D], Real const (&max)[D])
   return TensorBuffer<T, D>(nn, amin, amax);
 }
 
-template <typename T = neml2::Scalar, std::size_t D>
+template <typename T = torch::Tensor, std::size_t D>
 TensorBuffer<T, D>
 createBuffer(long int const (&n)[D], Real const (&max)[D])
 {
@@ -47,7 +47,7 @@ createBuffer(long int const (&n)[D], Real const (&max)[D])
   return createBuffer(n, min, max);
 }
 
-template <typename T = neml2::Scalar, std::size_t D>
+template <typename T = torch::Tensor, std::size_t D>
 TensorBuffer<T, D>
 createBuffer(long int const (&n)[D])
 {
@@ -79,9 +79,9 @@ public:
   std::array<neml2::Real, D> & min() { return _min; }
   std::array<neml2::Real, D> & max() { return _max; }
 
-  neml2::Scalar getAxis(std::size_t dim, Interval interval = Interval::LEFT_OPEN) const;
-  neml2::Scalar getFrequency(std::size_t dim) const;
-  neml2::Scalar grad(std::size_t dim, T * fft = nullptr) const;
+  torch::Tensor getAxis(std::size_t dim, Interval interval = Interval::LEFT_OPEN) const;
+  torch::Tensor getFrequency(std::size_t dim) const;
+  torch::Tensor grad(std::size_t dim, T * fft = nullptr) const;
 
   auto getAxis() const { return getAxisHelper(std::make_integer_sequence<std::size_t, D>{}); }
   auto getFrequency() const
@@ -90,7 +90,7 @@ public:
   }
   auto grad() const { return gradHelper(std::make_integer_sequence<std::size_t, D>{}); }
 
-  neml2::Scalar laplace() const;
+  torch::Tensor laplace() const;
 
   // stream in gnuplot readable format
 
@@ -121,7 +121,7 @@ protected:
 
 private:
   torch::TensorOptions _options;
-  const neml2::Scalar _two_pi_i;
+  const torch::Tensor _two_pi_i;
   T _data;
   const bool _rfft;
   std::array<neml2::Real, D> _min;
@@ -145,7 +145,7 @@ TensorBuffer<T, D>::TensorBuffer(const TensorShapeRef & batch_shape,
 }
 
 template <typename T, std::size_t D>
-neml2::Scalar
+torch::Tensor
 TensorBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 {
   if (dim >= D)
@@ -190,7 +190,7 @@ TensorBuffer<T, D>::getAxis(std::size_t dim, Interval interval) const
 }
 
 template <typename T, std::size_t D>
-neml2::Scalar
+torch::Tensor
 TensorBuffer<T, D>::getFrequency(std::size_t dim) const
 {
   if (dim >= D)
@@ -205,7 +205,7 @@ TensorBuffer<T, D>::getFrequency(std::size_t dim) const
 }
 
 template <typename T, std::size_t D>
-neml2::Scalar
+torch::Tensor
 TensorBuffer<T, D>::grad(std::size_t dim, T * cached_fft) const
 {
   if (dim >= D)
@@ -248,10 +248,10 @@ TensorBuffer<T, D>::ifft(const T & Abar) const
 }
 
 template <typename T, std::size_t D>
-neml2::Scalar
+torch::Tensor
 TensorBuffer<T, D>::laplace() const
 {
-  neml2::Scalar cached_fft = fft();
+  torch::Tensor cached_fft = fft();
   auto ret = grad(0, &cached_fft);
   ret *= ret;
 
