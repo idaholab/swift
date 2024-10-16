@@ -33,6 +33,16 @@ ParsedCompute::validParams()
                         "Provide i (imaginary unit), kx,ky,kz (reciprocal space frequency), k2 "
                         "(square of the k-vector), x,y,z "
                         "(real space coordinates), and pi,e.");
+  // Constants and their values
+  params.addParam<std::vector<std::string>>(
+      "constant_names",
+      std::vector<std::string>(),
+      "Vector of constants used in the parsed function (use this for kB etc.)");
+  params.addParam<std::vector<std::string>>(
+      "constant_expressions",
+      std::vector<std::string>(),
+      "Vector of values for the constants in constant_names (can be an FParser expression)");
+
   return params;
 }
 
@@ -44,12 +54,45 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
   const auto & expression = getParam<std::string>("expression");
   const auto & names = getParam<std::vector<TensorInputBufferName>>("inputs");
 
+  // check for duplicates
+  auto hasDuplicates = [](const std::vector<std::string> & values)
+  {
+    std::set<std::string> s(values.begin(), values.end());
+    return values.size() != s.size();
+  };
+
+  if (hasDuplicates(names))
+    paramError("inputs", "Duplicate buffer name.");
+
   // get all input buffers
   for (const auto & name : names)
     _params.push_back(&getInputBufferByName(name));
 
   // build variable string
   auto variables = MooseUtils::join(names, ",");
+
+  static const std::set<std::string> reserved_symbols = {
+      "i", "x", "kx", "y", "ky", "z", "kz", "k2"};
+
+  // helper function to check if the name given is one of the reserved_names
+  auto isReservedName = [this](const std::string & name)
+  { return _extra_symbols && (reserved_symbols.find(name) != reserved_symbols.end()); };
+
+  const auto & constant_names = getParam<std::vector<std::string>>("constant_names");
+  const auto & constant_expressions = getParam<std::vector<std::string>>("constant_expressions");
+
+  if (hasDuplicates(constant_names))
+    paramError("constant_names", "Duplicate constant name.");
+
+  // check constant vectors
+  unsigned int nconst = constant_expressions.size();
+  if (nconst != constant_names.size())
+    paramError("constant_names",
+               "The parameter vectors constant_names (size ",
+               constant_names.size(),
+               ") and constant_values (size ",
+               nconst,
+               ") must have equal length.");
 
   auto setup = [&](auto & fp)
   {
@@ -73,7 +116,33 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
       fp.AddConstant("e", std::exp(Real(1.0)));
     }
 
+    // previously evaluated constant_expressions may be used in following constant_expressions
+    std::vector<Real> constant_values(nconst);
+    for (unsigned int i = 0; i < nconst; ++i)
+    {
+      // no need to use dual numbers for the constant expressions
+      auto expression = std::make_shared<FunctionParserADBase<Real>>();
+
+      // add previously evaluated constants
+      for (unsigned int j = 0; j < i; ++j)
+        if (!expression->AddConstant(constant_names[j], constant_values[j]))
+          paramError("constant_names", "Invalid constant name '", constant_names[j], "'");
+      mooseInfoRepeated("Const: ", constant_names[i], " -> ", constant_expressions[i]);
+      // build the temporary constant expression function
+      if (expression->Parse(constant_expressions[i], "") >= 0)
+        mooseError("Invalid constant expression\n",
+                   constant_expressions[i],
+                   "\n in parsed function object.\n",
+                   expression->ErrorMsg());
+
+      constant_values[i] = expression->Eval(nullptr);
+
+      if (!fp.AddConstant(constant_names[i], constant_values[i]))
+        mooseError("Invalid constant name in parsed function object");
+    }
+
     // parse
+    mooseInfoRepeated("Parse: ", expression);
     fp.Parse(expression, variables);
 
     if (fp.Parse(expression, variables) >= 0)

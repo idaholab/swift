@@ -159,4 +159,5 @@ DomainAction::partitionHepler(int64_t total, const std::vector<T> & weights)
 
   // add remainsder to last slice
   ns.back() += total;
+  return ns;
 }

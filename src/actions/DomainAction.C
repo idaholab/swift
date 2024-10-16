@@ -224,45 +224,22 @@ DomainAction::partitionSlabs()
   // y is partitioned along the y realspace axis
   _n_local_all[1] = partitionHepler(_global_axis[1].sizes()[1], _device_weights);
 
-  // z is not partitioned at all
-  _n_local_all[2].asign(_n_rank, _n_global[2]);
-
   // set begin/end for x and y
   for (const auto d : {0, 1})
   {
-    _local_begin[d].resize(_n_rank);
-    _local_end[d].resize(_n_rank);
-
-    // total weight
-    int64_t remaining_total_weight = 0;
-    for (const auto & weight : _local_weights)
-      remaining_total_weight += weight;
-
-    _n_local_all[d].resize(_n_rank);
-    _local_begin[d][0] = 0;
-    for (const auto i : make_range(_n_rank - 1))
+    int64_t b = 0;
+    for (const auto r: index_range(_n_local_all[d]))
     {
-
-      _n_local_all[d][i] = n;
-      remaining_total_weight -= _local_weights[i];
-      remaining_layers -= n;
-
-      _local_begin[d][i + 1] = _local_end[d][i] = _local_begin[d][i] + n;
+      _local_begin[d][r] = b;
+      b += _n_local_all[d][r];
+      _local_end[d][r] = b;
     }
-    _n_local_all[d][_n_rank - 1] = remaining_layers;
-    _local_end[d][_n_rank - 1] = _local_begin[d][_n_rank - 1] + remaining_layers;
   }
 
-  // z goes along the full dimension for each rank
-  _local_begin[2].resize(_n_rank);
-  _local_end[2].resize(_n_rank);
-  _n_local_all[2].resize(_n_rank);
-  for (const auto i : make_range(_communicator.size()))
-  {
-    _local_begin[2][i] = 0;
-    _local_end[2][i] = _n_global[2];
-    _n_local_all[2][i] = _n_global[2];
-  }
+  // z is not partitioned at all
+  _n_local_all[2].assign(_n_rank, _n_global[2]);
+  _local_begin[2].assign(_n_rank, 0);
+  _local_end[2].assign(_n_rank, _n_global[2]);
 
   // slice the real space into x-z slabs stacked in y direction
   _local_axis[0] = _global_axis[0].slice(0, 0, _n_global[0]);
@@ -475,8 +452,6 @@ DomainAction::fftPencil(const torch::Tensor & /*t*/) const
 torch::Tensor
 DomainAction::ifft(const torch::Tensor & t) const
 {
-  mooseInfoRepeated("ifft");
-
   switch (_dim)
   {
     case 1:
