@@ -10,6 +10,7 @@
 #include "ParsedCompute.h"
 
 #include "MooseUtils.h"
+#include "SwiftUtils.h"
 #include "MultiMooseEnum.h"
 #include "DomainAction.h"
 
@@ -68,21 +69,25 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
   for (const auto & name : names)
     _params.push_back(&getInputBufferByName(name));
 
-  // build variable string
-  auto variables = MooseUtils::join(names, ",");
-
-  static const std::set<std::string> reserved_symbols = {
+  static const std::vector<std::string> reserved_symbols = {
       "i", "x", "kx", "y", "ky", "z", "kz", "k2"};
 
   // helper function to check if the name given is one of the reserved_names
-  auto isReservedName = [this](const std::string & name)
-  { return _extra_symbols && (reserved_symbols.find(name) != reserved_symbols.end()); };
+  auto isReservedName = [this](const auto & name)
+  { return _extra_symbols && std::count(reserved_symbols.begin(), reserved_symbols.end(), name); };
 
   const auto & constant_names = getParam<std::vector<std::string>>("constant_names");
   const auto & constant_expressions = getParam<std::vector<std::string>>("constant_expressions");
 
   if (hasDuplicates(constant_names))
     paramError("constant_names", "Duplicate constant name.");
+
+  for (const auto & name : constant_names)
+    if (isReservedName(name))
+      paramError("constant_names", "Cannot use reserved name '", name, "' for constant.");
+  for (const auto & name : names)
+    if (isReservedName(name))
+      paramError("inputs", "Cannot use reserved name '", name, "' for coupled fields.");
 
   // check constant vectors
   unsigned int nconst = constant_expressions.size();
@@ -96,10 +101,13 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 
   auto setup = [&](auto & fp)
   {
+    std::vector variables_vec = names;
+
     // add extra symbols
     if (_extra_symbols)
     {
-      variables = MooseUtils::join(std::vector<std::string>{variables, "i,x,kx,y,ky,z,kz,k2"}, ",");
+      // append extra symbols
+      variables_vec.insert(variables_vec.end(), reserved_symbols.begin(), reserved_symbols.end());
 
       _constant_tensors.push_back(torch::tensor(c10::complex<double>(0.0, 1.0)));
       _params.push_back(&_constant_tensors[0]);
@@ -127,7 +135,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
       for (unsigned int j = 0; j < i; ++j)
         if (!expression->AddConstant(constant_names[j], constant_values[j]))
           paramError("constant_names", "Invalid constant name '", constant_names[j], "'");
-      mooseInfoRepeated("Const: ", constant_names[i], " -> ", constant_expressions[i]);
+
       // build the temporary constant expression function
       if (expression->Parse(constant_expressions[i], "") >= 0)
         mooseError("Invalid constant expression\n",
@@ -141,8 +149,10 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
         mooseError("Invalid constant name in parsed function object");
     }
 
+    // build variables string
+    const auto variables = MooseUtils::join(variables_vec, ",");
+
     // parse
-    mooseInfoRepeated("Parse: ", expression);
     fp.Parse(expression, variables);
 
     if (fp.Parse(expression, variables) >= 0)

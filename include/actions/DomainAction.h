@@ -58,8 +58,7 @@ protected:
   torch::Tensor fftPencil(const torch::Tensor & t) const;
 
   template <typename T>
-  std::vector<int64_t>
-  partitionHepler(int64_t total, const std::vector<T> & weights);
+  std::vector<int64_t> partitionHepler(int64_t total, const std::vector<T> & weights);
 
   /// device names to be used on the nodes
   const std::vector<std::string> _device_names;

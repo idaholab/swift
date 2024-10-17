@@ -34,6 +34,8 @@ TensorIntegralPostprocessor::execute()
 
   for (const auto dim : make_range(_domain.getDim()))
     _integral *= _domain.getDomainSize()[dim];
+
+  _integral /= _u.numel();
 }
 
 PostprocessorValue

@@ -1,0 +1,9 @@
+Applications:
+    swift:
+        exe_directory: ${ROOT_DIR}
+        exe_name: swift
+        app_types:
+            - SwiftApp
+        content_directory: doc/content
+        show_warning: false
+

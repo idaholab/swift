@@ -135,13 +135,13 @@ DomainAction::gridChanged()
 {
   auto options = MooseTensor::floatTensorOptions();
 
-  // get grid geometry
-  for (const auto dim : make_range(3))
+  // build real space axes
+  for (const auto dim : {0, 1, 2})
+  {
+    // get grid geometry
     _grid_spacing[dim] = _max_global[dim] / _n_global[dim];
 
-  // build real space axes
-  for (const auto dim : make_range(3u))
-  {
+    // real space axis
     if (dim < _dim)
       _global_axis[dim] =
           align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
@@ -154,14 +154,14 @@ DomainAction::gridChanged()
   }
 
   // build reciprocal space axes
-  for (const auto dim : make_range(3u))
+  for (const auto dim : {0, 1, 2})
   {
     if (dim < _dim)
     {
       const auto freq = (dim == _dim - 1)
                             ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing[dim], options)
                             : torch::fft::fftfreq(_n_global[dim], _grid_spacing[dim], options);
-      _global_reciprocal_axis[dim] = align(freq * libMesh::pi, dim);
+      _global_reciprocal_axis[dim] = align(freq * 2.0 * libMesh::pi, dim);
     }
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);

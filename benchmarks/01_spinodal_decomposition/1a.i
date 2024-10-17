@@ -2,10 +2,8 @@
   dim = 2
   nx = 200
   ny = 200
-  # nz = 200
-  xmax = ${fparse pi*8}
-  ymax = ${fparse pi*8}
-  # zmax = ${fparse pi*8}
+  xmax = 200
+  ymax = 200
 
   device_names = 'cuda'
 
@@ -31,24 +29,29 @@
   []
   [kappabarbar]
   []
+  # postprocessing
+  [F]
+  []
 []
 
 [TensorComputes]
   [Initialize]
     [c]
-      type = RandomTensor
+      type = ParsedCompute
       buffer = c
-      min = 0.44
-      max = 0.56
+      extra_symbols = true
+      expression = 'c0+epsilon*(cos(0.105*x)*cos(0.11*y)+(cos(0.13*x)*cos(0.087*y))^2+cos(0.025*x-0.15*y)*cos(0.07*x-0.02*y))'
+      constant_names = 'c0 epsilon'
+      constant_expressions = '0.5 0.01'
     []
     [Mbar]
       type = ReciprocalLaplacianFactor
-      factor = 0.2 # Mobility
+      factor = 5 # Mobility
       buffer = Mbar
     []
     [kappabarbar]
       type = ReciprocalLaplacianSquareFactor
-      factor = -0.001 # kappa
+      factor = -2 # -kappa
       buffer = kappabarbar
     []
   []
@@ -58,9 +61,10 @@
       type = ParsedCompute
       buffer = mu
       enable_jit = true
-      expression = '0.1*c^2*(c-1)^2'
+      expression = 'rho_s*(c-c_alpha)^2*(c_beta-c)^2'
+      constant_names =       'rho_s c_alpha c_beta'
+      constant_expressions = '5     0.3     0.7'
       derivatives = c
-      # expression = "0.4*c^3-0.6*c^2+0.2*c"
       inputs = c
     []
     [mubar]
@@ -79,6 +83,18 @@
       type = ForwardFFT
       buffer = cbar
       input = c
+    []
+  []
+
+  [Postprocess]
+    [F]
+      type = ParsedCompute
+      buffer = F
+      enable_jit = true
+      expression = 'rho_s*(c-c_alpha)^2*(c_beta-c)^2'
+      constant_names =       'rho_s c_alpha c_beta'
+      constant_expressions = '5     0.3     0.7'
+      inputs = c
     []
   []
 []
@@ -104,21 +120,6 @@
   []
 []
 
-[AuxKernels]
-  # [c]
-  #   type = ProjectTensorAux
-  #   buffer = c
-  #   variable = c
-  #   execute_on = final
-  # []
-  # [f]
-  #   type = ProjectTensorAux
-  #   buffer = f
-  #   variable = f
-  #   execute_on = TIMESTEP_END
-  # []
-[]
-
 [Postprocessors]
   [min_c]
     type = ElementExtremeValue
@@ -142,6 +143,14 @@
     variable = c
     execute_on = 'TIMESTEP_END'
   []
+  [F]
+    type = TensorIntegralPostprocessor
+    buffer = F
+  []
+  [stable_dt]
+    type = SemiImplicitCriticalTimeStep
+    buffer = kappabarbar
+  []
 []
 
 [Problem]
@@ -152,12 +161,7 @@
 [Executioner]
   type = Transient
   num_steps = 100
-  [TimeStepper]
-    type = IterationAdaptiveDT
-    growth_factor = 1.8
-    dt = 0.1
-  []
-  dtmax = 1000
+  dt = 1
 []
 
 [Outputs]
