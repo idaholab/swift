@@ -21,8 +21,6 @@ FFTGradientSquare::validParams()
   params.addParam<bool>(
       "input_is_reciprocal", false, "Input buffer is already in reciprocal space");
   params.addParam<Real>("factor", 1.0, "Prefactor to the gradient square");
-  params.addRequiredParam<MooseEnum>(
-      "direction", MooseEnum("X=0 Y=1 Z=2"), "Which axis to take the gradient along.");
   return params;
 }
 

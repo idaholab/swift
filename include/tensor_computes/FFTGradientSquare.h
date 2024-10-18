@@ -32,5 +32,5 @@ protected:
   const unsigned int & _dim;
 
   /// imaginary unit i
-  const torch::Tensor & _i;
+  const torch::Tensor _i;
 };

@@ -30,5 +30,5 @@ protected:
   unsigned int _direction;
 
   /// imaginary unit i
-  const torch::Tensor & _i;
+  const torch::Tensor _i;
 };

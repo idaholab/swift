@@ -1,9 +1,11 @@
 [Domain]
-  dim = 2
+  dim = 3
   nx = 40
   ny = 40
+  nz = 40
   xmax = ${fparse pi*2}
-  ymax = ${fparse pi*20}
+  ymax = ${fparse pi*4}
+  zmax = ${fparse pi*6}
   mesh_mode = DUMMY
   device_names = cpu
 []
@@ -11,9 +13,9 @@
 [TensorBuffers]
   [s]
   []
-  [grad_s]
+  [grad_sq]
   []
-  [c]
+  [c2]
   []
   [diff]
   []
@@ -25,25 +27,24 @@
       type = ParsedCompute
       buffer = s
       extra_symbols = true
-      expression = 'sin(x)'
+      expression = 'sin(x)+sin(y)+sin(z)'
     []
-    [cos]
+    [cos2]
       type = ParsedCompute
-      buffer = c
+      buffer = c2
       extra_symbols = true
-      expression = 'cos(x)'
+      expression = 'cos(x)^2+cos(y)^2+cos(z)^2'
     []
-    [grad_sin]
-      type = FFTGradient
-      buffer = grad_s
+    [grad_sq]
+      type = FFTGradientSquare
+      buffer = grad_sq
       input = s
-      direction = x
     []
     [diff]
       type = ParsedCompute
       buffer = diff
-      inputs = 'grad_s c'
-      expression = 'grad_s - c'
+      inputs = 'grad_sq c2'
+      expression = 'abs(grad_sq - c2)'
     []
   []
 []

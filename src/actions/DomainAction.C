@@ -452,6 +452,7 @@ DomainAction::fftPencil(const torch::Tensor & /*t*/) const
 torch::Tensor
 DomainAction::ifft(const torch::Tensor & t) const
 {
+  MooseTensor::printTensorInfo(t);
   switch (_dim)
   {
     case 1:

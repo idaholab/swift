@@ -1,0 +1,14 @@
+[Tests]
+  [gradient]
+    type = CSVDiff
+    input = gradient.i
+    csvdiff = gradient_out.csv
+    requirement = 'The system shall be able to compute the gradient of a tensor field along a given axis'
+  []
+  [gradient_square]
+    type = CSVDiff
+    input = gradient_square.i
+    csvdiff = gradient_square_out.csv
+    requirement = 'The system shall be able to compute the square of the gradient of a tensor field'
+  []
+[]
