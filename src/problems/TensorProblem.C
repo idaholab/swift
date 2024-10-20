@@ -341,9 +341,12 @@ TensorProblem::advanceState()
     auto & [max, states] = max_states;
     if (states.size() < max)
       states.push_back(torch::tensor({}, _options));
-    for (std::size_t i = states.size() - 1; i > 0; --i)
-      states[i] = states[i - 1];
-    states[0] = _tensor_buffer[name];
+    if (!states.empty())
+    {
+      for (std::size_t i = states.size() - 1; i > 0; --i)
+        states[i] = states[i - 1];
+      states[0] = _tensor_buffer[name];
+    }
   }
 }
 

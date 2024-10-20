@@ -1,7 +1,7 @@
 [Domain]
   dim = 2
-  nx = 200
-  ny = 200
+  nx = 80
+  ny = 80
   xmax = 200
   ymax = 200
 
@@ -13,12 +13,12 @@
 
 [TensorBuffers]
   [c]
-    map_to_aux_variable = c
+    # map_to_aux_variable = c
   []
   [cbar]
   []
   [mu]
-    map_to_aux_variable = mu
+    # map_to_aux_variable = mu
   []
   [mubar]
   []
@@ -31,6 +31,8 @@
   []
   # postprocessing
   [F]
+  []
+  [Fgrad]
   []
 []
 
@@ -51,7 +53,7 @@
     []
     [kappabarbar]
       type = ReciprocalLaplacianSquareFactor
-      factor = -2 # -kappa
+      factor = -10 # -kappa*M
       buffer = kappabarbar
     []
   []
@@ -87,14 +89,20 @@
   []
 
   [Postprocess]
+    [Fgrad]
+      type = FFTGradientSquare
+      buffer = Fgrad
+      input = c
+      factor = 1 # kappa/2
+    []
     [F]
       type = ParsedCompute
       buffer = F
       enable_jit = true
-      expression = 'rho_s*(c-c_alpha)^2*(c_beta-c)^2'
+      expression = 'rho_s * (c-c_alpha)^2 * (c_beta-c)^2 + Fgrad'
       constant_names =       'rho_s c_alpha c_beta'
       constant_expressions = '5     0.3     0.7'
-      inputs = c
+      inputs = 'c Fgrad'
     []
   []
 []
@@ -103,6 +111,7 @@
   [c]
     type = FFTSemiImplicit
     buffer = c
+    history_size = 1
     reciprocal_buffer = cbar
     linear_reciprocal = kappabarbar
     nonlinear_reciprocal = Mbarmubar
@@ -110,47 +119,37 @@
 []
 
 [AuxVariables]
-  [mu]
-    family = MONOMIAL
-    order = CONSTANT
-  []
-  [c]
-    # family = MONOMIAL
-    # order = CONSTANT
-  []
+  # [mu]
+  #   family = MONOMIAL
+  #   order = CONSTANT
+  # []
+  # [c]
+  #   # family = MONOMIAL
+  #   # order = CONSTANT
+  # []
 []
 
 [Postprocessors]
   [min_c]
-    type = ElementExtremeValue
-    variable = c
+    type = TensorExtremeValuePostprocessor
+    buffer = c
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_c]
-    type = ElementExtremeValue
-    variable = c
+    type = TensorExtremeValuePostprocessor
+    buffer = c
     value_type = MAX
-    execute_on = 'TIMESTEP_END'
-  []
-  # [F]
-  #   type = ElementIntegralVariablePostprocessor
-  #   variable = f
-  #   execute_on = 'TIMESTEP_END'
-  # []
-  [C]
-    type = ElementIntegralVariablePostprocessor
-    variable = c
     execute_on = 'TIMESTEP_END'
   []
   [F]
     type = TensorIntegralPostprocessor
     buffer = F
   []
-  [stable_dt]
-    type = SemiImplicitCriticalTimeStep
-    buffer = kappabarbar
-  []
+  # [stable_dt]
+  #   type = SemiImplicitCriticalTimeStep
+  #   buffer = kappabarbar
+  # []
 []
 
 [Problem]
@@ -160,12 +159,17 @@
 
 [Executioner]
   type = Transient
-  num_steps = 100
-  dt = 1
+  num_steps = 400
+  [TimeStepper]
+    type = IterationAdaptiveDT
+    growth_factor = 1.1
+    dt = 1
+  []
+  dtmax = 300
 []
 
 [Outputs]
-  exodus = true
+  # exodus = true
   csv = true
   perf_graph = true
   execute_on = 'TIMESTEP_END'
