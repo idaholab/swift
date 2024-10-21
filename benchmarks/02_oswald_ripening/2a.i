@@ -1,7 +1,7 @@
 [Domain]
   dim = 2
-  nx = 80
-  ny = 80
+  nx = 120
+  ny = 120
   xmax = 200
   ymax = 200
 
@@ -12,8 +12,14 @@
 
 fchem='fa:=rho^2*(c-ca)^2;
 fb:=rho^2*(cb-c)^2;
-h:=n1^3*(6*n1^2-15*n1+10)+n2^3*(6*n2^2-15*n2+10)+n3^3*(6*n3^2-15*n3+10)+n4^3*(6*n4^2-15*n4+10);
-g:=n1^2*(1-n1)^2+n2^2*(1-n2)^2+n3^2*(1-n3)^2+n4^2*(1-n4)^2+
+h:=n1^3*(6*n1^2-15*n1+10) +
+   n2^3*(6*n2^2-15*n2+10) +
+   n3^3*(6*n3^2-15*n3+10) +
+   n4^3*(6*n4^2-15*n4+10);
+g:=n1^2*(1-n1)^2 +
+   n2^2*(1-n2)^2 +
+   n3^2*(1-n3)^2 +
+   n4^2*(1-n4)^2 +
 alpha*(
 n1^2*n2^2 + n1^2*n3^2 + n1^2*n4^2 +
 n2^2*n1^2 + n2^2*n3^2 + n2^2*n4^2 +
@@ -91,7 +97,15 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   # postprocessing
   [F]
   []
-  [Fgrad]
+  [Fgrad_c]
+  []
+  [Fgrad_n1]
+  []
+  [Fgrad_n2]
+  []
+  [Fgrad_n3]
+  []
+  [Fgrad_n4]
   []
   [bnds]
     map_to_aux_variable = bnds
@@ -173,7 +187,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ParsedCompute
       buffer = mu_n1
       enable_jit = true
-      expression = '${fchem}*L'
+      expression = '${fchem}*(-L)'
       constant_names = ${cnames}
       constant_expressions = ${cvalues}
       derivatives = n1
@@ -183,7 +197,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ParsedCompute
       buffer = mu_n2
       enable_jit = true
-      expression = '${fchem}*L'
+      expression = '${fchem}*(-L)'
       constant_names = ${cnames}
       constant_expressions = ${cvalues}
       derivatives = n2
@@ -193,7 +207,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ParsedCompute
       buffer = mu_n3
       enable_jit = true
-      expression = '${fchem}*L'
+      expression = '${fchem}*(-L)'
       constant_names = ${cnames}
       constant_expressions = ${cvalues}
       derivatives = n3
@@ -203,7 +217,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ParsedCompute
       buffer = mu_n4
       enable_jit = true
-      expression = '${fchem}*L'
+      expression = '${fchem}*(-L)'
       constant_names = ${cnames}
       constant_expressions = ${cvalues}
       derivatives = n4
@@ -272,26 +286,50 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   []
 
   [Postprocess]
-    [Fgrad]
+    [Fgrad_c]
       type = FFTGradientSquare
-      buffer = Fgrad
+      buffer = Fgrad_c
       input = c
-      factor = 1 # kappa/2
+      factor = 1.5 # kappa/2
+    []
+    [Fgrad_n1]
+      type = FFTGradientSquare
+      buffer = Fgrad_n1
+      input = n1
+      factor = 1.5 # kappa/2
+    []
+    [Fgrad_n2]
+      type = FFTGradientSquare
+      buffer = Fgrad_n2
+      input = n2
+      factor = 1.5 # kappa/2
+    []
+    [Fgrad_n3]
+      type = FFTGradientSquare
+      buffer = Fgrad_n3
+      input = n3
+      factor = 1.5 # kappa/2
+    []
+    [Fgrad_n4]
+      type = FFTGradientSquare
+      buffer = Fgrad_n4
+      input = n4
+      factor = 1.5 # kappa/2
     []
     [F]
       type = ParsedCompute
       buffer = F
       enable_jit = true
-      expression = ${fchem}
+      expression = '${fchem} + Fgrad_c + Fgrad_n1 + Fgrad_n2 + Fgrad_n3 + Fgrad_n4'
       constant_names =  ${cnames}
       constant_expressions = ${cvalues}
-      inputs = 'c n1 n2 n3 n4'
+      inputs = 'c n1 n2 n3 n4 Fgrad_c Fgrad_n1 Fgrad_n2 Fgrad_n3 Fgrad_n4'
     []
     [bnds]
       type = ParsedCompute
       buffer = bnds
       enable_jit = true
-      expression = '(n1*n2)+(n1*n3)+(n1*n4)+(n2*n3)+(n2*n4)+(n3*n4)'
+      expression = 'n1^2 + n2^2 + n3^2 + n4^2'
       inputs = 'n1 n2 n3 n4'
     []
   []
@@ -368,18 +406,18 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 1000
+  spectral_solve_substeps = 2000
 []
 
 [Executioner]
   type = Transient
-  num_steps = 400
+  num_steps = 1030
   [TimeStepper]
     type = IterationAdaptiveDT
-    growth_factor = 1
-    dt = 1e-4
+    growth_factor = 1.1
+    dt = 0.001
   []
-  dtmax = 300
+  dtmax = 10
 []
 
 [Outputs]

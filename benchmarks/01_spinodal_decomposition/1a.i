@@ -1,7 +1,7 @@
 [Domain]
   dim = 2
-  nx = 80
-  ny = 80
+  nx = 150
+  ny = 150
   xmax = 200
   ymax = 200
 
@@ -13,7 +13,7 @@
 
 [TensorBuffers]
   [c]
-    # map_to_aux_variable = c
+    map_to_aux_variable = c
   []
   [cbar]
   []
@@ -107,6 +107,13 @@
   []
 []
 
+[UserObjects]
+  [terminator]
+    type = Terminator
+    expression = change<1e-3
+  []
+[]
+
 [TensorTimeIntegrators]
   [c]
     type = FFTSemiImplicit
@@ -123,10 +130,10 @@
   #   family = MONOMIAL
   #   order = CONSTANT
   # []
-  # [c]
-  #   # family = MONOMIAL
-  #   # order = CONSTANT
-  # []
+  [c]
+    # family = MONOMIAL
+    # order = CONSTANT
+  []
 []
 
 [Postprocessors]
@@ -146,10 +153,10 @@
     type = TensorIntegralPostprocessor
     buffer = F
   []
-  # [stable_dt]
-  #   type = SemiImplicitCriticalTimeStep
-  #   buffer = kappabarbar
-  # []
+  [change]
+    type = TensorIntegralChangePostprocessor
+    buffer = c
+  []
 []
 
 [Problem]
@@ -159,7 +166,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 400
+  num_steps = 1000
   [TimeStepper]
     type = IterationAdaptiveDT
     growth_factor = 1.1
@@ -169,7 +176,7 @@
 []
 
 [Outputs]
-  # exodus = true
+  exodus = true
   csv = true
   perf_graph = true
   execute_on = 'TIMESTEP_END'
