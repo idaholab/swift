@@ -1,11 +1,11 @@
 [Domain]
   dim = 2
-  nx = 120
-  ny = 120
+  nx = 200
+  ny = 200
   xmax = 200
   ymax = 200
 
-  device_names = 'cuda'
+  device_names = 'cuda:7'
 
   mesh_mode = DOMAIN
 []

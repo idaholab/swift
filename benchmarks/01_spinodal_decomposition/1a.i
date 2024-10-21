@@ -1,7 +1,7 @@
 [Domain]
   dim = 2
-  nx = 150
-  ny = 150
+  nx = 200
+  ny = 200
   xmax = 200
   ymax = 200
 
@@ -110,7 +110,7 @@
 [UserObjects]
   [terminator]
     type = Terminator
-    expression = change<1e-3
+    expression = change<1e-4
   []
 []
 
