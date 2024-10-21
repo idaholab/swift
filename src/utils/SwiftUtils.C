@@ -37,6 +37,8 @@ struct TorchDeviceSingleton
                                            : torchDevice()),
       _device(_device_string),
       _float_dtype(isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32),
+      _complex_float_dtype(isSupported(torch::kComplexDouble, _device) ? torch::kComplexDouble
+                                                                       : torch::kComplexFloat),
       _int_dtype(isSupported(torch::kInt64, _device) ? torch::kInt64 : torch::kInt32)
   {
     mooseInfo("Running on '", _device_string, "'.");
@@ -49,6 +51,7 @@ struct TorchDeviceSingleton
   const std::string _device_string;
   const torch::Device _device;
   const torch::Dtype _float_dtype;
+  const torch::Dtype _complex_float_dtype;
   const torch::Dtype _int_dtype;
 };
 
@@ -69,6 +72,19 @@ floatTensorOptions()
   const static TorchDeviceSingleton ts;
   return torch::TensorOptions()
       .dtype(ts._float_dtype)
+      .layout(torch::kStrided)
+      .memory_format(torch::MemoryFormat::Contiguous)
+      .pinned_memory(false)
+      .device(ts._device)
+      .requires_grad(false);
+}
+
+const torch::TensorOptions
+complexFloatTensorOptions()
+{
+  const static TorchDeviceSingleton ts;
+  return torch::TensorOptions()
+      .dtype(ts._complex_float_dtype)
       .layout(torch::kStrided)
       .memory_format(torch::MemoryFormat::Contiguous)
       .pinned_memory(false)

@@ -29,7 +29,7 @@ FFTElasticChemicalPotential::validParams()
 FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters & parameters)
   : TensorOperator(parameters),
     _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
-                            MooseTensor::floatTensorOptions().dtype(torch::kComplexDouble))),
+                            MooseTensor::complexFloatTensorOptions())),
     _mu(getParam<Real>("mu")),
     _lambda(getParam<Real>("lambda")),
     _e0(getParam<Real>("e0")),

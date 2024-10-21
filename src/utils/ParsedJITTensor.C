@@ -438,10 +438,30 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::pow, {s[sp], const_one_third});
         break;
 
+      case cFetch:
+        ++sp;
+        s[sp] = s[ByteCode[++i]];
+        break;
       case cDup:
         ++sp;
         s[sp] = s[sp - 1];
         break;
+
+#ifdef FP_SUPPORT_OPTIMIZER
+      case cPopNMov:
+      {
+        int dst = ByteCode[++i], src = ByteCode[++i];
+        s[dst] = s[src];
+        sp = dst;
+        break;
+      }
+      case cLog2by:
+        --sp;
+        s[sp] = _graph->insert(aten::mul, {_graph->insert(aten::log2, {s[sp]}), s[sp + 1]});
+        break;
+      case cNop:
+        break;
+#endif
 
       default:
         if (op >= VarBegin)

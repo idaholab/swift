@@ -21,13 +21,18 @@ n3^2*n1^2 + n3^2*n2^2 + n3^2*n4^2 +
 n4^2*n1^2 + n4^2*n2^2 + n4^2*n3^2);
 (fa*(1-h) + fb*h + w*g)'
 
+nic = 'epsilon*(cos((0.01*idx)*x-4)*cos((0.007+0.01*idx)*y)
+       +cos((0.11+0.01*idx)*x)*cos((0.11+0.01*idx)*y)
+       +psi*(cos((0.046+0.001*idx)*x+(0.0405+0.001*idx)*y)
+       *cos((0.031+0.001*idx)*x-(0.004+0.001*idx)*y))^2)^2'
+
 cnames = 'rho     ca  cb  alpha w L M'
 cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 
 [TensorBuffers]
   # variables
   [c]
-    # map_to_aux_variable = c
+    map_to_aux_variable = c
   []
   [n1]
   []
@@ -63,6 +68,14 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 
   [mu_c_bar]
   []
+  [mu_n1_bar]
+  []
+  [mu_n2_bar]
+  []
+  [mu_n3_bar]
+  []
+  [mu_n4_bar]
+  []
 
   [Mbar_mu_c_bar]
   []
@@ -81,6 +94,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   [Fgrad]
   []
   [bnds]
+    map_to_aux_variable = bnds
   []
 []
 
@@ -108,6 +122,38 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ReciprocalLaplacianFactor
       buffer = kappaLbar
       factor = 15 # kappa_ni*L
+    []
+    [n1]
+      type = ParsedCompute
+      buffer = n1
+      expression = ${nic}
+      extra_symbols = true
+      constant_names       = 'idx epsilon psi'
+      constant_expressions = '  1     0.1 1.5'
+    []
+    [n2]
+      type = ParsedCompute
+      buffer = n2
+      expression = ${nic}
+      extra_symbols = true
+      constant_names       = 'idx epsilon psi'
+      constant_expressions = '  2    0.1 1.5'
+    []
+    [n3]
+      type = ParsedCompute
+      buffer = n3
+      expression = ${nic}
+      extra_symbols = true
+      constant_names       = 'idx epsilon psi'
+      constant_expressions = '  3     0.1 1.5'
+    []
+    [n4]
+      type = ParsedCompute
+      buffer = n4
+      expression = ${nic}
+      extra_symbols = true
+      constant_names       = 'idx epsilon psi'
+      constant_expressions = '  4     0.1 1.5'
     []
   []
 
@@ -194,8 +240,8 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       type = ParsedCompute
       buffer = Mbar_mu_c_bar
       enable_jit = true
-      expression = 'Lbar*mubar'
-      inputs = 'Lbar mubar'
+      expression = 'Lbar*mu_c_bar'
+      inputs = 'Lbar mu_c_bar'
     []
 
     [c_bar]
@@ -246,6 +292,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = bnds
       enable_jit = true
       expression = '(n1*n2)+(n1*n3)+(n1*n4)+(n2*n3)+(n2*n4)+(n3*n4)'
+      inputs = 'n1 n2 n3 n4'
     []
   []
 []
@@ -290,10 +337,10 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 []
 
 [AuxVariables]
-  # [c]
-  #   # family = MONOMIAL
-  #   # order = CONSTANT
-  # []
+  [c]
+  []
+  [bnds]
+  []
 []
 
 [Postprocessors]
@@ -329,14 +376,14 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   num_steps = 400
   [TimeStepper]
     type = IterationAdaptiveDT
-    growth_factor = 1.1
-    dt = 1
+    growth_factor = 1
+    dt = 1e-4
   []
   dtmax = 300
 []
 
 [Outputs]
-  # exodus = true
+  exodus = true
   csv = true
   perf_graph = true
   execute_on = 'TIMESTEP_END'

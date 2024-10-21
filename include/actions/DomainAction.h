@@ -33,6 +33,8 @@ public:
   const unsigned int & getDim() const { return _dim; }
   const std::array<int64_t, 3> & getGridSize() const { return _n_global; }
   const std::array<int64_t, 3> & getReciprocalGridSize() const { return _n_reciprocal_global; }
+  const std::array<int64_t, 3> & getLocalGridSize() const { return _n_local; }
+  const std::array<int64_t, 3> & getLocalReciprocalGridSize() const { return _n_reciprocal_local; }
   const std::array<Real, 3> & getDomainSize() const { return _max_global; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
@@ -84,6 +86,9 @@ protected:
 
   /// local number of grid points in real space
   std::array<int64_t, 3> _n_local;
+
+  /// local number of grid points in real space
+  std::array<int64_t, 3> _n_reciprocal_local;
 
   /// local begin/end indixes along each direction for slabs/pencils
   std::array<std::vector<int64_t>, 3> _local_begin;

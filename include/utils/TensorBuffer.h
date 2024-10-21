@@ -134,7 +134,7 @@ TensorBuffer<T, D>::TensorBuffer(const TensorShapeRef & batch_shape,
                            const std::array<Real, D> & max)
   : _options(floatTensorOptions()),
     _two_pi_i(
-        torch::tensor(c10::complex<double>(0.0, 2.0 * pi), _options.dtype(torch::kComplexDouble))),
+        torch::tensor(c10::complex<double>(0.0, 2.0 * pi), MooseTensor::complexFloatTensorOptions())),
     _data(T::zeros(batch_shape, _options)),
     _rfft(true),
     _min(min),

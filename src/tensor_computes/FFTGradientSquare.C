@@ -31,7 +31,7 @@ FFTGradientSquare::FFTGradientSquare(const InputParameters & parameters)
     _factor(getParam<Real>("factor")),
     _dim(_domain.getDim()),
     _i(torch::tensor(c10::complex<double>(0.0, 1.0),
-                     MooseTensor::floatTensorOptions().dtype(torch::kComplexDouble)))
+                     MooseTensor::complexFloatTensorOptions()))
 {
 }
 

@@ -30,7 +30,7 @@ FFTGradient::FFTGradient(const InputParameters & parameters)
     _input_is_reciprocal(getParam<bool>("input_is_reciprocal")),
     _direction(getParam<MooseEnum>("direction")),
     _i(torch::tensor(c10::complex<double>(0.0, 1.0),
-                     MooseTensor::floatTensorOptions().dtype(torch::kComplexDouble)))
+                     MooseTensor::complexFloatTensorOptions()))
 {
 }
 

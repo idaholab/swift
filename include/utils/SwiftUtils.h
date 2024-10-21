@@ -26,6 +26,7 @@ class Key
 void printTensorInfo(const torch::Tensor & x);
 
 const torch::TensorOptions floatTensorOptions();
+const torch::TensorOptions complexFloatTensorOptions();
 const torch::TensorOptions intTensorOptions();
 
 } // namespace MooseTensor

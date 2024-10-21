@@ -14,12 +14,22 @@
 /**
  * Constant Tensor
  */
-class ConstantTensor : public TensorOperator
+template <bool reciprocal>
+class ConstantTensorTempl : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  ConstantTensor(const InputParameters & parameters);
+  ConstantTensorTempl(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
+
+  /// mesh dimension
+  const unsigned int & _dim;
+
+  using TensorOperator::_domain;
+  using TensorOperator::_u;
 };
+
+typedef ConstantTensorTempl<false> ConstantTensor;
+typedef ConstantTensorTempl<true> ConstantReciprocalTensor;

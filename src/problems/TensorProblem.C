@@ -120,6 +120,16 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     // run ICs
     for (auto & ic : _ics)
       ic->computeBuffer();
+
+    // compile ist of compute output tensors
+    std::set<std::string> _is_output;
+    for (auto & cmp : _computes)
+      _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
+
+    // check for uninitialized tensors
+    for (auto & [name, t] : _tensor_buffer)
+      if (!t.defined() && _is_output.count(name) == 0)
+        mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)

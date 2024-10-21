@@ -111,14 +111,14 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _local_ranks.push_back(local_rank);
     _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
 
-    std::cout << "Process on " << host_name << ' ' << local_rank << ' '
-              << _device_weights[local_rank % _device_weights.size()] << '\n';
+    // std::cout << "Process on " << host_name << ' ' << local_rank << ' '
+    //           << _device_weights[local_rank % _device_weights.size()] << '\n';
 
     local_rank++;
   }
 
-  for (const auto i : index_range(host_names))
-    std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+  // for (const auto i : index_range(host_names))
+  //   std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
 
   // pick a compute device for a list of available devices
   auto swift_app = dynamic_cast<SwiftApp *>(&_app);
@@ -166,7 +166,7 @@ DomainAction::gridChanged()
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
 
-    // get reciprocal axis size
+    // get global reciprocal axis size
     _n_reciprocal_global[dim] = _global_reciprocal_axis[dim].sizes()[dim];
   }
 
@@ -184,6 +184,10 @@ DomainAction::gridChanged()
       partitionPencils();
       break;
   }
+
+  // get local reciprocal axis size
+  for (const auto dim : {0, 1, 2})
+    _n_reciprocal_local[dim] = _local_reciprocal_axis[dim].sizes()[dim];
 
   // k-square buffer
   _k2 = _local_reciprocal_axis[0] * _local_reciprocal_axis[0] +
@@ -206,7 +210,7 @@ DomainAction::partitionSerial()
     }
   }
 
-  // to do, make those slices depmendent on local begin/end
+  // to do, make those slices dependent on local begin/end
   _local_axis = _global_axis;
   _n_local = _n_global;
   _local_reciprocal_axis = _global_reciprocal_axis;
