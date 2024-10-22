@@ -116,6 +116,12 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_output", TensorOutput, false);
   addTaskDependency("add_tensor_output", "add_tensor_time_integrator");
 
+  // Create TensorSolver
+  registerSyntaxTask(
+      "CreateTensorSolverAction", "TensorSolver", "create_tensor_solver");
+  registerMooseObjectTask("create_tensor_solver", TensorSolver, false);
+  addTaskDependency("create_tensor_solver", "add_tensor_output");
+
   // make sure all this gets run before `add_mortar_variable`
   addTaskDependency("add_mortar_variable", "add_tensor_output");
 }

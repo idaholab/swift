@@ -12,6 +12,7 @@
 #include "FEProblem.h"
 #include "DomainInterface.h"
 #include "SwiftTypes.h"
+#include "SwiftUtils.h"
 
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
@@ -22,6 +23,8 @@ class UniformTensorMesh;
 class TensorOperatorBase;
 class TensorTimeIntegrator;
 class TensorOutput;
+class TensorSolver;
+class CreateTensorSolverAction;
 
 /**
  * Problem for solving eigenvalue problems
@@ -59,11 +62,11 @@ public:
                                            InputParameters & parameters);
 
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
-                                    const std::string & name,
-                                    InputParameters & parameters);
+                                       const std::string & name,
+                                       InputParameters & parameters);
   virtual void addTensorOutput(const std::string & output_name,
-                            const std::string & name,
-                            InputParameters & parameters);
+                               const std::string & name,
+                               InputParameters & parameters);
 
   torch::Tensor & getBuffer(const std::string & buffer_name);
   const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
@@ -77,14 +80,19 @@ public:
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
 
-  /// get the domain shape (to build tensors from scratch)
+  /// get the domain shape (to build tensors from scratch) TODO: make sure this is local
   const torch::IntArrayRef & getShape() { return _shape; }
+
+  typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
+  const TensorComputeList & getComputes() const { return _computes; }
+
+  /// The CreateTensorSolverAction calls this to set the active solver
+  void setSolver(std::shared_ptr<TensorSolver> solver,
+                 const MooseTensor::Key<CreateTensorSolverAction> &);
 
 protected:
   void updateDOFMap();
   void mapBuffersToAux();
-
-  typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
 
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
@@ -143,4 +151,7 @@ protected:
   /// buffers to solution vector indices
   std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
       _buffer_to_var;
+
+  /// The [TensorSolver]
+  std::shared_ptr<TensorSolver> _solver;
 };

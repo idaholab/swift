@@ -13,6 +13,7 @@
 #include "TensorOperatorBase.h"
 #include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
+#include "TensorSolver.h"
 #include "DomainAction.h"
 
 #include "SwiftUtils.h"
@@ -44,7 +45,8 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
     _dim(_domain.getDim()),
     _grid_spacing(_domain.getGridSpacing()),
     _n((_domain.getGridSize())),
-    _shape(_domain.getShape())
+    _shape(_domain.getShape()),
+    _solver(nullptr)
 {
   // make sure AuxVariables are contiguous in teh solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
@@ -134,29 +136,36 @@ TensorProblem::execute(const ExecFlagType & exec_type)
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
-    // if the time step changed and the current time integrator does not support variable time step
-    // size, we clear the histories
-    if (dt() != dtOld())
-      for (auto & [name, max_states] : _old_tensor_buffer)
-        max_states.second.clear();
-
-    // update substepping dt
-    _sub_dt = dt() / _substeps;
-
-    for (unsigned substep = 0; substep < _substeps; ++substep)
+    // legacy time integrator system
+    if (!_solver)
     {
-      // run computes on begin
-      for (auto & cmp : _computes)
-        cmp->computeBuffer();
+      // if the time step changed and the current time integrator does not support variable time
+      // step size, we clear the histories
+      if (dt() != dtOld())
+        for (auto & [name, max_states] : _old_tensor_buffer)
+          max_states.second.clear();
 
-      // run timeintegrators
-      for (auto & ti : _time_integrators)
-        ti->computeBuffer();
+      // update substepping dt
+      _sub_dt = dt() / _substeps;
 
-      // advance step (this will not work with solve failures!)
-      if (substep < _substeps - 1)
-        advanceState();
+      for (unsigned substep = 0; substep < _substeps; ++substep)
+      {
+        // run computes on begin
+        for (auto & cmp : _computes)
+          cmp->computeBuffer();
+
+        // run timeintegrators
+        for (auto & ti : _time_integrators)
+          ti->computeBuffer();
+
+        // advance step (this will not work with solve failures!)
+        if (substep < _substeps - 1)
+          advanceState();
+      }
     }
+    else
+      // new time integrator
+      _solver->computeBuffer();
 
     // run postprocessing before output
     for (auto & pp : _pps)
@@ -526,4 +535,18 @@ TensorProblem::getCPUBuffer(const std::string & buffer_name)
       mooseError("Failed to insert read-only CPU buffer");
   }
   return it->second;
+}
+
+void TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
+                              const MooseTensor::Key<CreateTensorSolverAction> &)
+{
+  if (_solver)
+    mooseError("A solver has already been set up.");
+
+  _solver = solver;
+
+  // check that no legacy time integrators have been set
+  if (!_time_integrators.empty())
+    mooseError(
+        "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
 }
