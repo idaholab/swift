@@ -18,7 +18,6 @@
   [cbar]
   []
   [mu]
-    # map_to_aux_variable = mu
   []
   [mubar]
   []
@@ -33,9 +32,6 @@
   [F]
   []
   [Fgrad]
-  []
-  [du]
-    map_to_aux_variable = du
   []
 []
 
@@ -110,19 +106,11 @@
   []
 []
 
-[UserObjects]
-  [terminator]
-    type = Terminator
-    expression = change<1e-4
-  []
-[]
-
 [TensorSolver]
   type = SecantSolver
-  substeps = 1
-  du_realspace = du
-  max_iterations = 100
-  tolerance = 1e-8
+  substeps = 5
+  max_iterations = 50
+  tolerance = 1e-7
   dt_epsilon = 1e-5
   buffer = c
   reciprocal_buffer = cbar
@@ -131,15 +119,7 @@
 []
 
 [AuxVariables]
-  # [mu]
-  #   family = MONOMIAL
-  #   order = CONSTANT
-  # []
   [c]
-    # family = MONOMIAL
-    # order = CONSTANT
-  []
-  [du]
   []
 []
 
@@ -160,10 +140,6 @@
     type = TensorIntegralPostprocessor
     buffer = F
   []
-  [change]
-    type = TensorIntegralChangePostprocessor
-    buffer = c
-  []
 []
 
 [Problem]
@@ -172,7 +148,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 3
+  num_steps = 900
   [TimeStepper]
     type = IterationAdaptiveDT
     growth_factor = 1.01
@@ -187,4 +163,3 @@
   perf_graph = true
   execute_on = 'TIMESTEP_END'
 []
-

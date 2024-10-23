@@ -30,6 +30,5 @@ protected:
   unsigned int _substeps;
   unsigned int _max_iterations;
   const Real _tolerance;
-
-  torch::Tensor & _du_realspace;
+  const bool _verbose;
 };
