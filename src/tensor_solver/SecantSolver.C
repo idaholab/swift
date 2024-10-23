@@ -61,7 +61,7 @@ SecantSolver::secantSolve()
   }
 
   // inverse of the Jacobian
-  torch::Tensor iJ;
+  torch::Tensor J;
 
   // secant iterations
   for (const auto iteration : make_range(_max_iterations))
@@ -78,30 +78,32 @@ SecantSolver::secantSolve()
       const auto & N = _variables[i]._nonlinear_reciprocal;
       const auto & L = _variables[i]._linear_reciprocal;
 
-      // residual
-      auto R = (N + L * u) * dt + u_old[i] - u;
+      // residual in real space
+      auto R = _domain.ifft((N + L * u) * dt + u_old[i] - u);
+
+      if (iteration == 0)
+        _du_realspace = R;
 
       // approximate Jacobian during first substep
       if (iteration == 0)
-      {
-        iJ = 1.0 / (L * dt - 1.0);
-        // iJ = torch::where(torch::abs(iJ) > 1.0, 1e-5, iJ);
-      }
+        J = _domain.ifft(L * dt - 1.0);
       else
       {
-        const auto denom = R - Rprev[i];
-        iJ = torch::where(torch::abs(denom) > _tolerance, (u - uprev[i]) / denom, _tolerance);
+        J = (R - Rprev[i]) / (u_out - uprev[i]);
+        // J = torch::where(torch::abs(denom) > _tolerance, R - Rprev[i] / denom, 0.0);
+
+        // std::cout << " |denom|=" << torch::sum(torch::abs(denom)).item<double>() << '\n';
+        // std::cout << " |R-Rprev|=" << torch::sum(torch::abs(R - Rprev[i])).item<double>() <<
+        // '\n';
       }
 
-      auto du = -R * iJ;
-      du = torch::where(torch::abs(du) > 1, du / torch::abs(du), du);
+      auto du = -R / J;
+      // auto du = torch::where(torch::abs(J) > _tolerance, -R / J, 0.0);
 
-      // debug
-      if (_substep == 0)
-        _du_realspace = _domain.ifft(du);
+      uprev[i] = u_out;
+      Rprev[i] = R;
 
-      const auto unext = u + du;
-      u_out = _domain.ifft(unext);
+      u_out += du;
 
       const auto unorm = torch::sum(torch::abs(du)).item<double>();
       const auto Rnorm = torch::sum(torch::abs(R)).item<double>();
@@ -111,9 +113,6 @@ SecantSolver::secantSolve()
         // _console << "Secant solve converged after " << iteration << " iterations.\n";
         return;
       }
-
-      uprev[i] = unext;
-      Rprev[i] = R;
     }
   }
 }

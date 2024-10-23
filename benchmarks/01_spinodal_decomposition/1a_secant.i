@@ -121,8 +121,8 @@
   type = SecantSolver
   substeps = 1
   du_realspace = du
-  max_iterations = 4
-  tolerance = 1e-3
+  max_iterations = 10
+  tolerance = 1e-8
   buffer = c
   reciprocal_buffer = cbar
   linear_reciprocal = kappabarbar
