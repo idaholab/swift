@@ -21,6 +21,7 @@ SecantSolver::validParams()
   params.addParam<unsigned int>("substeps", 1, "secant solver substeps per time step.");
   params.addParam<unsigned int>("max_iterations", 5, "Maximum number of secant solver iteration.");
   params.addParam<Real>("tolerance", 1e-10, "Convergence tolerance.");
+  params.addParam<Real>("damping", 1.0, "Damping factor for teh update step.");
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
   params.set<unsigned int>("substeps") = 0;
@@ -33,7 +34,8 @@ SecantSolver::SecantSolver(const InputParameters & parameters)
     _substeps(getParam<unsigned int>("substeps")),
     _max_iterations(getParam<unsigned int>("max_iterations")),
     _tolerance(getParam<Real>("tolerance")),
-    _verbose(getParam<bool>("verbose"))
+    _verbose(getParam<bool>("verbose")),
+    _damping(getParam<Real>("damping"))
 {
 }
 
@@ -48,11 +50,21 @@ void
 SecantSolver::secantSolve()
 {
   const auto n = _variables.size();
+
+  if (n > 1)
+    paramWarning("buffer",
+                 "The secant solver only work well for uncoupled variables. Use the BroydenSolver "
+                 "for solves with multiple coupled variables.");
+
   const auto dt = _dt / _substeps;
   std::vector<torch::Tensor> u_old(n);
   std::vector<torch::Tensor> Rprev(n);
   std::vector<torch::Tensor> uprev(n);
   std::vector<Real> R0norm(n);
+
+  // initial guess computed using semi-implicit Euler
+  for (auto & cmp : _computes)
+    cmp->computeBuffer();
 
   for (const auto i : make_range(n))
   {
@@ -61,9 +73,6 @@ SecantSolver::secantSolve()
     const auto & N = _variables[i]._nonlinear_reciprocal;
     const auto & L = _variables[i]._linear_reciprocal;
 
-    // initial guess computed using semi-implicit Euler
-    for (auto & cmp : _computes)
-      cmp->computeBuffer();
     Rprev[i] = (N + L * u) * dt; // u = u_old at this point!
     uprev[i] = u;
 
@@ -116,7 +125,10 @@ SecantSolver::secantSolve()
       uprev[i] = u;
       Rprev[i] = R;
 
-      u_out = _domain.ifft(u + du);
+      if (_damping == 1.0)
+        u_out = _domain.ifft(u + du);
+      else
+        u_out = _domain.ifft(u + du * _damping);
 
       const auto Rnorm = torch::sum(torch::abs(R)).item<double>();
 

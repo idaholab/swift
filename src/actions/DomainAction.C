@@ -74,6 +74,7 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _max_global({getParam<Real>("xmax"), getParam<Real>("ymax"), getParam<Real>("zmax")}),
     _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>()),
     _shape(torch::IntArrayRef(_n_local.data(), _dim)),
+    _reciprocal_shape(torch::IntArrayRef(_n_reciprocal_local.data(), _dim)),
     _rank(_communicator.rank()),
     _n_rank(_communicator.size()),
     _send_tensor(_n_rank),

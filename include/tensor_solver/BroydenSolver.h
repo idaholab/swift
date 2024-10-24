@@ -12,19 +12,19 @@
 #include "SplitOperatorBase.h"
 
 /**
- * SecantSolver object
+ * BroydenSolver object
  */
-class SecantSolver : public SplitOperatorBase
+class BroydenSolver : public SplitOperatorBase
 {
 public:
   static InputParameters validParams();
 
-  SecantSolver(const InputParameters & parameters);
+  BroydenSolver(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
 protected:
-  void secantSolve();
+  void broydenSolve();
 
   unsigned int _substep;
   unsigned int _substeps;
@@ -32,4 +32,6 @@ protected:
   const Real _tolerance;
   const bool _verbose;
   const Real _damping;
+  unsigned int _dim;
+  torch::TensorOptions _options;
 };

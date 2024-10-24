@@ -40,7 +40,10 @@ public:
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
   const torch::Tensor & getKSquare() const { return _k2; }
+
+  /// get the shape of the local domain
   const torch::IntArrayRef & getShape() const { return _shape; }
+  const torch::IntArrayRef & getReciprocalShape() const { return _reciprocal_shape; }
 
   torch::Tensor fft(const torch::Tensor & t) const;
   torch::Tensor ifft(const torch::Tensor & t) const;
@@ -116,6 +119,7 @@ protected:
 
   /// domain shape
   torch::IntArrayRef _shape;
+  torch::IntArrayRef _reciprocal_shape;
 
   /// MPI rank
   unsigned int _rank;

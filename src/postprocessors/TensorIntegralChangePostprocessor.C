@@ -10,7 +10,6 @@
 #include "TensorIntegralChangePostprocessor.h"
 #include "DomainAction.h"
 #include "TensorProblem.h"
-#include "UniformTensorMesh.h"
 
 registerMooseObject("SwiftApp", TensorIntegralChangePostprocessor);
 
