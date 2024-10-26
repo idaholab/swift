@@ -11,6 +11,8 @@
 
 #include <torch/torch.h>
 
+#define pti(tensor) MooseTensor::printTensorInfo(#tensor, tensor)
+
 namespace MooseTensor
 {
 
@@ -24,9 +26,11 @@ class Key
 };
 
 void printTensorInfo(const torch::Tensor & x);
+void printTensorInfo(const std::string & name, const torch::Tensor & x);
 
 const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions complexFloatTensorOptions();
 const torch::TensorOptions intTensorOptions();
 
 } // namespace MooseTensor
+

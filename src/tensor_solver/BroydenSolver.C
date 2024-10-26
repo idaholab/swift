@@ -59,7 +59,7 @@ BroydenSolver::broydenSolve()
   v.push_back(n);
 
   // Create a 3x3 identity matrix and expand to all grid points
-  torch::Tensor M = torch::eye(n, _options);
+  torch::Tensor M = torch::eye(n, _options);// * 1e-6;
   for (const auto i : make_range(_dim))
     M.unsqueeze_(0);
   M = M.expand(v);
@@ -85,8 +85,8 @@ BroydenSolver::broydenSolve()
   const auto dt = _dt / _substeps;
 
   // initial residual
-  const auto R0 = (N + L * u) * dt;
-  torch::Tensor R = R0;
+  torch::Tensor R = (N + L * u) * dt;
+  const auto R0norm = torch::sum(torch::abs(R)).item<double>();
 
   // stack u_old
   std::vector<torch::Tensor> u_old_v(n);
@@ -103,13 +103,23 @@ BroydenSolver::broydenSolve()
   {
     const auto sv = torch::matmul(M, R.unsqueeze(-1)).squeeze(-1);
 
-    const auto s = sv.unsqueeze(-2);
-    const auto sT = sv.unsqueeze(-1);
+    const auto sT = sv.unsqueeze(-2); // row vector
+    const auto s = sv.unsqueeze(-1);  // column vector
 
     // update u
-    const auto u_out_v = torch::unbind(u + sv, -1);
+    const auto u_out_v = torch::unbind(u - sv, -1);
     for (const auto i : make_range(n))
       _variables[i]._buffer = _domain.ifft(u_out_v[i]);
+
+    // check for convergence
+    const auto Rnorm = torch::sum(torch::abs(R)).item<double>();
+    if (Rnorm / R0norm < _tolerance)
+    {
+      std::cout << "Secant solve converged after " << iteration << " iterations.\n";
+      return;
+    }
+    else
+      std::cout << iteration << " |R|=" << Rnorm << std::endl;
 
     // evaluate the solve computes
     for (auto & cmp : _computes)
@@ -118,53 +128,18 @@ BroydenSolver::broydenSolve()
     const auto [u, N, L] = stackVariables();
 
     // residual in reciprocal space
-    R = (N + L * u) * dt + u_old - u;
+    const auto Rnew = (N + L * u) * dt + u_old - u;
+    const auto yv = Rnew - R;
 
-    MooseTensor::printTensorInfo(torch::matmul(s, sT));
-    mooseError("done");
+    const auto yT = yv.unsqueeze(-2); // row vector
+    const auto y = yv.unsqueeze(-1);  // column vector
 
-    // Vector fx_new = f(x + s);
-    // Vector y = fx_new - fx;
-    // Vector dy = fx_new - fx_new.subvec(0, n - 2); // Approximate the Jacobian column
-    // M = M + (y * dy.t()) / (dy.t() * dy) - (s * s.t()) / (s.t() * y);
-    // x += s;
-    // fx = fx_new;
+    // update inverse jacobian
+    // auto denom = sT.matmul(y);
+    // denom = torch::where(torch::abs(denom)> 1e-10, denom, 1e90);
+    // M = M + (s - M.matmul(y)).matmul(sT) / denom;
+    R = Rnew;
 
-    // if (arma::norm(fx, 2) < epsilon) {
-    //   return x; // Converged
-    // }
-
-    // // avoid NaN
-    // const auto denom = u - uprev[i];
-    // J = (R - Rprev[i]) / denom;
-    // auto du = torch::where(torch::abs(denom) > 0, -R / J, 0.0);
-
-    // uprev[i] = u;
-    // Rprev[i] = R;
-
-    // if (_damping == 1.0)
-    //   u_out = _domain.ifft(u + du);
-    // else
-    //   u_out = _domain.ifft(u + du * _damping);
-
-    // const auto Rnorm = torch::sum(torch::abs(R)).item<double>();
-
-    // if (_verbose)
-    // {
-    //   const auto unorm = torch::sum(torch::abs(du)).item<double>();
-    //   std::cout << iteration << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
-    // }
-
-    // // relative convergence check
-    // all_converged = all_converged && (Rnorm / R0norm[i] < _tolerance);
-
-    // if (all_converged)
-    // {
-    //   std::cout << "Secant solve converged after " << iteration << " iterations.\n";
-    //   break;
-    // }
+    M = M + (s - M.matmul(y)).matmul(sT) / sT.matmul(y);
   }
-
-  if (!all_converged)
-    std::cout << "Solve not converged.\n";
 }

@@ -66,6 +66,15 @@ printTensorInfo(const torch::Tensor & x)
   Moose::out << std::endl;
 }
 
+void
+printTensorInfo(const std::string & name,const torch::Tensor & x)
+{
+  Moose::out << "============== " << name << " ==============\n";
+  printTensorInfo(x);
+  Moose::out << std::endl;
+}
+
+
 const torch::TensorOptions
 floatTensorOptions()
 {
