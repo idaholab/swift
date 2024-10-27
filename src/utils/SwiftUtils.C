@@ -74,6 +74,24 @@ printTensorInfo(const std::string & name,const torch::Tensor & x)
   Moose::out << std::endl;
 }
 
+void
+printElementZero(const torch::Tensor & tensor)
+{
+  // Access the element at all zero indices
+  auto element = tensor[0][0];
+  // for (int i = 1; i < tensor.dim(); ++i)
+  //   element = element[0];
+
+  Moose::out << element << std::endl;
+}
+
+void
+printElementZero(const std::string & name, const torch::Tensor & x)
+{
+  Moose::out << "============== " << name << " ==============\n";
+  printElementZero(x);
+  Moose::out << std::endl;
+}
 
 const torch::TensorOptions
 floatTensorOptions()

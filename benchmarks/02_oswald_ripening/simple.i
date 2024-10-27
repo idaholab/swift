@@ -1,9 +1,9 @@
 [Domain]
   dim = 2
-  nx = 20
-  ny = 20
-  xmax = 20
-  ymax = 20
+  nx = 4
+  ny = 4
+  xmax = 1
+  ymax = 1
 
   device_names = 'cuda:0'
 
@@ -130,7 +130,7 @@
   # type = SecantSolver
   type = BroydenSolver
   substeps = 1
-  max_iterations = 30
+  max_iterations = 10
   damping = 0.5
   buffer = 'n1 n2 n3'
   tolerance = 1e-5
@@ -165,7 +165,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 2
+  num_steps = 1
   dt = 1e-2
 []
 

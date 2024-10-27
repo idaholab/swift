@@ -95,6 +95,9 @@ BroydenSolver::broydenSolve()
   const auto [u, N, L] = stackVariables();
   torch::Tensor R = (N + L * u) * dt;
 
+  pez(N);
+  pez(L);
+
   // initial residual norm
   const auto R0norm = torch::norm(R).item<double>();
 
@@ -111,25 +114,25 @@ BroydenSolver::broydenSolve()
     else
       std::cout << iteration << " |R|=" << Rnorm << std::endl;
 
+    pez(M);
+    pez(R);
+
     // update step dx
     const auto sk = -torch::matmul(M, R.unsqueeze(-1)); // column vector
     const auto skT = sk.squeeze(-1).unsqueeze(-2);      // row vector
 
+    pez(sk);
+
     // update u
     const auto u_out_v = torch::unbind(u + sk.squeeze(-1), -1);
     for (const auto i : make_range(n))
-    {
-      // pti(u_out_v[i]);
       _variables[i]._buffer = _domain.ifft(u_out_v[i]);
-    }
 
     // update residual
     for (auto & cmp : _computes)
       cmp->computeBuffer();
     const auto [u, N, L] = stackVariables();
     const auto Rnew = (N + L * u) * dt + u_old - u;
-
-    std::cout << "|u_old - u| = " << torch::norm(R).item<double>() << std::endl;
 
     // residual change
     const auto yk = (Rnew - R).unsqueeze(-1);
@@ -142,4 +145,6 @@ BroydenSolver::broydenSolve()
 
     R = Rnew;
   }
+
+  std::cerr << "Secant solve did not converge within the maximum number of iterations.\n";
 }

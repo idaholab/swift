@@ -13,6 +13,8 @@
 
 #define pti(tensor) MooseTensor::printTensorInfo(#tensor, tensor)
 
+#define pez(tensor) MooseTensor::printElementZero(#tensor, tensor)
+
 namespace MooseTensor
 {
 
@@ -27,6 +29,9 @@ class Key
 
 void printTensorInfo(const torch::Tensor & x);
 void printTensorInfo(const std::string & name, const torch::Tensor & x);
+
+void printElementZero(const torch::Tensor & tensor);
+void printElementZero(const std::string & name, const torch::Tensor & tensor);
 
 const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions complexFloatTensorOptions();
