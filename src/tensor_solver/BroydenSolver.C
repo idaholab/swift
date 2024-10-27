@@ -51,6 +51,8 @@ BroydenSolver::computeBuffer()
 void
 BroydenSolver::broydenSolve()
 {
+  const auto dt = _dt / _substeps;
+
   // Jacobian dimensions
   const auto n = _variables.size();
   const auto & s = _domain.getReciprocalShape();
@@ -59,10 +61,19 @@ BroydenSolver::broydenSolve()
   v.push_back(n);
 
   // Create a 3x3 identity matrix and expand to all grid points
-  torch::Tensor M = torch::eye(n, _options);// * 1e-6;
+  torch::Tensor M = torch::eye(n, _options) * 1e-6;
   for (const auto i : make_range(_dim))
     M.unsqueeze_(0);
   M = M.expand(v);
+
+  // stack u_old
+  std::vector<torch::Tensor> u_old_v(n);
+  for (const auto i : make_range(n))
+    if (_variables[i]._reciprocal_buffer.defined())
+      u_old_v[i] = _variables[i]._reciprocal_buffer;
+    else
+      u_old_v[i] = _domain.fft(_variables[i]._buffer);
+  const auto u_old = torch::stack(u_old_v, -1);
 
   auto stackVariables = [&]()
   {
@@ -78,41 +89,20 @@ BroydenSolver::broydenSolve()
     return std::make_tuple(torch::stack(u, -1), torch::stack(N, -1), torch::stack(L, -1));
   };
 
+  // initial residual
   for (auto & cmp : _computes)
     cmp->computeBuffer();
-
   const auto [u, N, L] = stackVariables();
-  const auto dt = _dt / _substeps;
-
-  // initial residual
   torch::Tensor R = (N + L * u) * dt;
-  const auto R0norm = torch::sum(torch::abs(R)).item<double>();
 
-  // stack u_old
-  std::vector<torch::Tensor> u_old_v(n);
-  for (const auto i : make_range(n))
-    if (_variables[i]._reciprocal_buffer.defined())
-      u_old_v[i] = _variables[i]._reciprocal_buffer;
-    else
-      u_old_v[i] = _domain.fft(_variables[i]._buffer);
-  const auto u_old = torch::stack(u_old_v, -1);
+  // initial residual norm
+  const auto R0norm = torch::norm(R).item<double>();
 
   // secant iterations
-  bool all_converged;
   for (const auto iteration : make_range(_max_iterations))
   {
-    const auto sv = torch::matmul(M, R.unsqueeze(-1)).squeeze(-1);
-
-    const auto sT = sv.unsqueeze(-2); // row vector
-    const auto s = sv.unsqueeze(-1);  // column vector
-
-    // update u
-    const auto u_out_v = torch::unbind(u - sv, -1);
-    for (const auto i : make_range(n))
-      _variables[i]._buffer = _domain.ifft(u_out_v[i]);
-
     // check for convergence
-    const auto Rnorm = torch::sum(torch::abs(R)).item<double>();
+    const auto Rnorm = torch::norm(R).item<double>();
     if (Rnorm / R0norm < _tolerance)
     {
       std::cout << "Secant solve converged after " << iteration << " iterations.\n";
@@ -121,25 +111,30 @@ BroydenSolver::broydenSolve()
     else
       std::cout << iteration << " |R|=" << Rnorm << std::endl;
 
-    // evaluate the solve computes
+    // update step dx
+    const auto sk = -torch::matmul(M, R.unsqueeze(-1)); // column vector
+    const auto skT = sk.squeeze(-1).unsqueeze(-2);      // row vector
+
+    // update u
+    const auto u_out_v = torch::unbind(u + sk.squeeze(-1), -1);
+    for (const auto i : make_range(n))
+      _variables[i]._buffer = _domain.ifft(u_out_v[i]);
+
+    // update residual
     for (auto & cmp : _computes)
       cmp->computeBuffer();
-
     const auto [u, N, L] = stackVariables();
-
-    // residual in reciprocal space
     const auto Rnew = (N + L * u) * dt + u_old - u;
-    const auto yv = Rnew - R;
 
-    const auto yT = yv.unsqueeze(-2); // row vector
-    const auto y = yv.unsqueeze(-1);  // column vector
+    // residual change
+    const auto yk = (Rnew - R).unsqueeze(-1);
 
-    // update inverse jacobian
-    // auto denom = sT.matmul(y);
-    // denom = torch::where(torch::abs(denom)> 1e-10, denom, 1e90);
-    // M = M + (s - M.matmul(y)).matmul(sT) / denom;
+    const auto denom = torch::matmul(skT, yk);
+    // M = M + torch::where(torch::abs(denom) > 0, torch::matmul((sk - torch::matmul(M, yk)), skT) / denom, 0.0);
+    M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::where(torch::abs(denom) > 0, denom, 1.0);
+
+    // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::matmul(skT, yk);
+
     R = Rnew;
-
-    M = M + (s - M.matmul(y)).matmul(sT) / sT.matmul(y);
   }
 }
