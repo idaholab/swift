@@ -61,7 +61,7 @@ BroydenSolver::broydenSolve()
   v.push_back(n);
 
   // Create a 3x3 identity matrix and expand to all grid points
-  torch::Tensor M = torch::eye(n, _options) * 1e-6;
+  torch::Tensor M = torch::eye(n, _options); // * 1e-6;
   for (const auto i : make_range(_dim))
     M.unsqueeze_(0);
   M = M.expand(v);
@@ -118,7 +118,10 @@ BroydenSolver::broydenSolve()
     // update u
     const auto u_out_v = torch::unbind(u + sk.squeeze(-1), -1);
     for (const auto i : make_range(n))
+    {
+      // pti(u_out_v[i]);
       _variables[i]._buffer = _domain.ifft(u_out_v[i]);
+    }
 
     // update residual
     for (auto & cmp : _computes)
@@ -126,12 +129,14 @@ BroydenSolver::broydenSolve()
     const auto [u, N, L] = stackVariables();
     const auto Rnew = (N + L * u) * dt + u_old - u;
 
+    std::cout << "|u_old - u| = " << torch::norm(R).item<double>() << std::endl;
+
     // residual change
     const auto yk = (Rnew - R).unsqueeze(-1);
 
     const auto denom = torch::matmul(skT, yk);
     // M = M + torch::where(torch::abs(denom) > 0, torch::matmul((sk - torch::matmul(M, yk)), skT) / denom, 0.0);
-    M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::where(torch::abs(denom) > 0, denom, 1.0);
+    M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::where(torch::abs(denom) > 1e-12, denom, 1.0);
 
     // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::matmul(skT, yk);
 

@@ -130,7 +130,7 @@
   # type = SecantSolver
   type = BroydenSolver
   substeps = 1
-  max_iterations = 3000
+  max_iterations = 30
   damping = 0.5
   buffer = 'n1 n2 n3'
   tolerance = 1e-5
@@ -165,7 +165,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 4
+  num_steps = 2
   dt = 1e-2
 []
 
