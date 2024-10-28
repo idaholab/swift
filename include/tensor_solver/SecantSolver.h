@@ -10,11 +10,12 @@
 #pragma once
 
 #include "SplitOperatorBase.h"
+#include "IterativeTensorSolverInterface.h"
 
 /**
  * SecantSolver object
  */
-class SecantSolver : public SplitOperatorBase
+class SecantSolver : public SplitOperatorBase, public IterativeTensorSolverInterface
 {
 public:
   static InputParameters validParams();

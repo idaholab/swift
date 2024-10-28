@@ -1,0 +1,178 @@
+//* This file is part of the MOOSE framework
+//* https://www.mooseframework.org
+//*
+//* All rights reserved, see COPYRIGHT for full restrictions
+//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+//*
+//* Licensed under LGPL 2.1, please see LICENSE for details
+//* https://www.gnu.org/licenses/lgpl-2.1.html
+
+// MOOSE includes
+#include "TensorSolveIterationAdaptiveDT.h"
+#include "TensorProblem.h"
+#include "IterativeTensorSolverInterface.h"
+
+#include <limits>
+
+registerMooseObject("MooseApp", TensorSolveIterationAdaptiveDT);
+
+InputParameters
+TensorSolveIterationAdaptiveDT::validParams()
+{
+  InputParameters params = TimeStepper::validParams();
+  params.addClassDescription(
+      "Adjust the timestep based on the number of internal TensorSolve iterations");
+  params.addParam<int>(
+      "min_iterations",
+      "If the solve takes less than 'min_iterations', dt is increased by 'growth_factor'");
+  params.addParam<int>(
+      "max_iterations",
+      "If the solve takes more than 'max_iterations', dt is decreased by 'cutback_factor'");
+
+  params.addParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor",
+                                                  "If specified, a list of postprocessor values "
+                                                  "used as an upper limit for the "
+                                                  "current time step length");
+  params.addRequiredParam<Real>("dt", "The default timestep size between solves");
+  params.addParam<Real>("growth_factor",
+                        2.0,
+                        "Factor to apply to timestep if easy convergence or if recovering "
+                        "from failed solve");
+  params.addParam<Real>("cutback_factor",
+                        0.5,
+                        "Factor to apply to timestep if difficult convergence "
+                        "occurs. "
+                        "For failed solves, use cutback_factor_at_failure");
+
+  params.declareControllable("growth_factor cutback_factor");
+
+  return params;
+}
+
+TensorSolveIterationAdaptiveDT::TensorSolveIterationAdaptiveDT(const InputParameters & parameters)
+  : TimeStepper(parameters),
+    PostprocessorInterface(this),
+    _dt_old(declareRestartableData<Real>("dt_old", 0.0)),
+    _input_dt(getParam<Real>("dt")),
+    _growth_factor(getParam<Real>("growth_factor")),
+    _cutback_factor(getParam<Real>("cutback_factor")),
+    _cutback_occurred(declareRestartableData<bool>("cutback_occurred", false)),
+    _tensor_problem(
+        [this]() -> const TensorProblem &
+        {
+          auto tensor_problem = dynamic_cast<TensorProblem *>(&_fe_problem);
+          if (!tensor_problem)
+            mooseError("TensorSolveIterationAdaptiveDT requires a TensorProblem.");
+          return *tensor_problem;
+        }()),
+    _iterative_solver(_tensor_problem.getSolver<IterativeTensorSolverInterface>()),
+    _previous_iterations(_iterative_solver.getIterations()),
+    _is_converged(_iterative_solver.isConverged())
+{
+  for (const auto & name :
+       getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor"))
+    _pps_value.push_back(&getPostprocessorValueByName(name));
+}
+
+Real
+TensorSolveIterationAdaptiveDT::computeInitialDT()
+{
+  return _input_dt;
+}
+
+Real
+TensorSolveIterationAdaptiveDT::computeDT()
+{
+  Real dt = _dt_old;
+
+  if (_cutback_occurred)
+  {
+    _cutback_occurred = false;
+
+    // Don't allow it to grow this step, but shrink if needed
+    bool allowToGrow = false;
+    computeAdaptiveDT(dt, allowToGrow);
+  }
+  else
+    computeAdaptiveDT(dt);
+
+  return dt;
+}
+
+bool
+TensorSolveIterationAdaptiveDT::constrainStep(Real & dt)
+{
+  bool at_sync_point = TimeStepper::constrainStep(dt);
+
+  // Limit the timestep to postprocessor value
+  limitDTToPostprocessorValue(dt);
+
+  return at_sync_point;
+}
+
+bool
+TensorSolveIterationAdaptiveDT::converged() const
+{
+  return _is_converged;
+}
+
+Real
+TensorSolveIterationAdaptiveDT::computeFailedDT()
+{
+  _cutback_occurred = true;
+
+  // Can't cut back any more
+  if (_dt <= _dt_min)
+    mooseError("Solve failed and timestep already at dtmin, cannot continue!");
+
+  if (_verbose)
+  {
+    _console << "\nSolve failed with dt: " << std::setw(9) << _dt
+             << "\nRetrying with reduced dt: " << std::setw(9) << _dt * _cutback_factor_at_failure
+             << std::endl;
+  }
+  else
+    _console << "\nSolve failed, cutting timestep." << std::endl;
+
+  return _dt * _cutback_factor_at_failure;
+}
+
+void
+TensorSolveIterationAdaptiveDT::limitDTToPostprocessorValue(Real & limitedDT) const
+{
+  if (_pps_value.size() != 0 && _t_step > 1)
+  {
+    Real limiting_pps_value = *_pps_value[0];
+    unsigned int i_min = 0;
+    for (size_t i = 1; i < _pps_value.size(); ++i)
+      if (*_pps_value[i] < limiting_pps_value)
+      {
+        limiting_pps_value = *_pps_value[i];
+        i_min = i;
+      }
+
+    if (limitedDT > limiting_pps_value)
+    {
+      if (limiting_pps_value < 0)
+        mooseWarning(
+            "Negative timestep limiting postprocessor '" +
+            getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor")[i_min] +
+            "': " + std::to_string(limiting_pps_value));
+      limitedDT = std::max(_dt_min, limiting_pps_value);
+
+      if (_verbose)
+        _console << "Limiting dt to postprocessor value. dt = " << limitedDT << std::endl;
+    }
+  }
+}
+
+void
+TensorSolveIterationAdaptiveDT::computeAdaptiveDT(Real & dt, bool allowToGrow, bool allowToShrink)
+{
+  if (allowToGrow && _previous_iterations < _min_iterations)
+    // Grow the timestep
+    dt *= _growth_factor;
+  else if (allowToShrink && _previous_iterations > _max_iterations)
+    // Shrink the timestep
+    dt *= _cutback_factor;
+}

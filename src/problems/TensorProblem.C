@@ -13,7 +13,6 @@
 #include "TensorOperatorBase.h"
 #include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
-#include "TensorSolver.h"
 #include "DomainAction.h"
 
 #include "SwiftUtils.h"
@@ -550,3 +549,4 @@ void TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
     mooseError(
         "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
 }
+

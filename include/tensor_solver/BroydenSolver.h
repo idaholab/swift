@@ -10,11 +10,12 @@
 #pragma once
 
 #include "SplitOperatorBase.h"
+#include "IterativeTensorSolverInterface.h"
 
 /**
  * BroydenSolver object
  */
-class BroydenSolver : public SplitOperatorBase
+class BroydenSolver : public SplitOperatorBase, public IterativeTensorSolverInterface
 {
 public:
   static InputParameters validParams();

@@ -90,6 +90,10 @@ public:
   void setSolver(std::shared_ptr<TensorSolver> solver,
                  const MooseTensor::Key<CreateTensorSolverAction> &);
 
+  /// get a reference to the current solver
+  template <typename T>
+  const T & getSolver() const;
+
 protected:
   void updateDOFMap();
   void mapBuffersToAux();
@@ -155,3 +159,19 @@ protected:
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
 };
+
+#include "TensorSolver.h"
+
+template <typename T>
+const T &
+TensorProblem::getSolver() const
+{
+  if (_solver)
+  {
+    const auto specialized_solver = dynamic_cast<const T*>(_solver.get());
+    if (specialized_solver)
+      return *specialized_solver;
+    mooseError("No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
+  }
+  mooseError("No TensorSolver has been set up.");
+}

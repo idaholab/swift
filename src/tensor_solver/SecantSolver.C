@@ -31,6 +31,7 @@ SecantSolver::validParams()
 
 SecantSolver::SecantSolver(const InputParameters & parameters)
   : SplitOperatorBase(parameters),
+    IterativeTensorSolverInterface(),
     _substeps(getParam<unsigned int>("substeps")),
     _max_iterations(getParam<unsigned int>("max_iterations")),
     _tolerance(getParam<Real>("tolerance")),
