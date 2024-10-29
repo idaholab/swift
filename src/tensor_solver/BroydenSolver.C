@@ -20,8 +20,9 @@ BroydenSolver::validParams()
   params.addClassDescription("Implicit secant solver time integration.");
   params.addParam<unsigned int>("substeps", 1, "secant solver substeps per time step.");
   params.addParam<unsigned int>("max_iterations", 5, "Maximum number of secant solver iteration.");
-  params.addParam<Real>("tolerance", 1e-10, "Convergence tolerance.");
-  params.addParam<Real>("damping", 1.0, "Damping factor for teh update step.");
+  params.addParam<Real>("relative_tolerance", 1e-9, "Convergence tolerance.");
+  params.addParam<Real>("absolute_tolerance", 1e-9, "Convergence tolerance.");
+  params.addParam<Real>("damping", 1.0, "Damping factor for the update step.");
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
   params.set<unsigned int>("substeps") = 0;
@@ -30,10 +31,12 @@ BroydenSolver::validParams()
 }
 
 BroydenSolver::BroydenSolver(const InputParameters & parameters)
-  : SplitOperatorBase(parameters), IterativeTensorSolverInterface(),
+  : SplitOperatorBase(parameters),
+    IterativeTensorSolverInterface(),
     _substeps(getParam<unsigned int>("substeps")),
     _max_iterations(getParam<unsigned int>("max_iterations")),
-    _tolerance(getParam<Real>("tolerance")),
+    _relative_tolerance(getParam<Real>("relative_tolerance")),
+    _absolute_tolerance(getParam<Real>("absolute_tolerance")),
     _verbose(getParam<bool>("verbose")),
     _damping(getParam<Real>("damping")),
     _dim(_domain.getDim()),
@@ -100,24 +103,35 @@ BroydenSolver::broydenSolve()
   const auto R0norm = torch::norm(R).item<double>();
 
   // secant iterations
-  for (const auto iteration : make_range(_max_iterations))
+  for (_iterations = 0; _iterations < _max_iterations; ++_iterations)
   {
     // check for convergence
     const auto Rnorm = torch::norm(R).item<double>();
-    if (Rnorm / R0norm < _tolerance)
+
+    // NaN check
+    if (std::isnan(Rnorm))
+      mooseError("NAN!");
+
+    // residual divergence check
+    if (_iterations > 4 && Rnorm * 10.0 / _iterations > R0norm)
+      mooseError("Diverging residual ", Rnorm, " ", Rnorm * 10.0 / _iterations, ' ', R0norm);
+
+    if (Rnorm < _absolute_tolerance || Rnorm / R0norm < _relative_tolerance)
     {
-      std::cout << "Broyden solve converged after " << iteration << " iterations.\n";
+      std::cout << "Broyden solve converged after " << _iterations << " iterations. |R|=" << Rnorm
+                << " |R|/|R0|=" << Rnorm / R0norm << '\n';
+      _is_converged = true;
       return;
     }
-    else
-      std::cout << iteration << " |R|=" << Rnorm << std::endl;
+    else if (_verbose)
+      std::cout << _iterations << " |R|=" << Rnorm << std::endl;
 
     // update step dx
     const auto sk = -torch::matmul(M, R.unsqueeze(-1)); // column vector
     const auto skT = sk.squeeze(-1).unsqueeze(-2);      // row vector
 
     // update u
-    const auto u_out_v = torch::unbind(u + sk.squeeze(-1), -1);
+    const auto u_out_v = torch::unbind(u + sk.squeeze(-1) * 0.5, -1);
     for (const auto i : make_range(n))
       _variables[i]._buffer = _domain.ifft(u_out_v[i]);
     // update residual
@@ -132,9 +146,18 @@ BroydenSolver::broydenSolve()
     const auto ykT = yk.squeeze(-1).unsqueeze(-2);
 
     const auto denom = torch::matmul(skT, yk);
-    // M = M + torch::where(torch::abs(denom) > 0, torch::matmul((sk - torch::matmul(M, yk)), skT) / denom, 0.0);
-    M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) /
-                torch::where(torch::abs(denom) > 1e-12, denom, 1.0);
+    if (_verbose)
+    {
+      const auto denom_zero = torch::sum(torch::where(torch::abs(denom) == 0, 1, 0)).item<double>();
+      if (denom_zero)
+        std::cout << "Matrix update denominator is zero in " << denom_zero << " entries.\n";
+    }
+
+    M = M + torch::where(torch::abs(denom) > 0,
+                         torch::matmul((sk - torch::matmul(M, yk)), skT) / denom,
+                         0.0);
+    // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) /
+    //             torch::where(torch::abs(denom) > 1e-12, denom, 1.0);
 
     // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::matmul(skT, yk);
 
@@ -142,4 +165,5 @@ BroydenSolver::broydenSolve()
   }
 
   std::cerr << "Broyden solve did not converge within the maximum number of iterations.\n";
+  _is_converged = false;
 }

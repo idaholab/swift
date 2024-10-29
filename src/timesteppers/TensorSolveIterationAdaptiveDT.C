@@ -29,7 +29,7 @@ TensorSolveIterationAdaptiveDT::validParams()
       "max_iterations",
       "If the solve takes more than 'max_iterations', dt is decreased by 'cutback_factor'");
 
-  params.addParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor",
+  params.addParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor", {},
                                                   "If specified, a list of postprocessor values "
                                                   "used as an upper limit for the "
                                                   "current time step length");
@@ -54,6 +54,8 @@ TensorSolveIterationAdaptiveDT::TensorSolveIterationAdaptiveDT(const InputParame
     PostprocessorInterface(this),
     _dt_old(declareRestartableData<Real>("dt_old", 0.0)),
     _input_dt(getParam<Real>("dt")),
+    _min_iterations(getParam<int>("min_iterations")),
+    _max_iterations(getParam<int>("max_iterations")),
     _growth_factor(getParam<Real>("growth_factor")),
     _cutback_factor(getParam<Real>("cutback_factor")),
     _cutback_occurred(declareRestartableData<bool>("cutback_occurred", false)),
@@ -64,10 +66,7 @@ TensorSolveIterationAdaptiveDT::TensorSolveIterationAdaptiveDT(const InputParame
           if (!tensor_problem)
             mooseError("TensorSolveIterationAdaptiveDT requires a TensorProblem.");
           return *tensor_problem;
-        }()),
-    _iterative_solver(_tensor_problem.getSolver<IterativeTensorSolverInterface>()),
-    _previous_iterations(_iterative_solver.getIterations()),
-    _is_converged(_iterative_solver.isConverged())
+        }())
 {
   for (const auto & name :
        getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor"))
@@ -90,8 +89,7 @@ TensorSolveIterationAdaptiveDT::computeDT()
     _cutback_occurred = false;
 
     // Don't allow it to grow this step, but shrink if needed
-    bool allowToGrow = false;
-    computeAdaptiveDT(dt, allowToGrow);
+    computeAdaptiveDT(dt, /* allowToGrow = */ false);
   }
   else
     computeAdaptiveDT(dt);
@@ -113,7 +111,8 @@ TensorSolveIterationAdaptiveDT::constrainStep(Real & dt)
 bool
 TensorSolveIterationAdaptiveDT::converged() const
 {
-  return _is_converged;
+  const auto & iterative_solver = _tensor_problem.getSolver<IterativeTensorSolverInterface>();
+  return iterative_solver.isConverged();
 }
 
 Real
@@ -140,39 +139,50 @@ TensorSolveIterationAdaptiveDT::computeFailedDT()
 void
 TensorSolveIterationAdaptiveDT::limitDTToPostprocessorValue(Real & limitedDT) const
 {
-  if (_pps_value.size() != 0 && _t_step > 1)
-  {
-    Real limiting_pps_value = *_pps_value[0];
-    unsigned int i_min = 0;
-    for (size_t i = 1; i < _pps_value.size(); ++i)
-      if (*_pps_value[i] < limiting_pps_value)
-      {
-        limiting_pps_value = *_pps_value[i];
-        i_min = i;
-      }
+  if (_pps_value.empty() || _t_step <= 1)
+    return;
 
-    if (limitedDT > limiting_pps_value)
+  Real limiting_pps_value = *_pps_value[0];
+  unsigned int i_min = 0;
+  for (const auto i : index_range(_pps_value))
+    if (*_pps_value[i] < limiting_pps_value)
     {
-      if (limiting_pps_value < 0)
-        mooseWarning(
-            "Negative timestep limiting postprocessor '" +
-            getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor")[i_min] +
-            "': " + std::to_string(limiting_pps_value));
-      limitedDT = std::max(_dt_min, limiting_pps_value);
-
-      if (_verbose)
-        _console << "Limiting dt to postprocessor value. dt = " << limitedDT << std::endl;
+      limiting_pps_value = *_pps_value[i];
+      i_min = i;
     }
+
+  if (limitedDT > limiting_pps_value)
+  {
+    if (limiting_pps_value < 0)
+      mooseWarning(
+          "Negative timestep limiting postprocessor '" +
+          getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor")[i_min] +
+          "': " + std::to_string(limiting_pps_value));
+    limitedDT = std::max(_dt_min, limiting_pps_value);
+
+    if (_verbose)
+      _console << "Limiting dt to postprocessor value. dt = " << limitedDT << std::endl;
   }
 }
 
 void
 TensorSolveIterationAdaptiveDT::computeAdaptiveDT(Real & dt, bool allowToGrow, bool allowToShrink)
 {
-  if (allowToGrow && _previous_iterations < _min_iterations)
+  const auto & iterative_solver = _tensor_problem.getSolver<IterativeTensorSolverInterface>();
+  const auto previous_iterations = iterative_solver.getIterations();
+
+  if (allowToGrow && previous_iterations < _min_iterations)
     // Grow the timestep
     dt *= _growth_factor;
-  else if (allowToShrink && _previous_iterations > _max_iterations)
+  else if (allowToShrink && previous_iterations > _max_iterations)
     // Shrink the timestep
     dt *= _cutback_factor;
 }
+
+void
+TensorSolveIterationAdaptiveDT::acceptStep()
+{
+  TimeStepper::acceptStep();
+  _dt_old = _dt;
+}
+

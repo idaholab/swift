@@ -26,6 +26,7 @@ public:
   TensorSolveIterationAdaptiveDT(const InputParameters & parameters);
 
   virtual bool constrainStep(Real & dt) override;
+  virtual void acceptStep() override;
 
 protected:
   virtual Real computeInitialDT() override;
@@ -54,12 +55,8 @@ protected:
   const Real & _cutback_factor;
   bool & _cutback_occurred;
 
-const TensorProblem & _tensor_problem;
-
-  /// iterative solver
-  const IterativeTensorSolverInterface & _iterative_solver;
+  const TensorProblem & _tensor_problem;
 
   /// Number of iterations in previous solve
-  const unsigned int & _previous_iterations;
-  const bool & _is_converged;
+  unsigned int _previous_iterations;
 };

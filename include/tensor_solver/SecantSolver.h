@@ -30,7 +30,10 @@ protected:
   unsigned int _substep;
   unsigned int _substeps;
   unsigned int _max_iterations;
-  const Real _tolerance;
+
+  const Real _relative_tolerance;
+  const Real _absolute_tolerance;
+
   const bool _verbose;
   const Real _damping;
 };

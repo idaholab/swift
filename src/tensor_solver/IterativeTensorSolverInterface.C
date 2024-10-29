@@ -12,6 +12,6 @@
 
 IterativeTensorSolverInterface::IterativeTensorSolverInterface()
   :  _iterations(0),
-    _is_converged(false)
+    _is_converged(true)
 {
 }
