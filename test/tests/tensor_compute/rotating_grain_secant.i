@@ -110,8 +110,9 @@
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = SecantSolver
   buffer = psi
+  substeps = 1
   reciprocal_buffer = psibar
   linear_reciprocal = linear
   nonlinear_reciprocal = psi3bar
@@ -119,16 +120,18 @@
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 110
 []
 
 [Executioner]
   type = Transient
   num_steps = 120
   [TimeStepper]
-    type = IterationAdaptiveDT
-    growth_factor = 1.2
-    dt = 1.7
+    type = TensorSolveIterationAdaptiveDT
+    dt = 0.1
+    max_iterations = 500
+    min_iterations = 300
+    growth_factor = 1.1
+    cutback_factor = 0.9
   []
   dtmax = 500
 []

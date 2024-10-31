@@ -61,6 +61,14 @@
       min = 0.44
       max = 0.56
     []
+    [mu_init]
+      type = ConstantTensor
+      buffer = mu
+    []
+    [mumech_init]
+      type = ConstantTensor
+      buffer = mumech
+    []
     [disp_x]
       type = RandomTensor
       buffer = disp_x
@@ -149,14 +157,19 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = cbar
-    linear_reciprocal = kappabarbar
-    nonlinear_reciprocal = Mbarmubar
-  []
+[TensorSolver]
+  type = SecantSolver
+  substeps = 1
+  max_iterations = 1000
+  # damping = 0.75
+  relative_tolerance = 1e-6
+  absolute_tolerance = 1e-6
+  buffer = c
+  dt_epsilon = 1e-7
+  reciprocal_buffer = cbar
+  linear_reciprocal = kappabarbar
+  nonlinear_reciprocal = Mbarmubar
+  verbose = true
 []
 
 [Postprocessors]
@@ -224,19 +237,19 @@
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 1000
-  print_debug_output = true
 []
 
 [Executioner]
   type = Transient
-  num_steps = 100
+  end_time = 100
   [TimeStepper]
-    type = IterationAdaptiveDT
-    growth_factor = 1.8
+    type = TensorSolveIterationAdaptiveDT
     dt = 0.1
+    max_iterations = 500
+    min_iterations = 300
+    growth_factor = 1.1
+    cutback_factor = 0.9
   []
-  dtmax = 1000
 []
 
 [Outputs]

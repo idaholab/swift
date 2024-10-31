@@ -34,8 +34,12 @@ protected:
   const Real _relative_tolerance;
   const Real _absolute_tolerance;
 
+  /// approximation of the Jacobian inverse
+  torch::Tensor _M;
+
   const bool _verbose;
   const Real _damping;
+  const Real _eye_factor;
   unsigned int _dim;
   torch::TensorOptions _options;
 };

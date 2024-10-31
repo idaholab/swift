@@ -19,10 +19,10 @@ SecantSolver::validParams()
   InputParameters params = SplitOperatorBase::validParams();
   params.addClassDescription("Implicit secant solver time integration.");
   params.addParam<unsigned int>("substeps", 1, "secant solver substeps per time step.");
-  params.addParam<unsigned int>("max_iterations", 5, "Maximum number of secant solver iteration.");
+  params.addParam<unsigned int>("max_iterations", 30, "Maximum number of secant solver iteration.");
   params.addParam<Real>("relative_tolerance", 1e-9, "Convergence tolerance.");
   params.addParam<Real>("absolute_tolerance", 1e-9, "Convergence tolerance.");
-  params.addParam<Real>("damping", 1.0, "Damping factor for teh update step.");
+  params.addParam<Real>("damping", 1.0, "Damping factor for the update step.");
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
   params.set<unsigned int>("substeps") = 0;

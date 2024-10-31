@@ -24,6 +24,8 @@ BroydenSolver::validParams()
   params.addParam<Real>("absolute_tolerance", 1e-9, "Convergence tolerance.");
   params.addParam<Real>("damping", 1.0, "Damping factor for the update step.");
   params.addParam<Real>(
+      "initial_jacobian_guess", 1.0, "Factor for the initial inverse jacobian guess.");
+  params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
   params.set<unsigned int>("substeps") = 0;
   params.addParam<bool>("verbose", false, "Show convergence history.");
@@ -39,9 +41,22 @@ BroydenSolver::BroydenSolver(const InputParameters & parameters)
     _absolute_tolerance(getParam<Real>("absolute_tolerance")),
     _verbose(getParam<bool>("verbose")),
     _damping(getParam<Real>("damping")),
+    _eye_factor(getParam<Real>("initial_jacobian_guess")),
     _dim(_domain.getDim()),
     _options(MooseTensor::complexFloatTensorOptions())
 {
+  // Jacobian dimensions
+  const auto n = _variables.size();
+  const auto & s = _domain.getReciprocalShape();
+  std::vector<int64_t> v(s.begin(), s.end());
+  v.push_back(n);
+  v.push_back(n);
+
+  // Create a 3x3 identity matrix and expand to all grid points
+  _M = torch::eye(n, _options) * _eye_factor;
+  for (const auto i : make_range(_dim))
+    _M.unsqueeze_(0);
+  _M = _M.expand(v);
 }
 
 void
@@ -55,19 +70,7 @@ void
 BroydenSolver::broydenSolve()
 {
   const auto dt = _dt / _substeps;
-
-  // Jacobian dimensions
   const auto n = _variables.size();
-  const auto & s = _domain.getReciprocalShape();
-  std::vector<int64_t> v(s.begin(), s.end());
-  v.push_back(n);
-  v.push_back(n);
-
-  // Create a 3x3 identity matrix and expand to all grid points
-  torch::Tensor M = torch::eye(n, _options); // * 1e-6;
-  for (const auto i : make_range(_dim))
-    M.unsqueeze_(0);
-  M = M.expand(v);
 
   // stack u_old
   std::vector<torch::Tensor> u_old_v(n);
@@ -114,7 +117,7 @@ BroydenSolver::broydenSolve()
 
     // residual divergence check
     if (_iterations > 4 && Rnorm * 10.0 / _iterations > R0norm)
-      mooseError("Diverging residual ", Rnorm, " ", Rnorm * 10.0 / _iterations, ' ', R0norm);
+      mooseWarning("Diverging residual ", Rnorm, " ", Rnorm * 10.0 / _iterations, ' ', R0norm);
 
     if (Rnorm < _absolute_tolerance || Rnorm / R0norm < _relative_tolerance)
     {
@@ -127,13 +130,17 @@ BroydenSolver::broydenSolve()
       std::cout << _iterations << " |R|=" << Rnorm << std::endl;
 
     // update step dx
-    const auto sk = -torch::matmul(M, R.unsqueeze(-1)); // column vector
+    const auto sk = -torch::matmul(_M, R.unsqueeze(-1)); // column vector
     const auto skT = sk.squeeze(-1).unsqueeze(-2);      // row vector
 
     // update u
     const auto u_out_v = torch::unbind(u + sk.squeeze(-1) * 0.5, -1);
     for (const auto i : make_range(n))
+    {
+      // look at min max here and maybe apply bounds?
       _variables[i]._buffer = _domain.ifft(u_out_v[i]);
+    }
+
     // update residual
     for (auto & cmp : _computes)
       cmp->computeBuffer();
@@ -153,13 +160,13 @@ BroydenSolver::broydenSolve()
         std::cout << "Matrix update denominator is zero in " << denom_zero << " entries.\n";
     }
 
-    M = M + torch::where(torch::abs(denom) > 0,
-                         torch::matmul((sk - torch::matmul(M, yk)), skT) / denom,
-                         0.0);
-    // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) /
+    _M = _M + torch::where(torch::abs(denom) > 1e-12,
+                           torch::matmul((sk - torch::matmul(_M, yk)), skT) / denom,
+                           0.0);
+    // _M = _M + torch::matmul((sk - torch::matmul(_M, yk)), skT) /
     //             torch::where(torch::abs(denom) > 1e-12, denom, 1.0);
 
-    // M = M + torch::matmul((sk - torch::matmul(M, yk)), skT) / torch::matmul(skT, yk);
+    // _M = _M + torch::matmul((sk - torch::matmul(_M, yk)), skT) / torch::matmul(skT, yk);
 
     R = Rnew;
   }

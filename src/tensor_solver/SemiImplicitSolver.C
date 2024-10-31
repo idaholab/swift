@@ -18,7 +18,7 @@ SemiImplicitSolver::validParams()
 {
   InputParameters params = SplitOperatorBase::validParams();
   params.addClassDescription("Semi-implicit time integration solver.");
-  params.addRequiredParam<unsigned int>("substeps", "semi-implicit substeps per time step.");
+  params.addParam<unsigned int>("substeps", 1, "semi-implicit substeps per time step.");
   return params;
 }
 

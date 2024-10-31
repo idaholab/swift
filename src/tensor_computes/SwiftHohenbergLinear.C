@@ -23,13 +23,15 @@ SwiftHohenbergLinear::validParams()
 }
 
 SwiftHohenbergLinear::SwiftHohenbergLinear(const InputParameters & parameters)
-  : TensorOperator(parameters), _r(getParam<Real>("r")), _alpha(getParam<Real>("alpha"))
+  : TensorOperator(parameters),
+    _r(getParam<Real>("r")),
+    _alpha(getParam<Real>("alpha")),
+    _k2(_domain.getKSquare())
 {
 }
 
 void
 SwiftHohenbergLinear::computeBuffer()
 {
-  const auto k2 = (_i * _i + _j * _j + _k * _k);
-  _u = (_r - _alpha * _alpha * (1.0 - k2) * (1.0 - k2));
+  _u = (_r - _alpha * _alpha * (1.0 - _k2) * (1.0 - _k2));
 }

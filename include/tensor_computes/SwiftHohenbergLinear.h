@@ -12,7 +12,7 @@
 #include "TensorOperator.h"
 
 /**
- * Sinusoidal IC
+ * Swift-Hohenberg linear operator
  */
 class SwiftHohenbergLinear : public TensorOperator
 {
@@ -25,4 +25,5 @@ public:
 
   const Real _r;
   const Real _alpha;
+  const torch::Tensor & _k2;
 };
