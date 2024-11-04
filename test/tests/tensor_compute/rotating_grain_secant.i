@@ -1,9 +1,10 @@
+w=60
 [Domain]
   dim = 2
   nx = 400
   ny = 400
-  xmax = ${fparse pi*2*30}
-  ymax = ${fparse pi*2*30}
+  xmax = ${fparse pi*2*${w}}
+  ymax = ${fparse pi*2*${w}}
 
   device_names = 'cuda'
 
@@ -43,16 +44,22 @@
   [grain1]
     type = ParsedFunction
     # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
-  []
+    expression = 'cx:=x/4; cy:=y/4; a := 0;
+                  -0.5* sin(sin(a)*cy+cos(a)*cx)^2 *
+                        sin(sin(a+1/3*pi)*cy+cos(a+1/3*pi)*cx)^2 *
+                        sin(sin(a-1/3*pi)*cy+cos(a-1/3*pi)*cx)^2'
+[]
   [grain2]
     type = ParsedFunction
     # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0.95; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
+    expression = 'cx:=x/4; cy:=y/4; a := 0.95;
+                  -0.5* sin(sin(a)*cy+cos(a)*cx)^2 *
+                        sin(sin(a+1/3*pi)*cy+cos(a+1/3*pi)*cx)^2 *
+                        sin(sin(a-1/3*pi)*cy+cos(a-1/3*pi)*cx)^2'
   []
   [domain]
     type = ParsedFunction
-    expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<(20*pi)^2, grain2, grain1)'
+    expression = 'r := (x-${w}*pi)^2+(y-${w}*pi)^2; if(r<(${w}*pi*0.66)^2, grain2, grain1)'
     symbol_names = 'grain1 grain2'
     symbol_values = 'grain1 grain2'
   []
@@ -124,10 +131,10 @@
 
 [Executioner]
   type = Transient
-  num_steps = 120
+  num_steps = 200
   [TimeStepper]
     type = TensorSolveIterationAdaptiveDT
-    dt = 0.1
+    dt = 1
     max_iterations = 500
     min_iterations = 300
     growth_factor = 1.1
