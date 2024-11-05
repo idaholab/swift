@@ -35,6 +35,6 @@ protected:
   const Real & _dt;
   const Real & _dt_old;
 
-  /// root compute for teh solver
+  /// root compute for the solver
   std::shared_ptr<TensorOperatorBase> _compute;
 };

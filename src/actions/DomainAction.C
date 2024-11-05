@@ -499,3 +499,4 @@ DomainAction::align(torch::Tensor t, unsigned int dim) const
       mooseError("Unsupported mesh dimension");
   }
 }
+

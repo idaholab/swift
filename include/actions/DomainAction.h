@@ -62,6 +62,9 @@ protected:
   torch::Tensor fftSlab(const torch::Tensor & t) const;
   torch::Tensor fftPencil(const torch::Tensor & t) const;
 
+  template <bool is_real>
+  torch::Tensor cosineTransform(const torch::Tensor & t, int64_t axis) const;
+
   template <typename T>
   std::vector<int64_t> partitionHepler(int64_t total, const std::vector<T> & weights);
 
@@ -168,4 +171,29 @@ DomainAction::partitionHepler(int64_t total, const std::vector<T> & weights)
   // add remainsder to last slice
   ns.back() += total;
   return ns;
+}
+
+// See Makhoul 2003 (DOI: 10.1109/TASSP.1980.1163351)
+template <bool is_real>
+torch::Tensor
+DomainAction::cosineTransform(const torch::Tensor & t, int64_t axis) const
+{
+  // size along the axis
+  const auto l = t.sizes()[axis];
+
+  // mirror tensor and stack onto itself (with one layer removed)
+  auto t_flip = torch::flip(t, {axis});
+
+  // stack tensor along axis
+  auto t_stacked = torch::stack({t, t_flip}, axis);
+
+  // perform 1D FFT along the selected axis and slice in the reciprocal domain
+  torch::Tensor t_bar;
+  if constexpr (is_real)
+    t_bar = torch::fft::rfft(t_stacked, -1, axis);
+  else
+    t_bar = torch::fft::fft(t_stacked, -1, axis);
+
+  mooseError("Not implemented!");
+  // return t_bar;
 }
