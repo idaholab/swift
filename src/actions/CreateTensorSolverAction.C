@@ -11,6 +11,7 @@
 #include "CreateTensorSolverAction.h"
 #include "TensorProblem.h"
 #include "TensorSolver.h"
+#include "SwiftTypes.h"
 
 registerMooseAction("SwiftApp", CreateTensorSolverAction, "create_tensor_solver");
 
@@ -37,6 +38,26 @@ CreateTensorSolverAction::act()
   // Add a pointer to the TensorProblem and the Domain
   _moose_object_pars.addPrivateParam<TensorProblem *>("_tensor_problem", tensor_problem.get());
   _moose_object_pars.addPrivateParam<const DomainAction *>("_domain", &_domain);
+
+  // check if a root compute was supplied, otherwise attomatically generate one
+  if (!_moose_object_pars.isParamValid("root_compute"))
+  {
+    mooseInfo("Automatically generating root compute.");
+
+    // get the names of all computes
+    std::vector<TensorComputeName> compute_names;
+    for (const auto cmp : tensor_problem->getComputes())
+      compute_names.push_back(cmp->name());
+
+    // create ComputeGroup
+    const auto root_name = "automatic_root_compute";
+    auto params = _factory.getValidParams("ComputeGroup");
+    params.set<std::vector<TensorComputeName>>("computes") = compute_names;
+    tensor_problem->addTensorComputeSolve("ComputeGroup", root_name, params);
+
+    // set solver root compute to the generated object
+    _moose_object_pars.set<TensorComputeName>("root_compute") = root_name;
+  }
 
   // Create the object
   auto solver = _factory.create<TensorSolver>(_type, "TensorSolver", _moose_object_pars, 0);

@@ -88,14 +88,13 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = cbar
-    linear_reciprocal = kappabarbar
-    nonlinear_reciprocal = Mbarmubar
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  buffer = c
+  reciprocal_buffer = cbar
+  linear_reciprocal = kappabarbar
+  nonlinear_reciprocal = Mbarmubar
+  substeps = 1000
 []
 
 [Postprocessors]
@@ -125,7 +124,6 @@
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 1000
 []
 
 [Executioner]

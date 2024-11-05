@@ -37,9 +37,8 @@ SemiImplicitSolver::computeBuffer()
   // subcycles
   for (const auto substep : make_range(_substeps))
   {
-    // re-evaluate the solve computes
-    for (auto & cmp : _computes)
-      cmp->computeBuffer();
+    // re-evaluate the solve compute
+    _compute->computeBuffer();
 
     // integrate all variables
     for (auto & [u,

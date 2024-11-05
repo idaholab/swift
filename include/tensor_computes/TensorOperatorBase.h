@@ -32,8 +32,14 @@ public:
   virtual const std::set<std::string> & getRequestedItems() override { return _requested_buffers; }
   virtual const std::set<std::string> & getSuppliedItems() override { return _supplied_buffers; }
 
+  /// Helper to recursively update dependencies for grouped operators
+  virtual void updateDependencies() {}
+
   /// perform the computation
   virtual void computeBuffer() = 0;
+
+  /// called  after all objects have been constructed
+  virtual void init() {}
 
   /// called if the simulation cell dimensions change
   virtual void gridChanged() {}

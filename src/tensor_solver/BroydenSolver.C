@@ -96,8 +96,7 @@ BroydenSolver::broydenSolve()
   };
 
   // initial residual
-  for (auto & cmp : _computes)
-    cmp->computeBuffer();
+  _compute->computeBuffer();
   const auto [u0, N, L] = stackVariables();
   torch::Tensor u = u0;
   torch::Tensor R = (N + L * u) * dt;
@@ -142,8 +141,7 @@ BroydenSolver::broydenSolve()
     }
 
     // update residual
-    for (auto & cmp : _computes)
-      cmp->computeBuffer();
+    _compute->computeBuffer();
     const auto [u0, N, L] = stackVariables();
     u = u0;
     const auto Rnew = (N + L * u) * dt + u_old - u;

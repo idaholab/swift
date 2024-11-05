@@ -123,7 +123,7 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   addTaskDependency("create_tensor_solver", "add_tensor_output");
 
   // make sure all this gets run before `add_mortar_variable`
-  addTaskDependency("add_mortar_variable", "add_tensor_output");
+  addTaskDependency("add_mortar_variable", "create_tensor_solver");
 }
 
 void

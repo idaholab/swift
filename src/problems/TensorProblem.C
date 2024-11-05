@@ -62,7 +62,6 @@ TensorProblem::~TensorProblem()
 void
 TensorProblem::init()
 {
-
   // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
   // pointer as well)
   for (auto pair : _tensor_buffer)
@@ -70,6 +69,14 @@ TensorProblem::init()
 
   // compute grid dependent quantities
   gridChanged();
+
+  // init computes (must happen before dependency update)
+  for (auto & cmp : _computes)
+    cmp->init();
+
+  // update dependencies
+  if (_solver)
+    _solver->updateDependencies();
 
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
@@ -116,6 +123,8 @@ TensorProblem::init()
 void
 TensorProblem::execute(const ExecFlagType & exec_type)
 {
+  mooseInfo("TensorProblem::execute");
+
   if (exec_type == EXEC_INITIAL)
   {
     // run ICs

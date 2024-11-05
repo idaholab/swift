@@ -65,8 +65,7 @@ SecantSolver::secantSolve()
   std::vector<Real> R0norm(n);
 
   // initial guess computed using semi-implicit Euler
-  for (auto & cmp : _computes)
-    cmp->computeBuffer();
+  _compute->computeBuffer();
 
   for (const auto i : make_range(n))
   {
@@ -103,9 +102,8 @@ SecantSolver::secantSolve()
   bool all_converged;
   for (_iterations = 0; _iterations < _max_iterations; ++_iterations)
   {
-    // evaluate the solve computes
-    for (auto & cmp : _computes)
-      cmp->computeBuffer();
+    // re-evaluate the solve compute
+    _compute->computeBuffer();
 
     all_converged = true;
 

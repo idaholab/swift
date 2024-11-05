@@ -22,6 +22,8 @@ public:
 
   TensorSolver(const InputParameters & parameters);
 
+  virtual void updateDependencies() override final;
+
 protected:
   const std::vector<torch::Tensor> & getBufferOld(const std::string & param,
                                                   unsigned int max_states);
@@ -30,9 +32,9 @@ protected:
 
   void gatherDependencies();
 
-  // the computes this object depends on
-  TensorProblem::TensorComputeList _computes;
-
   const Real & _dt;
   const Real & _dt_old;
+
+  /// root compute for teh solver
+  std::shared_ptr<TensorOperatorBase> _compute;
 };

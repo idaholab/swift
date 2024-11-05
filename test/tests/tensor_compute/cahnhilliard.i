@@ -80,17 +80,23 @@
       buffer = cbar
       input = c
     []
+
+    # root compute
+    [cahn_hilliard]
+      type = ComputeGroup
+      computes = 'mu mubar Mbarmubar cbar'
+    []
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = cbar
-    linear_reciprocal = kappabarbar
-    nonlinear_reciprocal = Mbarmubar
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  root_compute = cahn_hilliard
+  buffer = c
+  reciprocal_buffer = cbar
+  linear_reciprocal = kappabarbar
+  nonlinear_reciprocal = Mbarmubar
+  substeps = 1000
 []
 
 [AuxVariables]
@@ -146,7 +152,6 @@
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 1000
 []
 
 [Executioner]
