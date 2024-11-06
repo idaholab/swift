@@ -8,10 +8,18 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "TensorSolver.h"
+#include "TensorPredictor.h"
 #include "TensorProblem.h"
 
 IterativeTensorSolverInterface::IterativeTensorSolverInterface()
   :  _iterations(0),
     _is_converged(true)
 {
+}
+
+void
+IterativeTensorSolverInterface::applyPredictors()
+{
+  for (const auto pred : _predictors)
+    pred->computeBuffer();
 }

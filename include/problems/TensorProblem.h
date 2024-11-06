@@ -92,7 +92,7 @@ public:
 
   /// get a reference to the current solver
   template <typename T>
-  const T & getSolver() const;
+  T & getSolver() const;
 
 protected:
   void updateDOFMap();
@@ -123,6 +123,9 @@ protected:
 
   /// old buffers (stores max number of states, requested, and states)
   std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_tensor_buffer;
+
+  /// old timesteps
+  std::vector<Real> _old_dt;
 
   const unsigned int & _dim;
 
@@ -163,12 +166,12 @@ protected:
 #include "TensorSolver.h"
 
 template <typename T>
-const T &
+T &
 TensorProblem::getSolver() const
 {
   if (_solver)
   {
-    const auto specialized_solver = dynamic_cast<const T*>(_solver.get());
+    const auto specialized_solver = dynamic_cast<T*>(_solver.get());
     if (specialized_solver)
       return *specialized_solver;
     mooseError("No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");

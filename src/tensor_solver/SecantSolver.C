@@ -93,6 +93,9 @@ SecantSolver::secantSolve()
       std::cout << "|R0|=" << R0norm[i] << std::endl;
   }
 
+  // forward predict (on solver outputs)
+  applyPredictors();
+
   // Jacobian
   torch::Tensor J;
   // Residual

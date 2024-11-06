@@ -9,6 +9,8 @@
 
 #pragma once
 
+class TensorPredictor;
+
 /**
  * Interface for tensor solvers with internal iterations
  */
@@ -20,7 +22,13 @@ public:
   const unsigned int & getIterations() const  { return _iterations; }
   const bool & isConverged() const { return _is_converged; }
 
+  void addPredictor(std::shared_ptr<TensorPredictor> predictor);
+
 protected:
+  void applyPredictors();
+
   unsigned int _iterations;
   bool _is_converged;
+
+  std::vector<std::shared_ptr<TensorPredictor>> _predictors;
 };

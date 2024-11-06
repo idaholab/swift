@@ -89,13 +89,13 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_ic", TensorOperator, false);
   addTaskDependency("add_tensor_ic", "add_tensor_buffer");
 
-  // TensorComputes/Solve Actions
+  // TensorComputes/Solve Action
   registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Solve/*", "add_tensor_compute");
   syntax.registerSyntaxType("TensorComputes/Solve/*", "TensorComputeName");
   registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
-  addTaskDependency("add_tensor_compute", "add_tensor_ic");
+  addTaskDependency("add_tensor_compute", "add_tensor_buffer");
 
-  // TensorComputes/Postprocess Actions
+  // TensorComputes/Postprocess Action
   registerSyntaxTask(
       "AddTensorObjectAction", "TensorComputes/Postprocess/*", "add_tensor_postprocessor");
   syntax.registerSyntaxType("TensorComputes/Postprocess/*", "TensorComputeName");
@@ -104,13 +104,13 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 
   registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
 
-  // TensorICs Actions
+  // TensorTimeIntegrator Action
   registerSyntaxTask("AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
   syntax.registerSyntaxType("TensorTimeIntegrators/*", "TensorTimeIntegratorName");
   registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
   addTaskDependency("add_tensor_time_integrator", "add_tensor_postprocessor");
 
-  // TensorOutputs Actions
+  // TensorOutputs Action
   registerSyntaxTask("AddTensorObjectAction", "TensorOutputs/*", "add_tensor_output");
   syntax.registerSyntaxType("TensorOutputs/*", "TensorOutputName");
   registerMooseObjectTask("add_tensor_output", TensorOutput, false);
@@ -122,8 +122,15 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("create_tensor_solver", TensorSolver, false);
   addTaskDependency("create_tensor_solver", "add_tensor_output");
 
+  // Add predictors to the solver
+  registerSyntaxTask(
+      "AddTensorPredictorAction", "TensorSolver/Predictors/*", "add_tensor_predictor");
+  syntax.registerSyntaxType("TensorSolver/Predictors/*", "TensorPredictorName");
+  registerMooseObjectTask("add_tensor_predictor", TensorPredictor, false);
+  addTaskDependency("add_tensor_predictor", "create_tensor_solver");
+
   // make sure all this gets run before `add_mortar_variable`
-  addTaskDependency("add_mortar_variable", "create_tensor_solver");
+  addTaskDependency("add_mortar_variable", "add_tensor_predictor");
 }
 
 void

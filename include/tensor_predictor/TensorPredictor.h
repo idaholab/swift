@@ -43,5 +43,5 @@ protected:
   torch::Tensor & _u;
 
   /// old states of the output buffer
-  const std::vector<torch::Tensor> _u_old;
+  const std::vector<torch::Tensor> & _u_old;
 };

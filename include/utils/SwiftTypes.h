@@ -6,9 +6,9 @@
 // DerivativeStringClass(TensorComputeName);
 typedef std::string TensorComputeName;
 
-/// Name of an TensorIC object
-// DerivativeStringClass(TensorICName);
-typedef std::string TensorICName;
+/// Name of an TensorPredictor object
+// DerivativeStringClass(TensorPredictorName);
+typedef std::string TensorPredictorName;
 
 /// Name of an TensorTimeIntegrator object
 // DerivativeStringClass(TensorTimeIntegratorName);
