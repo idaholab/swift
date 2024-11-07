@@ -20,6 +20,6 @@ IterativeTensorSolverInterface::IterativeTensorSolverInterface()
 void
 IterativeTensorSolverInterface::applyPredictors()
 {
-  for (const auto pred : _predictors)
+  for (const auto & pred : _predictors)
     pred->computeBuffer();
 }

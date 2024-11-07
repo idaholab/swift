@@ -46,7 +46,7 @@ CreateTensorSolverAction::act()
 
     // get the names of all computes
     std::vector<TensorComputeName> compute_names;
-    for (const auto cmp : tensor_problem->getComputes())
+    for (const auto & cmp : tensor_problem->getComputes())
       compute_names.push_back(cmp->name());
 
     // create ComputeGroup

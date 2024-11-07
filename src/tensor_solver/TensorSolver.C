@@ -47,7 +47,7 @@ TensorSolver::updateDependencies()
 {
   // the compute that's being solved for (usually a ComputeGroup)
   const auto & root_name = getParam<TensorComputeName>("root_compute");
-  for (const auto cmp : _tensor_problem.getComputes())
+  for (const auto & cmp : _tensor_problem.getComputes())
     if (cmp->name() == root_name)
     {
       _compute = cmp;

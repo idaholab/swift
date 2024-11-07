@@ -47,6 +47,9 @@ DomainAction::validParams()
   params.addParam<Real>("xmax", 1.0, "Upper X Coordinate of the generated mesh");
   params.addParam<Real>("ymax", 1.0, "Upper Y Coordinate of the generated mesh");
   params.addParam<Real>("zmax", 1.0, "Upper Z Coordinate of the generated mesh");
+  params.addParam<Real>("xmin", 0.0, "Lower X Coordinate of the generated mesh");
+  params.addParam<Real>("ymin", 0.0, "Lower Y Coordinate of the generated mesh");
+  params.addParam<Real>("zmin", 0.0, "Lower Z Coordinate of the generated mesh");
 
   MooseEnum meshmode("DUMMY DOMAIN MANUAL", "DUMMY");
   meshmode.addDocumentation("DUMMY",
@@ -71,6 +74,7 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _dim(getParam<MooseEnum>("dim")),
     _n_global(
         {getParam<unsigned int>("nx"), getParam<unsigned int>("ny"), getParam<unsigned int>("nz")}),
+    _min_global({getParam<Real>("xmin"), getParam<Real>("ymin"), getParam<Real>("zmin")}),
     _max_global({getParam<Real>("xmax"), getParam<Real>("ymax"), getParam<Real>("zmax")}),
     _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>()),
     _shape(torch::IntArrayRef(_n_local.data(), _dim)),
@@ -139,13 +143,17 @@ DomainAction::gridChanged()
   // build real space axes
   for (const auto dim : {0, 1, 2})
   {
+    // error check
+    if (_max_global[dim] <= _min_global[dim])
+      mooseError("Max coordinate must be larger than teh min coordinate in every dimension");
+
     // get grid geometry
-    _grid_spacing[dim] = _max_global[dim] / _n_global[dim];
+    _grid_spacing[dim] = (_max_global[dim] - _min_global[dim]) / _n_global[dim];
 
     // real space axis
     if (dim < _dim)
       _global_axis[dim] =
-          align(torch::linspace(c10::Scalar(_grid_spacing[dim] / 2.0),
+          align(torch::linspace(c10::Scalar(_min_global[dim] + _grid_spacing[dim] / 2.0),
                                 c10::Scalar(_max_global[dim] - _grid_spacing[dim] / 2.0),
                                 _n_global[dim],
                                 options),
@@ -319,6 +327,9 @@ DomainAction::act()
     params.set<Real>("xmax") = _max_global[0];
     params.set<Real>("ymax") = _max_global[1];
     params.set<Real>("zmax") = _max_global[2];
+    params.set<Real>("xmin") = _min_global[0];
+    params.set<Real>("ymin") = _min_global[1];
+    params.set<Real>("zmin") = _min_global[2];
 
     if (_mesh_mode == MeshMode::DOMAIN)
     {
@@ -499,4 +510,3 @@ DomainAction::align(torch::Tensor t, unsigned int dim) const
       mooseError("Unsupported mesh dimension");
   }
 }
-

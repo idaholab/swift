@@ -379,6 +379,10 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::tan, {s[sp]});
         break;
 
+      case cTanh:
+        s[sp] = _graph->insert(aten::tanh, {s[sp]});
+        break;
+
       case cSinCos:
         s[sp + 1] = _graph->insert(aten::cos, {s[sp]});
         s[sp] = _graph->insert(aten::sin, {s[sp]});

@@ -35,7 +35,8 @@ public:
   const std::array<int64_t, 3> & getReciprocalGridSize() const { return _n_reciprocal_global; }
   const std::array<int64_t, 3> & getLocalGridSize() const { return _n_local; }
   const std::array<int64_t, 3> & getLocalReciprocalGridSize() const { return _n_reciprocal_local; }
-  const std::array<Real, 3> & getDomainSize() const { return _max_global; }
+  const std::array<Real, 3> & getDomainMin() const { return _min_global; }
+  const std::array<Real, 3> & getDomainMax() const { return _max_global; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
@@ -101,8 +102,10 @@ protected:
   std::array<std::vector<int64_t>, 3> _local_end;
   std::array<std::vector<int64_t>, 3> _n_local_all;
 
-  /// global domain length in each dimension
+  ///@{ global domain length in each dimension
+  const std::array<Real, 3> _min_global;
   const std::array<Real, 3> _max_global;
+  ///@}
 
   const enum class MeshMode { DUMMY, DOMAIN, MANUAL } _mesh_mode;
 
