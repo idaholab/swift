@@ -209,6 +209,7 @@ void
 TensorProblem::updateDOFMap()
 {
   TIME_SECTION("update", 3, "Updating Tensor DOF Map", true);
+  const auto & min_global = _domain.getDomainMin();
 
   // variable mapping
   const auto & aux = getAuxiliarySystem();
@@ -224,7 +225,7 @@ TensorProblem::updateDOFMap()
     auto var_num = var->number();
 
     const static Point shift(
-        _grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
+        _grid_spacing[0] / 2.0 - min_global[0], _grid_spacing[1] / 2.0 - min_global[1], _grid_spacing[2] / 2.0 - min_global[2]);
     auto compute_iteration_index = [this](Point p, long int n0, long int n1)
     {
       switch (_dim)
@@ -280,11 +281,12 @@ TensorProblem::updateDOFMap()
       long int n1 = _n[1];
       long int n2 = _n[2];
       dofs.resize(n0 * n1 * n2);
+      const static Point shift(-min_global[0], -min_global[0], -min_global[0]);
       // loop over elements
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);
-        const auto iteration_index = compute_iteration_index(elem->centroid(), n0, n1);
+        const auto iteration_index = compute_iteration_index(elem->centroid() + shift, n0, n1);
         dofs[iteration_index] = dof_index;
       }
     }
