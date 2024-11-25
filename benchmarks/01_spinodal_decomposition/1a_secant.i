@@ -4,9 +4,7 @@
   ny = 200
   xmax = 200
   ymax = 200
-
   device_names = 'cuda'
-
   mesh_mode = DOMAIN
 []
 

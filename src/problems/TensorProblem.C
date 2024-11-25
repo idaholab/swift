@@ -62,6 +62,13 @@ TensorProblem::~TensorProblem()
 void
 TensorProblem::init()
 {
+  unsigned int n_threads = libMesh::n_threads();
+  if (n_threads != 1)
+  {
+    mooseInfo("Setting libTorch to use ", n_threads, " on the CPU.");
+    torch::set_num_threads(n_threads);
+  }
+
   // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
   // pointer as well)
   for (auto pair : _tensor_buffer)

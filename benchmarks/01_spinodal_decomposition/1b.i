@@ -48,7 +48,7 @@
       type = ParsedCompute
       buffer = domain
       extra_symbols = true
-      expression = 'w:=3;dx:=max(tanh(-x/w),tanh((x-200)/w)); dy:=max(tanh(-y/w),tanh((y-200)/w));max(dx,dy)'
+      expression = 'w:=3;dx:=max(tanh(-x/w),tanh((x-200)/w)); dy:=max(tanh(-y/w),tanh((y-200)/w));1-0.999999999*max(dx,dy)'
     []
     [c]
       type = ParsedCompute

@@ -2,7 +2,7 @@
 
 ![Swift Logo](https://github.com/dschwen/swift/blob/main/doc/content/swift.png?raw=true)
 
-**Swift** is an application do model high strain rate impacts based on the [MOOSE Finite Element Framework](http://mooseframework.org).
+**Swift** is a Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org).
 
 ### Other Software
 
@@ -18,7 +18,7 @@ Idaho National Laboratory is a cutting edge research facility which is a constan
 
 ### License
 
-Copyright 2017 Battelle Energy Alliance, LLC
+Copyright 2024 Battelle Energy Alliance, LLC
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version.
 
