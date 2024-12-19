@@ -4,9 +4,23 @@
 
 **Swift** is a Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org).
 
-contacts
-prerequistes
-why (device support) speed, new components, coupling with moose
+## Contacts
+
+The primary developer of Swift is _Daniel Schwen_. In case of questions or problems please file a GitHub issue.
+
+## Why another spectral solver?
+
+Swift...
+
+- ...uses familiar MOOSE input format
+- ...can couple to MOOSE FE/FV models
+- ...can utilize MOOSE postprocessing objects
+- ...uses MOOSE input/outputs
+- ...integrates with the MOOSE multiapp and transfers system (enabling it to work with stochastic tools to MCMC sample thousands of Swift mesoscale models, perform inverse Bayesian inference, parameter calibration, UQ etc.)
+- ...is fully device independent through libTorch
+- ...has all its dependencies provided by MOOSE alone
+- ...is focussed on ease of model development (with runtime parsed expressions, just-in-time compilation, and automatic dependency resolution)
+- ...supports runing models on GPUs
 
 ### Other Software
 
