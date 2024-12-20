@@ -1,12 +1,8 @@
 # ConstantTensor
 
-!alert construction title=Undocumented Class
-The ConstantTensor has not been documented. The content listed below should be used as a starting point for
-documenting the class, which includes the typical automatic documentation associated with a
-MooseObject; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
 !syntax description /TensorComputes/Solve/ConstantTensor
+
+`ConstantTensor` and `ConstantReciprocalTensor` set a tensor to a constant value in real space and reciprocal space respectively. The reciprocal space version takes an [!param](/TensorComputes/Solve/ConstantReciprocalTensor/imaginary) value parameter.
 
 ## Overview
 
