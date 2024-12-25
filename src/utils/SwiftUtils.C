@@ -131,4 +131,39 @@ intTensorOptions()
       .requires_grad(false);
 }
 
+void
+read2DStructuredLBMMeshFromVTK(const std::string& filePath,
+                      torch::Tensor& binaryMedia,
+                      torch::Tensor& poreSize,
+                      torch::Tensor& knudsenNumber,
+                      const std::vector<int> &dims)
+{
+  #ifdef SWIFT_HAVE_VTK
+    /*
+      Function to read binary porous media, local pore size distribution and Knudsen number
+      distributions from VTK file. scripts/create_vtk.py MUST be used to generate the vtk file
+    */
+    vtkSmartPointer<vtkXMLStructuredGridReader> reader = vtkSmartPointer<vtkXMLStructuredGridReader>::New();
+    reader->SetFileName(filePath.c_str());
+    reader->Update();
+
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = reader->GetOutput();
+
+    vtkSmartPointer<vtkDataArray> binaryMediaArray = structuredGrid->GetPointData()->GetArray("BinaryMedia");
+    vtkSmartPointer<vtkDataArray> poreSizeArray = structuredGrid->GetPointData()->GetArray("PoreSize");
+    vtkSmartPointer<vtkDataArray> knudsenNumberArray = structuredGrid->GetPointData()->GetArray("KnudsenNumber");
+
+    for (int64_t i = 0; i < dims[0]; i++)
+      for (int64_t j = 0; j < dims[1]; j++)
+        for (int64_t k = 0; k < dims[2]; k++)
+        {
+          // 2D only, 3D needs to be tested
+          int index = k * dims[1] * dims[2] + i * dims[1] + j;
+          binaryMedia.index_put_({i, j, k}, binaryMediaArray->GetTuple1(index));
+          poreSize.index_put_({i, j, k}, poreSizeArray->GetTuple1(index));
+          knudsenNumber.index_put_({i, j, k}, knudsenNumberArray->GetTuple1(index));
+        }
+  #endif
+}
+
 } // namespace MooseTensor

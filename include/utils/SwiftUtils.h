@@ -36,5 +36,11 @@ const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions complexFloatTensorOptions();
 const torch::TensorOptions intTensorOptions();
 
+void read2DStructuredLBMMeshFromVTK(const std::string& filePath,
+                      torch::Tensor& binaryMedia,
+                      torch::Tensor& poreSize,
+                      torch::Tensor& knudsenNumber,
+                      const std::vector<int> &dims);
+
 } // namespace MooseTensor
 
