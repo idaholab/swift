@@ -91,12 +91,18 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   // ComputeDevice Action
   registerSyntax("DomainAction", "Domain");
 
+  // LBM Stencil Actions
+  registerSyntaxTask("AddLBMStencilAction", "Stencil/*", "add_stencil");
+  syntax.registerSyntaxType("Stencil/*", "StencilName");
+  registerMooseObjectTask("add_stencil", LBStencil, false);
+  addTaskDependency("add_stencil", "add_aux_variable");
+
   // TensorBuffer Actions
   registerSyntaxTask("AddTensorBufferAction", "TensorBuffers/*", "add_tensor_buffer");
   syntax.registerSyntaxType("TensorBuffers/*", "TensorInputBufferName");
   syntax.registerSyntaxType("TensorBuffers/*", "TensorOutputBufferName");
   registerMooseObjectTask("add_tensor_buffer", TensorBuffer, false);
-  addTaskDependency("add_tensor_buffer", "add_aux_variable");
+  addTaskDependency("add_tensor_buffer", "add_stencil");
 
   // TensorComputes/Initial Actions
   registerDeep("TensorComputes/Initialize", "add_tensor_ic");
