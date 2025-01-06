@@ -31,11 +31,14 @@ public:
   void execute(const ExecFlagType & exec_type) override;
   
   // void advanceState() override;
+  
+  void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters) override;
 
   void addStencil(const std::string & stencil_name,
                               const std::string & name,
                               InputParameters & parameters);
-  
+
+
   const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
 
   const bool & isSlipEnabled() const {return _enable_slip; }
