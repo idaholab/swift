@@ -2,6 +2,8 @@
   dim = 2
   nx = 50
   ny = 50
+  xmax = 50
+  ymax = 50
   device_names = 'cpu'
 
   mesh_mode = MANUAL
@@ -22,6 +24,7 @@
 
 [TensorBuffers]
   [f]
+    vector_size = 9
   []
 []
 
