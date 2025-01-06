@@ -13,12 +13,12 @@ registerMooseObject("SwiftApp", LBMD3Q19);
 InputParameters
 LBMD3Q19::validParams()
 {
-  InputParameters params = LBMStencilBase::validParams();
+  InputParameters params = LatticeBoltzmannStencilBase::validParams();
   params.addClassDescription("LBMD3Q19 Stencil object.");
   return params;
 }
 
-LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LBMStencilBase(parameters)
+LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencilBase(parameters)
 {
   _q = 19;
   // LBMD3Q19 lattice

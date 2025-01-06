@@ -8,16 +8,24 @@
 
 #pragma once
 
-#include "LatticeBoltzmannStencilBase.h"
+#include "TensorOperator.h"
+
+class LatticeBoltzmannProblem;
+class LatticeBoltzmannStencilBase;
+class LatticeBoltzmannMesh;
 
 /**
- * 2-dimensional 9 velocity lattice configuration
+ * LatticeBoltzmannOperator object
  */
-
-class LBMD2Q9 : public LatticeBoltzmannStencilBase
+class LatticeBoltzmannOperator : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  LBMD2Q9(const InputParameters & parameters);
+  LatticeBoltzmannOperator(const InputParameters & parameters);
+
+protected:
+  LatticeBoltzmannProblem& _lb_problem;
+  const LatticeBoltzmannStencilBase & _stencil;
+  LatticeBoltzmannMesh & _mesh;
 };

@@ -8,7 +8,7 @@
 
 #include "LatticeBoltzmannProblem.h"
 #include "LatticeBoltzmannMesh.h"
-#include "LBMStencilBase.h"
+#include "LatticeBoltzmannStencilBase.h"
 
 registerMooseObject("SwiftApp", LatticeBoltzmannProblem);
 
@@ -41,22 +41,22 @@ LatticeBoltzmannProblem::init()
   TensorProblem::init();
 
   // initialize buffers with extra dimensions
-  for (auto & pair : _tensor_buffer)
-  {
-    auto extra_dim = _buffer_extra_dimension.find(pair.first);
+  // for (auto & pair : _tensor_buffer)
+  // {
+  //   auto extra_dim = _buffer_extra_dimension.find(pair.first);
 
-    if (extra_dim->second >= 1)
-    {
-      // buffers with extra dimension
-      unsigned int dim = 4;
-      std::array<int64_t, 4> n;
-      std::fill(n.begin(), n.end(), 1);
-      std::copy(_n.begin(), _n.end(), n.begin());
-      n[dim - 1] = static_cast<int64_t>(extra_dim->second);
-      torch::IntArrayRef shape = torch::IntArrayRef(n.data(), dim);
-      pair.second = torch::zeros(shape, _options);
-    }
-  }
+  //   if (extra_dim->second >= 1)
+  //   {
+  //     // buffers with extra dimension
+  //     unsigned int dim = 4;
+  //     std::array<int64_t, 4> n;
+  //     std::fill(n.begin(), n.end(), 1);
+  //     std::copy(_n.begin(), _n.end(), n.begin());
+  //     n[dim - 1] = static_cast<int64_t>(extra_dim->second);
+  //     torch::IntArrayRef shape = torch::IntArrayRef(n.data(), dim);
+  //     pair.second = torch::zeros(shape, _options);
+  //   }
+  // }
 
   // set up parameters for slip flow
   if (_enable_slip)
@@ -78,9 +78,9 @@ LatticeBoltzmannProblem::addStencil(
   if (_stencil_counter > 0)
     mooseError("Problem object LatticeBoltzmannProblem can only have one stencil");
   // Create the object
-  _stencil = _factory.create<LBMStencilBase>(stencil_name, name, parameters, 0);
+  _stencil = _factory.create<LatticeBoltzmannStencilBase>(stencil_name, name, parameters, 0);
   _stencil_counter ++;
-  logAdd("LBMStencilBase", name, stencil_name, parameters);
+  logAdd("LatticeBoltzmannStencilBase", name, stencil_name, parameters);
 }
 
 

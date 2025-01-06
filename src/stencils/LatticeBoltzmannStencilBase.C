@@ -6,10 +6,10 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "LBMStencilBase.h"
+#include "LatticeBoltzmannStencilBase.h"
 
 InputParameters
-LBMStencilBase::validParams()
+LatticeBoltzmannStencilBase::validParams()
 {
   InputParameters params = MooseObject::validParams();
   params.addClassDescription("LB Stencil object.");
@@ -17,6 +17,6 @@ LBMStencilBase::validParams()
   return params;
 }
 
-LBMStencilBase::LBMStencilBase(const InputParameters & parameters) : MooseObject(parameters) 
+LatticeBoltzmannStencilBase::LatticeBoltzmannStencilBase(const InputParameters & parameters) : MooseObject(parameters) 
 {
 }

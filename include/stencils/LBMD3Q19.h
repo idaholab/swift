@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "LBMStencilBase.h"
+#include "LatticeBoltzmannStencilBase.h"
 
 /**
  * 3-dimensional 19 velocity lattice configuration
  */
 
-class LBMD3Q19 : public LBMStencilBase
+class LBMD3Q19 : public LatticeBoltzmannStencilBase
 {
 public:
   static InputParameters validParams();

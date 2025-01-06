@@ -18,12 +18,12 @@
  * Base class for lattice stencils
  */
 
-class LBMStencilBase : public MooseObject
+class LatticeBoltzmannStencilBase : public MooseObject
 {
 public:
   static InputParameters validParams();
 
-  LBMStencilBase(const InputParameters & parameters);
+  LatticeBoltzmannStencilBase(const InputParameters & parameters);
 
 public:
   int64_t _q;

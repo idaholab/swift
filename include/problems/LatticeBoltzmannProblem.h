@@ -13,7 +13,7 @@
 #include "TensorProblem.h"
 
 
-class LBMStencilBase;
+class LatticeBoltzmannStencilBase;
 class LatticeBoltzmannMesh;
 
 /**
@@ -36,7 +36,7 @@ public:
                               const std::string & name,
                               InputParameters & parameters);
   
-  const LBMStencilBase & getStencil() const {return *_stencil; }
+  const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
 
   const bool & isSlipEnabled() const {return _enable_slip; }
 
@@ -58,7 +58,7 @@ protected:
   LatticeBoltzmannMesh * _lbm_mesh;
 
   /// LBM stencils
-  std::shared_ptr<LBMStencilBase> _stencil;
+  std::shared_ptr<LatticeBoltzmannStencilBase> _stencil;
 
   /// buffers with extra dimension
   std::map<std::string, unsigned int> _buffer_extra_dimension;
