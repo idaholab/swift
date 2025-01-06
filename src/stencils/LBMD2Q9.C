@@ -13,12 +13,12 @@ registerMooseObject("SwiftApp", LBMD2Q9);
 InputParameters
 LBMD2Q9::validParams()
 {
-  InputParameters params = LBMStencilBase::validParams();
+  InputParameters params = LatticeBoltzmannStencilBase::validParams();
   params.addClassDescription("LBMD2Q9 Stencil object.");
   return params;
 }
 
-LBMD2Q9::LBMD2Q9(const InputParameters & parameters) : LBMStencilBase(parameters)
+LBMD2Q9::LBMD2Q9(const InputParameters & parameters) : LatticeBoltzmannStencilBase(parameters)
 {
   _q = 9;
   _ex = torch::tensor({0, 1, 0, -1, 0, 1, -1, -1, 1}, MooseTensor::intTensorOptions());
