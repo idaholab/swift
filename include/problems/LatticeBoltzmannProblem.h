@@ -12,7 +12,6 @@
 
 #include "TensorProblem.h"
 
-
 class LatticeBoltzmannStencilBase;
 class LatticeBoltzmannMesh;
 
@@ -37,7 +36,6 @@ public:
   void addStencil(const std::string & stencil_name,
                               const std::string & name,
                               InputParameters & parameters);
-
 
   const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
 
