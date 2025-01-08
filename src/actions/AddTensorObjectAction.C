@@ -45,6 +45,9 @@ AddTensorObjectAction::act()
   if (_current_task == "add_tensor_ic")
     tensor_problem->addTensorComputeInitialize(_type, _name, _moose_object_pars);
 
+  if (_current_task == "add_tensor_bc")
+    tensor_problem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);
+
   if (_current_task == "add_tensor_postprocessor")
     tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
 
