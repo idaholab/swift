@@ -22,42 +22,32 @@ LBMEquilibrium::validParams()
 
 LBMEquilibrium::LBMEquilibrium(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
-  _rho(getInputBuffer("rho")),
+  _rho(getInputBuffer("rho").unsqueeze(3)),
   _velocity(getInputBuffer("velocty")),
+  _ux(_velocity.select(3, 0).unsqueeze(3)),
+  _uy(_velocity.select(3, 1).unsqueeze(3)),
   _dim(_mesh.getDim())
 {
-  _shape = {1, 1, 1, _stencil._q};
+  // recunstruct uz
+  switch (_dim)
+  {
+    case 3:
+      _uz = _velocity.select(3, 2).unsqueeze(3);
+      break;
+    case 2:
+      _uz = torch::zeros_like(_rho,  MooseTensor::floatTensorOptions());
+      break;
+    default:
+      mooseError("Unsupported dimensions for buffer _u");
+  }
 }
 
 void
 LBMEquilibrium::computeBuffer()
 {
-  // preparing
-  const torch::Tensor ex = _stencil._ex.view(_shape);
-  const torch::Tensor ey = _stencil._ey.view(_shape);
-  const torch::Tensor ez = _stencil._ez.view(_shape);
-  const torch::Tensor w = _stencil._weights.view(_shape);
-  torch::Tensor uz;
-  switch (_dim)
-  {
-    case 3:
-      uz = _velocity.select(3, 2).unsqueeze(3);
-      break;
-    case 2:
-      uz = torch::zeros_like(_rho,  MooseTensor::floatTensorOptions()).unsqueeze(3);
-      break;
-    default:
-      mooseError("Unsupported dimensions for buffer _u");
-  }
-
-  const torch::Tensor ux = _velocity.select(3, 0).unsqueeze(3);
-  const torch::Tensor uy = _velocity.select(3, 1).unsqueeze(3);
-  const torch::Tensor rho = _rho.unsqueeze(3);
-
-  //
-  _u = w * rho * (1.0 + (ex * ux + ey * uy + ez * uz) / _lb_problem._cs2 \
-                         + 0.5 * ((ex * ux + ey * uy + ez * uz) * (ex * ux + ey * uy + ez * uz)) / _lb_problem._cs4 \
-                          -0.5 * (ux * ux + uy * uy + uz * uz) / _lb_problem._cs2);
+  // compute equilibrium
+  _u = _w * _rho * (1.0 + (_ex * _ux + _ey * _uy + _ez * _uz) / _lb_problem._cs2 \
+                         + 0.5 * ((_ex * _ux + _ey * _uy + _ez * _uz) * (_ex * _ux + _ey * _uy + _ez * _uz)) / _lb_problem._cs4 \
+                          -0.5 * (_ux * _ux + _uy * _uy + _uz * _uz) / _lb_problem._cs2);
   _lb_problem.setTensorToValue(_u, 0);
 }
-

@@ -23,7 +23,10 @@ LatticeBoltzmannOperator::LatticeBoltzmannOperator(const InputParameters & param
   : TensorOperator(parameters),
   _lb_problem(dynamic_cast<LatticeBoltzmannProblem&>(_tensor_problem)),
   _stencil(_lb_problem.getStencil()),
-  _mesh(dynamic_cast<LatticeBoltzmannMesh &>(_lb_problem.mesh()))
+  _mesh(dynamic_cast<LatticeBoltzmannMesh &>(_lb_problem.mesh())),
+  _ex(_stencil._ex.view({1, 1, 1, _stencil._q})),
+  _ey(_stencil._ey.view({1, 1, 1, _stencil._q})),
+  _ez(_stencil._ez.view({1, 1, 1, _stencil._q})),
+  _w(_stencil._weights.view({1, 1, 1, _stencil._q}))
 {
 }
-

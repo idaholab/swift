@@ -26,7 +26,7 @@ public:
   LatticeBoltzmannStencilBase(const InputParameters & parameters);
 
 public:
-  int64_t _q;
+  int _q;
   torch::Tensor _ex;
   torch::Tensor _ey;
   torch::Tensor _ez;
