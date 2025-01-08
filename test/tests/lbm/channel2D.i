@@ -26,12 +26,48 @@
   [f]
     vector_size = 9
   []
+  [rho]
+  []
+  [u]
+    vector_size = 2
+  []
+[]
+
+[TensorComputes]
+  [Initialize]
+    [rho]
+      type = ConstantTensor
+      buffer =rho
+      real = 1.0
+      full = true
+    []
+    [u]
+      type = ConstantTensor
+      buffer = u
+      real = 0.001
+      full = true
+    []
+    [f]
+      type = LBMEquilibrium
+      buffer = f
+      rho = rho
+      velocty = u
+    []
+  []
+[]
+
+[Postprocessors]
+  [rho_avg]
+    type = TensorAveragePostprocessor
+    buffer = rho
+    execute_on = 'TIMESTEP_BEGIN'
+  []
 []
 
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  spectral_solve_substeps = 1
+  spectral_solve_substeps = 2
 []
 
 [Executioner]
