@@ -86,6 +86,9 @@ public:
   virtual void addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
                                           InputParameters & parameters);
+  void addTensorBoundaryCondition(const std::string & compute_name,
+                                  const std::string & name,
+                                  InputParameters & parameters);
   virtual void addTensorComputeSolve(const std::string & compute_name,
                                      const std::string & name,
                                      InputParameters & parameters);
@@ -215,6 +218,9 @@ protected:
 
   /// postprocessing objects
   TensorComputeList _pps;
+
+  /// bc objects
+  TensorComputeList _bcs;
 
   /// tensor outputs
   std::vector<std::shared_ptr<TensorOutput>> _outputs;

@@ -97,7 +97,6 @@ LatticeBoltzmannProblem::addStencil(
   logAdd("LatticeBoltzmannStencilBase", name, stencil_name, parameters);
 }
 
-
 void
 LatticeBoltzmannProblem::enableSlipModel()
 {
