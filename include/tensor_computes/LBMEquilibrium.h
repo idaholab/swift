@@ -26,10 +26,10 @@ public:
     virtual void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _rho;
-  const torch::Tensor & _velocity;
-  const torch::Tensor & _ux;
-  const torch::Tensor & _uy;
+  const torch::Tensor _rho;
+  const torch::Tensor _velocity;
+  const torch::Tensor _ux;
+  const torch::Tensor _uy;
   torch::Tensor _uz;
   const unsigned int & _dim;
 };
