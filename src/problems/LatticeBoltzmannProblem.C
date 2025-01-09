@@ -157,14 +157,6 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
     mapBuffersToAux();
   }
   FEProblem::execute(exec_type);
-
-  // TODO: Temporary debug outputs
-  std::cout<<exec_type<<std::endl;
-  for (auto pair : _tensor_buffer)
-  {
-    std::cout<<"Buffer: "<<pair.first<<std::endl;
-    std::cout<<"shape: "<<pair.second.sizes()<<std::endl;
-  }  
 }
 
 void
