@@ -232,7 +232,7 @@ LatticeBoltzmannProblem::setSolverResidual(const Real & residual)
 void
 LatticeBoltzmannProblem::setTensorToValue(torch::Tensor & t, const Real & value)
 {
-  auto tensor_shape = t.sizes();
+  const auto tensor_shape = t.sizes();
   const bool & is_mesh_file = _lbm_mesh->isMeshDatFile();
   const bool & is_mesh_vtk = _lbm_mesh->isMeshVTKFile();
   const auto & binary_mesh = _lbm_mesh->getBinaryMesh();

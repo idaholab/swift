@@ -26,6 +26,12 @@
   [f]
     vector_size = 9
   []
+  [f_post_collision]
+    vector_size = 9
+  []
+  [feq]
+    vector_size = 9
+  []
   [rho]
   []
   [u]
@@ -47,11 +53,32 @@
       real = 0.001
       full = true
     []
+    [feq]
+      type = LBMEquilibrium
+      buffer = feq
+      rho = rho
+      velocty = u
+    []
     [f]
       type = LBMEquilibrium
       buffer = f
       rho = rho
       velocty = u
+    []
+    [f_post_collision]
+      type = LBMEquilibrium
+      buffer = f_post_collision
+      rho = rho
+      velocty = u
+    []
+  []
+  [Solve]
+    [Collision]
+      type = LBMBGKCollision
+      buffer = f_post_collision
+      f = f
+      feq = feq
+      tau = 0.8
     []
   []
 []
