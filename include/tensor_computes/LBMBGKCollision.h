@@ -23,7 +23,7 @@ public:
   void computeBuffer() override;
 
 protected:
-  Real  _tau_bgk;
-  const torch::Tensor _feq;
-  const torch::Tensor _f;
+  Real _tau_bgk;
+  const torch::Tensor & _feq;
+  const torch::Tensor & _f;
 };
