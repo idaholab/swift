@@ -52,7 +52,7 @@ LatticeBoltzmannProblem::init()
   {
     auto extra_dim = _buffer_extra_dimension.find(pair.first);
 
-    if (extra_dim->second >= 1)
+    if (extra_dim->second > 1)
     {
       // buffers with extra dimension
       unsigned int dim = 4;
@@ -61,6 +61,11 @@ LatticeBoltzmannProblem::init()
       std::copy(_n.begin(), _n.end(), n.begin());
       n[dim - 1] = static_cast<int64_t>(extra_dim->second);
       torch::IntArrayRef shape = torch::IntArrayRef(n.data(), dim);
+      pair.second = torch::zeros(shape, _options);
+    }
+    else
+    {
+      torch::IntArrayRef shape = torch::IntArrayRef(_n.data(), 3);
       pair.second = torch::zeros(shape, _options);
     }
   }
@@ -75,7 +80,7 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 { 
   /**
    * This is primarily a copy of base class execute function with a 
-   * different order order of operations in the main loop.
+   * different order of operations in the main loop.
    */
   if (exec_type == EXEC_INITIAL)
   {
@@ -152,6 +157,14 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
     mapBuffersToAux();
   }
   FEProblem::execute(exec_type);
+
+  // TODO: Temporary debug outputs
+  std::cout<<exec_type<<std::endl;
+  for (auto pair : _tensor_buffer)
+  {
+    std::cout<<"Buffer: "<<pair.first<<std::endl;
+    std::cout<<"shape: "<<pair.second.sizes()<<std::endl;
+  }  
 }
 
 void
@@ -159,9 +172,6 @@ LatticeBoltzmannProblem::addTensorBuffer(const std::string & buffer_name, InputP
 {
   // run base class method
   TensorProblem::addTensorBuffer(buffer_name, parameters);
-
-  // initialize
-  _buffer_extra_dimension[buffer_name] = 0;
 
   // add extra dimension if necessary
   if(parameters.isParamValid("vector_size"))

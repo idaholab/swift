@@ -1,9 +1,9 @@
 [Domain]
   dim = 2
-  nx = 50
-  ny = 50
-  xmax = 50
-  ymax = 50
+  nx = 5
+  ny = 5
+  xmax = 5
+  ymax = 5
   device_names = 'cpu'
 
   mesh_mode = MANUAL
@@ -12,8 +12,8 @@
 [Mesh]
   type = LatticeBoltzmannMesh
   dim = 2
-  nx = 50
-  ny = 50
+  nx = 5
+  ny = 5
 []
 
 [Stencil]
@@ -23,15 +23,6 @@
 []
 
 [TensorBuffers]
-  [f]
-    vector_size = 9
-  []
-  [f_post_collision]
-    vector_size = 9
-  []
-  [feq]
-    vector_size = 9
-  []
   [rho]
   []
   [u]
@@ -42,43 +33,14 @@
 [TensorComputes]
   [Initialize]
     [rho]
-      type = ConstantTensor
-      buffer =rho
-      real = 1.0
-      full = true
+      type = LBMConstantTensor
+      buffer = rho
+      value = 1.0
     []
     [u]
-      type = ConstantTensor
+      type = LBMConstantTensor
       buffer = u
-      real = 0.001
-      full = true
-    []
-    [feq]
-      type = LBMEquilibrium
-      buffer = feq
-      rho = rho
-      velocty = u
-    []
-    [f]
-      type = LBMEquilibrium
-      buffer = f
-      rho = rho
-      velocty = u
-    []
-    [f_post_collision]
-      type = LBMEquilibrium
-      buffer = f_post_collision
-      rho = rho
-      velocty = u
-    []
-  []
-  [Solve]
-    [Collision]
-      type = LBMBGKCollision
-      buffer = f_post_collision
-      f = f
-      feq = feq
-      tau = 0.8
+      value = 0.001
     []
   []
 []

@@ -17,7 +17,7 @@ TensorBufferBase::validParams()
   params.registerSystemAttributeName("TensorBuffer"); //?
   params.addParam<AuxVariableName>("map_to_aux_variable",
                                    "Sync the given AuxVariable to the buffer contents");
-  params.addParam<unsigned int>("vector_size", 1, "Add extra dimension to tensors.");
+  params.addParam<unsigned int>("vector_size", 0, "Add extra dimension to tensors.");
   return params;
 }
 
