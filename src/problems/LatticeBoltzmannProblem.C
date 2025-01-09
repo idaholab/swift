@@ -10,6 +10,13 @@
 #include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
+#include "TensorOperatorBase.h"
+#include "TensorTimeIntegrator.h"
+#include "TensorOutput.h"
+
+#include "SwiftUtils.h"
+#include "DependencyResolverInterface.h"
+
 registerMooseObject("SwiftApp", LatticeBoltzmannProblem);
 
 InputParameters
@@ -65,8 +72,86 @@ LatticeBoltzmannProblem::init()
 
 void
 LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
-{
-  
+{ 
+  /**
+   * This is primarily a copy of base class execute function with a 
+   * different order order of operations in the main loop.
+   */
+  if (exec_type == EXEC_INITIAL)
+  {
+    // run ICs
+    for (auto & ic : _ics)
+      ic->computeBuffer();
+
+    // compile ist of compute output tensors
+    std::set<std::string> _is_output;
+    for (auto & cmp : _computes)
+      _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
+
+    // check for uninitialized tensors
+    for (auto & [name, t] : _tensor_buffer)
+      if (!t.defined() && _is_output.count(name) == 0)
+        mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
+  }
+
+  if (exec_type == EXEC_TIMESTEP_BEGIN)
+  {
+    _convergence_residual = 1.0;
+    if (dt() != dtOld())
+      for (auto & [name, max_states] : _old_tensor_buffer)
+        max_states.second.clear();
+
+    // update substepping dt
+    _sub_dt = dt() / _substeps;
+
+    for (unsigned substep = 0; substep < _substeps; ++substep)
+    {
+      // create old state buffers
+      advanceState();
+
+      // run timeintegrators
+      for (auto & ti : _time_integrators)
+        ti->computeBuffer();
+
+      // run bcs
+      for (auto & bc : _bcs)
+        bc->computeBuffer();
+
+      // run computes
+      for (auto & cmp : _computes)
+        cmp->computeBuffer();
+      _console << COLOR_WHITE << "Lattice Boltzmann Substep "<< substep<<", Residual "<<_convergence_residual << COLOR_DEFAULT << std::endl;
+
+      _t_total ++;
+    }
+
+    // run postprocessing before output
+    for (auto & pp : _pps)
+      pp->computeBuffer();
+
+    // wait for prior asynchronous activity on CPU buffers to complete
+    // (this is a synchronization barrier for the threaded CPU activity)
+    for (auto & output : _outputs)
+      output->waitForCompletion();
+
+    // prepare CPU buffers (this is a synchronization barrier for the GPU)
+    for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
+    {
+      // get main buffer (GPU or CPU) - we already verified that it must exist
+      const auto & buffer = _tensor_buffer[name];
+      if (buffer.is_cpu())
+        cpu_buffer = buffer.clone().contiguous();
+      else
+        cpu_buffer = buffer.cpu().contiguous();
+    }
+
+    // run direct buffer outputs (asynchronous in threads)
+    for (auto & output : _outputs)
+      output->startOutput();
+
+    mapBuffersToAux();
+  }
+  FEProblem::execute(exec_type);
 }
 
 void

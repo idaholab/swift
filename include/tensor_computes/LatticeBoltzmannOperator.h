@@ -29,8 +29,8 @@ protected:
   const LatticeBoltzmannStencilBase & _stencil;
   LatticeBoltzmannMesh & _mesh;
 
-  const torch::Tensor & _ex;
-  const torch::Tensor & _ey;
-  const torch::Tensor & _ez;
-  const torch::Tensor & _w;
+  const torch::Tensor _ex;
+  const torch::Tensor _ey;
+  const torch::Tensor _ez;
+  const torch::Tensor _w;
 };
