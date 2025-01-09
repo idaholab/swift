@@ -11,6 +11,7 @@
 #include "hit/parse.h"
 
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_ic");
+registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_bc");
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_compute");
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_postprocessor");
 
@@ -69,4 +70,7 @@ AddTensorComputeAction::act()
 
   if (_current_task == "add_tensor_postprocessor")
     tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
+
+  if (_current_task == "add_tensor_bc")
+    tensor_problem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);
 }
