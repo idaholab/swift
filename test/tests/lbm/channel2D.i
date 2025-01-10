@@ -72,6 +72,11 @@
       rho = rho
       velocity = u
     []
+    [Density]
+      type = LBMComputeDensity
+      buffer = rho
+      f = f
+    []
   []
 []
 
