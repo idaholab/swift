@@ -442,7 +442,7 @@ void
 TensorProblem::addTensorComputeSolve(const std::string & compute_name,
                                      const std::string & name,
                                      InputParameters & parameters)
-{
+{ 
   addTensorCompute(compute_name, name, parameters, _computes);
 }
 
@@ -450,7 +450,7 @@ void
 TensorProblem::addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
                                           InputParameters & parameters)
-{
+{ 
   addTensorCompute(compute_name, name, parameters, _ics);
 }
 
@@ -461,7 +461,6 @@ TensorProblem::addTensorBoundaryCondition(const std::string & compute_name,
 {
   addTensorCompute(compute_name, name, parameters, _bcs);
 }
-
 
 void
 TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
@@ -590,4 +589,3 @@ void TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
     mooseError(
         "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
 }
-
