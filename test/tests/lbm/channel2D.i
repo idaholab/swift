@@ -95,6 +95,12 @@
       buffer = u_magnitude
       velocity = u
     []
+    [Residual]
+      type = LBMComputeResidual
+      speed = u_magnitude
+      # TODO this buffer is redundant, but avoids 'missing parameter' error
+      buffer = u_magnitude
+    []
   []
 []
 
