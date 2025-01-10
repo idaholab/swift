@@ -81,6 +81,14 @@
   []
 []
 
+[TensorTimeIntegrators]
+  [Stream]
+    type = LBMStream
+    buffer = f
+    f_old = f_post_collision
+  []
+[]
+
 [Postprocessors]
   [rho_avg]
     type = TensorAveragePostprocessor
