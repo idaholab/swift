@@ -55,19 +55,7 @@
       type = LBMEquilibrium
       buffer = feq
       rho = rho
-      velocty = u
-    []
-    [f]
-      type = LBMEquilibrium
-      buffer = f
-      rho = rho
-      velocty = u
-    []
-    [f_post_collision]
-      type = LBMEquilibrium
-      buffer = f_post_collision
-      rho = rho
-      velocty = u
+      velocity = u
     []
   []
   [Solve]
@@ -77,6 +65,12 @@
       f = f
       feq = feq
       tau = 0.8
+    []
+    [Equilibrium]
+      type = LBMEquilibrium
+      buffer = feq
+      rho = rho
+      velocity = u
     []
   []
 []
