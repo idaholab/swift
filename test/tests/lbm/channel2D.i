@@ -46,7 +46,7 @@
       buffer = rho
       value = 1.0
     []
-    [velocty]
+    [velocity]
       type = LBMConstantTensor
       buffer = u
       value = 0.001
@@ -76,6 +76,13 @@
       type = LBMComputeDensity
       buffer = rho
       f = f
+    []
+    [Velocity]
+      type = LBMComputeVelocity
+      buffer = u
+      f = f
+      rho = rho 
+      body_force = 0.0001
     []
   []
 []
