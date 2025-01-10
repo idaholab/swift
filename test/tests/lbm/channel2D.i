@@ -5,7 +5,6 @@
   xmax = 5
   ymax = 5
   device_names = 'cpu'
-
   mesh_mode = MANUAL
 []
 
@@ -27,6 +26,8 @@
   []
   [u]
     vector_size = 2
+  []
+  [u_magnitude]
   []
   [f]
     vector_size = 9
@@ -50,6 +51,11 @@
       type = LBMConstantTensor
       buffer = u
       value = 0.001
+    []
+    [speed]
+      type = LBMConstantTensor
+      buffer = u_magnitude
+      value = 0
     []
     [equilibrium]
       type = LBMEquilibrium
@@ -84,6 +90,11 @@
       rho = rho 
       body_force = 0.0001
     []
+    [Spped]
+      type = LBMComputeVelocityMagnitude
+      buffer = u_magnitude
+      velocity = u
+    []
   []
 []
 
@@ -101,6 +112,11 @@
     buffer = rho
     execute_on = 'TIMESTEP_BEGIN'
   []
+  [speed_avg]
+    type = TensorAveragePostprocessor
+    buffer = u_magnitude
+    execute_on = 'TIMESTEP_BEGIN'
+  []
 []
 
 [Problem]
@@ -113,4 +129,3 @@
   type = Transient
   num_steps = 1
 []
-
