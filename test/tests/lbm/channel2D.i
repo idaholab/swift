@@ -66,11 +66,11 @@
   []
   [Solve]
     [Collision]
-      type = LBMBGKCollision
+      type = LBMMRTCollision
       buffer = f_post_collision
       f = f
       feq = feq
-      tau = 0.8
+      # tau = 0.8
     []
     [Equilibrium]
       type = LBMEquilibrium
