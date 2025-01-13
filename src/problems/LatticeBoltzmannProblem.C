@@ -254,3 +254,33 @@ LatticeBoltzmannProblem::setTensorToValue(torch::Tensor & t, const Real & value)
     }
   }
 }
+
+void
+LatticeBoltzmannProblem::printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index)
+{
+  /**
+   * Print the entire field for debugging
+   */
+  torch::Tensor field = t;
+  // for buffers higher than 3 dimensions, such as distribution functions
+  // select a direction to print or call this method repeatedly to print all directions
+  // higher than 4 dimensions is not supported
+  // why would one need 5 dimensional tensor for LBM anyway?? 
+  if (t.dim() == 4)
+    field = t.select(3, index);
+
+  // This is a sign that the buffer lacks extra dimensions of size 1
+  if (t.dim() < 3)
+    mooseError("Selected buffer is not 3 dimensional.");
+
+  for(int64_t i = 0; i <field.size(2); i++)
+  {
+    for(int64_t j = 0; j < field.size(1); j++)
+    {
+      for(int64_t k = 0; k < field.size(0); k++)
+        std::cout<<std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>() << " ";
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
+}
