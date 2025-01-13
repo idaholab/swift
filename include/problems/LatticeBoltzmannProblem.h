@@ -29,7 +29,7 @@ public:
 
   void execute(const ExecFlagType & exec_type) override;
   
-  // void advanceState() override;
+  void advanceState() override;
   
   void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters) override;
 

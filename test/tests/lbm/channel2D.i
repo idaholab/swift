@@ -63,14 +63,26 @@
       rho = rho
       velocity = u
     []
+    [equilibrium_2]
+      type = LBMEquilibrium
+      buffer = f_post_collision
+      rho = rho
+      velocity = u
+    []
+    [equilibrium_3]
+      type = LBMEquilibrium
+      buffer = feq
+      rho = rho
+      velocity = u
+    []
   []
   [Solve]
     [Collision]
-      type = LBMMRTCollision
+      type = LBMBGKCollision
       buffer = f_post_collision
       f = f
       feq = feq
-      # tau = 0.8
+      tau = 1.0
     []
     [Equilibrium]
       type = LBMEquilibrium
@@ -133,5 +145,5 @@
 
 [Executioner]
   type = Transient
-  num_steps = 10
+  num_steps = 2
 []
