@@ -53,5 +53,5 @@ LBMEquilibrium::computeBuffer()
   _u = _w * rho_unsqueezed * (1.0 + (_ex * ux + _ey * uy + _ez * uz) / _lb_problem._cs2 \
                          + 0.5 * ((_ex * ux + _ey * uy + _ez * uz) * (_ex * ux + _ey * uy + _ez * uz)) / _lb_problem._cs4 \
                           -0.5 * (ux * ux + uy * uy + uz * uz) / _lb_problem._cs2);
-  _lb_problem.setTensorToValue(_u, 0);
+  _lb_problem.maskedFillSolids(_u, 0);
 }

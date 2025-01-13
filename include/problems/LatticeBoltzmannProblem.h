@@ -51,8 +51,8 @@ public:
   /// sets convergence residual
   void setSolverResidual(const Real & residual);
 
-  /// sets tensor to a value at wall nodes
-  void setTensorToValue(torch::Tensor & t, const Real & value);
+  /// sets tensor to a value (normally zeros) at solid nodes
+  void maskedFillSolids(torch::Tensor & t, const Real & value);
 
   /// prints the tensor buffer, good for debugging
   void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);

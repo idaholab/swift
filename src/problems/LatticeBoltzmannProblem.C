@@ -234,7 +234,7 @@ LatticeBoltzmannProblem::setSolverResidual(const Real & residual)
 }
 
 void
-LatticeBoltzmannProblem::setTensorToValue(torch::Tensor & t, const Real & value)
+LatticeBoltzmannProblem::maskedFillSolids(torch::Tensor & t, const Real & value)
 {
   const auto tensor_shape = t.sizes();
   const bool & is_mesh_file = _lbm_mesh->isMeshDatFile();

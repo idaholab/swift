@@ -50,6 +50,6 @@ LBMStream::computeBuffer()
           /* dims = */
           {0, 1, 2}));
     }
-    _lb_problem.setTensorToValue(_u, 0);
+    _lb_problem.maskedFillSolids(_u, 0);
   }
 }

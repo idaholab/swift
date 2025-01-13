@@ -39,5 +39,5 @@ LBMMRTCollision::computeBuffer()
                             torch::matmul(_stencil._S,
                             torch::matmul(_stencil._M,
                             (_f - _feq).view({-1, _stencil._q}).t()))).t().view({shape});
-  _lb_problem.setTensorToValue(_u, 0);
+  _lb_problem.maskedFillSolids(_u, 0);
 }

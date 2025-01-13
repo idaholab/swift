@@ -34,5 +34,5 @@ void
 LBMBGKCollision::computeBuffer()
 {
   _u = _f - 1.0 / _tau_bgk * (_f - _feq);
-  _lb_problem.setTensorToValue(_u, 0);
+  _lb_problem.maskedFillSolids(_u, 0);
 }
