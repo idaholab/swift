@@ -91,6 +91,9 @@ protected:
   /// total number of time steps taken
   int _t_total = 0;
 
+  /// lbm substeps
+  const unsigned int _lbm_substeps;
+
 public:
   /// LBM constants
   const Real _cs = 1.0 / sqrt(3.0);
