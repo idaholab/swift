@@ -26,6 +26,7 @@ LatticeBoltzmannProblem::validParams()
   params.addParam<bool>("enable_slip", false, "Enable slip model");
   params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
   params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
+  params.addParam<unsigned int>("substeps", 1, "Number of LBM iterations for every MOOSE timestep");
   params.addClassDescription(
       "Problem object to enable solving lattice Boltzmann problems");
 
@@ -37,7 +38,8 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     _lbm_mesh(dynamic_cast<LatticeBoltzmannMesh *>(&_mesh)),
     _enable_slip(getParam<bool>("enable_slip")),
     _mfp(getParam<Real>("mfp")),
-    _dx(getParam<Real>("dx"))
+    _dx(getParam<Real>("dx")),
+    _lbm_substeps(getParam<unsigned int>("substeps"))
 {
 }
 
@@ -107,9 +109,9 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
         max_states.second.clear();
 
     // update substepping dt
-    _sub_dt = dt() / _substeps;
+    _sub_dt = dt() / _lbm_substeps;
 
-    for (unsigned substep = 0; substep < _substeps; ++substep)
+    for (unsigned substep = 0; substep < _lbm_substeps; ++substep)
     {
       // create old state buffers
       advanceState();

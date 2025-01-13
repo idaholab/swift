@@ -128,7 +128,7 @@
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  spectral_solve_substeps = 1
+  substeps = 10
 []
 
 [Executioner]
