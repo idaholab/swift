@@ -30,5 +30,5 @@ void
 LBMComputeDensity::computeBuffer()
 {   
   _u = torch::sum(_f, 3);
-  _lb_problem.setTensorToValue(_u, 0);
+  _lb_problem.maskedFillSolids(_u, 0);
 }
