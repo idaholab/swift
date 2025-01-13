@@ -54,6 +54,9 @@ public:
   /// sets tensor to a value at wall nodes
   void setTensorToValue(torch::Tensor & t, const Real & value);
 
+  /// prints the tensor buffer, good for debugging
+  void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
+
 protected:
   /// LBM Mesh object
   LatticeBoltzmannMesh * _lbm_mesh;

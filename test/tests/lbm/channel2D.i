@@ -50,7 +50,7 @@
     [velocity]
       type = LBMConstantTensor
       buffer = u
-      value = 0.001
+      value = 0.000
     []
     [speed]
       type = LBMConstantTensor
@@ -59,7 +59,7 @@
     []
     [equilibrium]
       type = LBMEquilibrium
-      buffer = feq
+      buffer = f
       rho = rho
       velocity = u
     []
@@ -128,10 +128,10 @@
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  spectral_solve_substeps = 2
+  spectral_solve_substeps = 1
 []
 
 [Executioner]
   type = Transient
-  num_steps = 1
+  num_steps = 10
 []
