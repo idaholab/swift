@@ -162,6 +162,48 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 }
 
 void
+LatticeBoltzmannProblem::advanceState()
+{
+  FEProblem::advanceState();
+  /**
+   * This is simply copy of the same function in the parent class
+   * The only differeence is here: timeStep() < 1
+   * Without this, streaming will be ignored in the first time step
+   * Which will lead to incrorrect results
+   */ 
+  if (timeStep() < 1)
+    return;
+
+  // move buffers in time
+  std::size_t total_max = 0;
+  for (auto & [name, max_states] : _old_tensor_buffer)
+  {
+    auto & [max, states] = max_states;
+    if (max > total_max)
+      total_max = max;
+
+    if (states.size() < max)
+      states.push_back(torch::tensor({}, _options));
+    if (!states.empty())
+    {
+      for (std::size_t i = states.size() - 1; i > 0; --i)
+        states[i] = states[i - 1];
+      states[0] = _tensor_buffer[name];
+    }
+  }
+
+  // move dt in time (UGH, we need the _substep_dt!!!!)
+  if (_old_dt.size() < total_max)
+    _old_dt.push_back(0.0);
+  if (!_old_dt.empty())
+  {
+    for (std::size_t i = _old_dt.size() - 1; i > 0; --i)
+      _old_dt[i] = _old_dt[i - 1];
+    _old_dt[0] = _dt;
+  }
+}
+
+void
 LatticeBoltzmannProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)
 {
   // run base class method
