@@ -18,7 +18,8 @@ Use the MOOSE configure script to enable libtorch and point it to the pytorch co
 
 ```
 cd moose
-./configure --with-libtorch=$CONDA_ENV_DIR/pytorch_swift
+export LIBTORCH_DIR=$(conda activate pytorch_swift; echo $CONDA_PREFIX; conda deactivate)
+./configure --with-libtorch
 ```
 
 Step back into the swift root directory and build.
