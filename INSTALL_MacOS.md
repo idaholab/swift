@@ -29,4 +29,9 @@ cd ..
 make -j
 ```
 
-Swift on arm64 macs installed this way will support `cpu` and `mps` as compute devices. On an M2 max laptop the 2D Cahn-Hilliard example will run in ~60s on mps and ~130s on cpu (12 threads). Note that MPS only supports single precision (32bit) floating point numbers.
+Swift on arm64 macs installed this way will support `cpu` and `mps` as compute devices. An mps/cpu (12 threads) runtime comparison for an M2 max laptop is shown below. Note that MPS only supports single precision (32bit) floating point numbers.
+
+| Example | `cpu` runtime | `mps` runtime |
+| - | - | - |
+| `cahnhilliard.i` | 128s | 60s|
+| `rotating_grain.i`| 54s | 21s |
