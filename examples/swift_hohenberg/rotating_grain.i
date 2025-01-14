@@ -162,15 +162,6 @@ crystal = '-sin(sin(a)*y/2+cos(a)*x/2)^2*sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*x/2
   []
 []
 
-# [TensorOutputs]
-#   [xdmf]
-#     type = XDMFTensorOutput
-#     buffer = 'psi'
-#     output_mode = 'Node'
-#     enable_hdf5 = true
-#   []
-# []
-
 [Outputs]
   exodus = true
   perf_graph = true

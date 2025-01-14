@@ -141,14 +141,14 @@
   []
 []
 
-# [TensorOutputs]
-#   [xdmf]
-#     type = XDMFTensorOutput
-#     buffer = 'psi'
-#     output_mode = 'Node'
-#     enable_hdf5 = true
-#   []
-# []
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'psi'
+    output_mode = 'Node'
+    enable_hdf5 = true
+  []
+[]
 
 [Outputs]
   exodus = true

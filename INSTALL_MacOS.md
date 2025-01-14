@@ -34,4 +34,6 @@ Swift on arm64 macs installed this way will support `cpu` and `mps` as compute d
 | Example | `cpu` runtime | `mps` runtime |
 | - | - | - |
 | `cahnhilliard.i` | 128s | 60s|
+| `cahnhilliard2.i` | ~26000s | 1068s |
+| `cahnhilliard3.i` | 440s | 29s |
 | `rotating_grain.i`| 54s | 21s |
