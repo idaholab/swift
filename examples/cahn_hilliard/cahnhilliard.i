@@ -1,20 +1,29 @@
+#
+# Simple Cahn-Hilliard solve on a 2D grid. We create a matching (conforming)
+# MOOSE mesh (with one element per FFT grid cell) and project the solution onto
+# the MOOSE mesh to utilize the exodus output object.
+#
+
 [Domain]
   dim = 2
   nx = 200
   ny = 200
-  # nz = 200
+
   xmax = ${fparse pi*8}
   ymax = ${fparse pi*8}
-  # zmax = ${fparse pi*8}
 
+  # run on a CUDA device (adjust this to `cpu` if not available)
   device_names = 'cuda'
 
+  # automatically create a matching mesh
   mesh_mode = DOMAIN
 []
 
 
 [TensorBuffers]
   [c]
+    # perform fast mapping to the matching mesh by directly writing to
+    # the solution vector of the specified Auxvariable
     map_to_aux_variable = c
   []
   [cbar]
@@ -36,11 +45,14 @@
 [TensorComputes]
   [Initialize]
     [c]
+      # Random initial condition around a concentration of 1/2
       type = RandomTensor
       buffer = c
       min = 0.44
       max = 0.56
     []
+
+    # precompute fixed factors for the solve
     [Mbar]
       type = ReciprocalLaplacianFactor
       factor = 0.2 # Mobility
@@ -60,7 +72,6 @@
       enable_jit = true
       expression = '0.1*c^2*(c-1)^2'
       derivatives = c
-      # expression = "0.4*c^3-0.6*c^2+0.2*c"
       inputs = c
     []
     [mubar]
@@ -101,15 +112,18 @@
 
 [AuxVariables]
   [mu]
+    # the mu tensor  is projected onto this elemental variable
     family = MONOMIAL
     order = CONSTANT
   []
   [c]
-    # family = MONOMIAL
-    # order = CONSTANT
+    # the c tensor is projected onto this nodal variable
   []
 []
 
+# a slower but more flexible alternative to `map_to_aux_variable` is running
+# these `ProjectTensorAux` AuxKernels to perform the projection. This aprpoach
+# also supports non-conforming meshes.
 [AuxKernels]
   # [c]
   #   type = ProjectTensorAux

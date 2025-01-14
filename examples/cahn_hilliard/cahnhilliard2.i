@@ -1,3 +1,8 @@
+#
+# The same simple Cahn-Hilliard solve as cahnhilliard.i, but on a 3D grid
+# and using the faster TensorOutputs system.
+#
+
 [Domain]
   dim = 3
   nx = 200
@@ -7,9 +12,11 @@
   ymax = ${fparse pi*8}
   zmax = ${fparse pi*8}
 
-  device_names = 'cpu'
-  # device_names = 'cuda'
+  # run on a CUDA device (adjust this to `cpu` if not available)
+  device_names = 'cuda'
 
+  # create a single element dummy mesh. Output will use the custom XDMF output
+  # in the `TensorOutputs` system.
   mesh_mode = DUMMY
 []
 
@@ -32,6 +39,10 @@
 []
 
 [TensorOutputs]
+  # the TensorOutouts system supports asynchronous threaded output.
+  # for GOU calculations a copy of the solution fields is moved to the CPU,
+  # and while the output files are written the next time step is already
+  # starting to compute.
   [xdmf]
     type = XDMFTensorOutput
     buffer = 'c mu'
@@ -64,9 +75,8 @@
       type = ParsedCompute
       buffer = mu
       enable_jit = true
-      # expression = '0.1*c^2*(c-1)^2'
-      # derivatives = c
-      expression = "0.4*c^3-0.6*c^2+0.2*c"
+      expression = '0.1*c^2*(c-1)^2'
+      derivatives = c
       inputs = c
     []
     [mubar]
