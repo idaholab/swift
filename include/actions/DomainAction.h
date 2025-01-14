@@ -106,7 +106,7 @@ protected:
   const std::array<Real, 3> _max_global;
   ///@}
 
-  const enum class MeshMode { DUMMY, DOMAIN, MANUAL } _mesh_mode;
+  const enum class MeshMode { SWIFT_DUMMY, SWIFT_DOMAIN, SWIFT_MANUAL } _mesh_mode;
 
   /// grid spacing
   std::array<Real, 3> _grid_spacing;

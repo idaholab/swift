@@ -1,12 +1,16 @@
 # Swift
 
-![Swift Logo](https://github.com/dschwen/swift/blob/main/doc/content/swift.png?raw=true)
+![Swift Logo](https://github.com/idaholab/swift/blob/main/doc/content/swift.png?raw=true)
 
 **Swift** is a Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org).
 
 ## Contacts
 
 The primary developer of Swift is _Daniel Schwen_. In case of questions or problems please file a GitHub issue.
+
+## Install
+
+- MacOS [installation instructions](INSTALL_MacOS.md)
 
 ## Why another spectral solver?
 
