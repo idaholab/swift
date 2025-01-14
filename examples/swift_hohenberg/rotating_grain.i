@@ -1,3 +1,13 @@
+#
+# Solve a simple Swift-Hohenberg crystal phase field problem. The initial condition is
+# a circular grain that is rotated against the surropunding matrix.
+# This example demonstrates the use of the [TensorComputes/Postprocess] system to perform
+# compute steps just prior to running the output objects. Here we perform a low-pass filtering
+# by forward transfroming the psi amplitude field into frequency space, attenuating frequencies
+# by the exponent of their wave number, and transforming back into real space. This filtering
+# makes the dislocation structure in teh crystal more pronounced in the visualization.
+#
+
 [Domain]
   dim = 2
   nx = 400
@@ -39,16 +49,15 @@
   []
 []
 
+crystal = '-sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
 [Functions]
   [grain1]
     type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
+    expression = 'a := 0; ${crystal}'
   []
   [grain2]
     type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0.95; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
+    expression = 'a := 0.95; ${crystal}'
   []
   [domain]
     type = ParsedFunction

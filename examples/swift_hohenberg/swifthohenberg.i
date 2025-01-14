@@ -1,3 +1,8 @@
+#
+# Solve a simple Swift-Hohenberg crystal phase field problem. The initial condition is
+# a random melt, which crystalizes out.
+#
+
 [Domain]
   dim = 2
   nx = 400

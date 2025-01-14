@@ -2,7 +2,7 @@
 
 ## Arm64
 
-**Conda:** create a separate conda environment for pytorch (and do not activate it)
+**Conda:** create a separate conda environment for PyTorch (and do not activate it)
 
 ```
 conda create -n pytorch_swift pytorch
@@ -28,4 +28,4 @@ cd ..
 make -j
 ```
 
-Swift on arm64 macs installed this way will support `cpu` and `mps` as compute devices. On an M2 max laptop the 2D Cahn-Hilliard example will run in ~60s on mps and ~130s on cpu (12 threads).
+Swift on arm64 macs installed this way will support `cpu` and `mps` as compute devices. On an M2 max laptop the 2D Cahn-Hilliard example will run in ~60s on mps and ~130s on cpu (12 threads). Note that MPS only supports single precision (32bit) floating point numbers.

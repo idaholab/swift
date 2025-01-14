@@ -2,9 +2,10 @@
 
 ![Swift Logo](https://github.com/idaholab/swift/blob/main/doc/content/swift.png?raw=true)
 
-**Swift** is a device independent Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org). Swift supports CPU, CUDA, and MPS[^1] with automatic detection of supported device precision. (
+**Swift** is a device independent Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org). Swift supports[^1] CPU, CUDA, and MPS[^2] with automatic detection of supported device precision.
 
 [^1]: more compute device types might be supported, but have not been tested.
+[^2]: torch MPS supports only single precision calculations!
 
 ## Contacts
 
