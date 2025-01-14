@@ -39,7 +39,7 @@ ProjectTensorAux::computeValue()
   auto getElement = [this]()
   {
     const Point shift(_grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
-    Point p = isNodal() ? (*_current_node + shift) : _current_elem->centroid();
+    Point p = isNodal() ? (*_current_node + shift) : _current_elem->vertex_average();
 
     using at::indexing::TensorIndex;
     switch (_dim)

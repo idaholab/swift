@@ -95,6 +95,8 @@ public:
 
 protected:
   void updateDOFMap();
+
+  template <typename FLOAT_TYPE>
   void mapBuffersToAux();
 
   virtual void addTensorCompute(const std::string & compute_name,

@@ -206,7 +206,12 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     for (auto & output : _outputs)
       output->startOutput();
 
-    mapBuffersToAux();
+    if (_options.dtype() == torch::kFloat64)
+      mapBuffersToAux<double>();
+    else if (_options.dtype() == torch::kFloat32)
+      mapBuffersToAux<float>();
+    else
+      mooseError("torch::Dtype unsupported by mapBuffersToAux.");
   }
 
   FEProblem::execute(exec_type);
@@ -293,13 +298,14 @@ TensorProblem::updateDOFMap()
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);
-        const auto iteration_index = compute_iteration_index(elem->centroid() + shift, n0, n1);
+        const auto iteration_index = compute_iteration_index(elem->vertex_average() + shift, n0, n1);
         dofs[iteration_index] = dof_index;
       }
     }
   }
 }
 
+template <typename FLOAT_TYPE>
 void
 TensorProblem::mapBuffersToAux()
 {
@@ -332,14 +338,14 @@ TensorProblem::mapBuffersToAux()
     {
       {
         case 1:
-          const auto b = buffer.accessor<double, 1>();
+          const auto b = buffer.accessor<FLOAT_TYPE, 1>();
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]];
           break;
       }
       case 2:
       {
-        const auto b = buffer.accessor<double, 2>();
+        const auto b = buffer.accessor<FLOAT_TYPE, 2>();
         for (const auto j : make_range(n1))
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]][j % _n[1]];
@@ -347,7 +353,7 @@ TensorProblem::mapBuffersToAux()
       }
       case 3:
       {
-        const auto b = buffer.accessor<double, 3>();
+        const auto b = buffer.accessor<FLOAT_TYPE, 3>();
         for (const auto k : make_range(n2))
           for (const auto j : make_range(n1))
             for (const auto i : make_range(n0))
