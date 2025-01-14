@@ -5,15 +5,16 @@
 # compute steps just prior to running the output objects. Here we perform a low-pass filtering
 # by forward transfroming the psi amplitude field into frequency space, attenuating frequencies
 # by the exponent of their wave number, and transforming back into real space. This filtering
-# makes the dislocation structure in teh crystal more pronounced in the visualization.
+# makes the dislocation structure in the crystal more pronounced in the visualization.
 #
 
+w=60
 [Domain]
   dim = 2
   nx = 400
   ny = 400
-  xmax = ${fparse pi*2*30}
-  ymax = ${fparse pi*2*30}
+  xmax = ${fparse pi*2*w}
+  ymax = ${fparse pi*2*w}
 
   device_names = 'cuda'
 
@@ -49,7 +50,7 @@
   []
 []
 
-crystal = '-sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
+crystal = '-sin(sin(a)*y/2+cos(a)*x/2)^2*sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*x/2)^2*sin(sin(a-1/3*pi)*y/2+cos(a-1/3*pi)*x/2)^2'
 [Functions]
   [grain1]
     type = ParsedFunction
@@ -61,7 +62,7 @@ crystal = '-sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(
   []
   [domain]
     type = ParsedFunction
-    expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<(20*pi)^2, grain2, grain1)'
+    expression = 'r := (x-${w}*pi)^2+(y-${w}*pi)^2; if(r<(${w}*2/3*pi)^2, grain2, grain1)'
     symbol_names = 'grain1 grain2'
     symbol_values = 'grain1 grain2'
   []
@@ -124,11 +125,11 @@ crystal = '-sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(
   reciprocal_buffer = psibar
   linear_reciprocal = linear
   nonlinear_reciprocal = psi3bar
+  substeps = 100
 []
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 110
 []
 
 [Executioner]
@@ -136,8 +137,8 @@ crystal = '-sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(
   num_steps = 120
   [TimeStepper]
     type = IterationAdaptiveDT
-    growth_factor = 1.2
-    dt = 1.7
+    growth_factor = 1.1
+    dt = 5
   []
   dtmax = 500
 []
