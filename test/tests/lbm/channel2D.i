@@ -114,6 +114,20 @@
       buffer = u_magnitude
     []
   []
+  [Boundary]
+    [front]
+      type = LBMBounceBack
+      buffer = f
+      f_old = f_post_collision
+      boundary = front
+    []
+    [back]
+      type = LBMBounceBack
+      buffer = f
+      f_old = f_post_collision
+      boundary = back
+    []
+  []
 []
 
 [TensorTimeIntegrators]
