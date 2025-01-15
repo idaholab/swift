@@ -6,12 +6,10 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-
 #include "LBMBoundaryCondition.h"
 #include "LatticeBoltzmannProblem.h"
 #include "LatticeBoltzmannStencilBase.h"
 #include "LatticeBoltzmannMesh.h"
-
 
 InputParameters
 LBMBoundaryCondition::validParams()
@@ -53,30 +51,31 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
 
 void
 LBMBoundaryCondition::computeBuffer()
-{
-    switch (_boundary)
-    {
-        case Boundary::top:
-            topBoundary();
-            break;
-        case Boundary::bottom:
-            bottomBoundary();
-            break;
-        case Boundary::left:
-            leftBoundary();
-            break;
-        case Boundary::right:
-            rightBoundary();
-            break;
-        case Boundary::front:
-            frontBoundary();
-            break;
-        case Boundary::back:
-            backBoundary();
-        case Boundary::wall:
-            wallBoundary();
-            break;
-        default:
-            mooseError("Undefined boundary names");
-    }
+{ 
+  switch (_boundary)
+  {
+    case Boundary::top:
+      topBoundary();
+      break;
+    case Boundary::bottom:
+      bottomBoundary();
+      break;
+    case Boundary::left:
+      leftBoundary();
+      break;
+    case Boundary::right:
+      rightBoundary();
+      break;
+    case Boundary::front:
+      frontBoundary();
+      break;
+    case Boundary::back:
+      backBoundary();
+      break;
+    case Boundary::wall:
+      wallBoundary();
+      break;
+    default:
+      mooseError("Undefined boundary names");
+  }
 }

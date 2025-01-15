@@ -45,6 +45,8 @@ public:
 
   const int & getTotalSteps() const {return _t_total;}
 
+  const std::array<int64_t, 3> & getGridSize() const {return _n;}
+  
   /// sets up slip model
   void enableSlipModel();
 

@@ -6,7 +6,6 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-
 #pragma once
 
 #include "LatticeBoltzmannOperator.h"
