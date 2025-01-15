@@ -1,9 +1,9 @@
 [Domain]
   dim = 2
-  nx = 5
-  ny = 5
-  xmax = 5
-  ymax = 5
+  nx = 100
+  ny = 100
+  xmax = 100
+  ymax = 100
   device_names = 'cpu'
   mesh_mode = MANUAL
 []
@@ -11,8 +11,10 @@
 [Mesh]
   type = LatticeBoltzmannMesh
   dim = 2
-  nx = 5
-  ny = 5
+  nx = 100
+  ny = 100
+  xmax = 100
+  ymax = 100
 []
 
 [Stencil]
@@ -23,11 +25,13 @@
 
 [TensorBuffers]
   [rho]
+    map_to_aux_variable = density
   []
   [u]
     vector_size = 2
   []
   [u_magnitude]
+    map_to_aux_variable = speed
   []
   [f]
     vector_size = 9
@@ -100,7 +104,7 @@
       buffer = u
       f = f
       rho = rho 
-      body_force = 0.0001
+      body_force = 0.000001
     []
     [Spped]
       type = LBMComputeVelocityMagnitude
@@ -114,6 +118,7 @@
       buffer = u_magnitude
     []
   []
+  # Any boundary that is not specified will be periodic
   [Boundary]
     [front]
       type = LBMBounceBack
@@ -151,13 +156,43 @@
   []
 []
 
+[AuxVariables]
+  [density]
+    family = MONOMIAL
+    order = CONSTANT
+  []
+  [speed]
+    family = MONOMIAL
+    order = CONSTANT
+  []
+[]
+
+[AuxKernels]
+  [density]
+    type = ProjectTensorAux
+    buffer = rho
+    variable = density
+    execute_on = timestep_end
+  []
+  [speed]
+    type = ProjectTensorAux
+    buffer = u_magnitude
+    variable = speed
+    execute_on = timestep_end
+  []
+[]
+
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  substeps = 10
+  substeps = 1000
 []
 
 [Executioner]
   type = Transient
   num_steps = 2
+[]
+
+[Outputs]
+  exodus = true
 []
