@@ -147,9 +147,9 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
       // get main buffer (GPU or CPU) - we already verified that it must exist
       const auto & buffer = _tensor_buffer[name];
       if (buffer.is_cpu())
-        cpu_buffer = buffer.clone().contiguous();
+        cpu_buffer = buffer.clone().contiguous().squeeze(); // squeeze out extra dimensions of size 1
       else
-        cpu_buffer = buffer.cpu().contiguous();
+        cpu_buffer = buffer.cpu().contiguous().squeeze(); // squeeze out extra dimensions of size 1
     }
 
     // run direct buffer outputs (asynchronous in threads)
