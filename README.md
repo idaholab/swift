@@ -7,6 +7,8 @@
 [^1]: more compute device types might be supported, but have not been tested.
 [^2]: torch MPS supports only single precision calculations!
 
+> Note: This is not the Hydride modeling code SWIFT by Los Alamos National Laboratory
+
 ## Contacts
 
 The primary developer of Swift is _Daniel Schwen_. In case of questions or problems please file a GitHub issue.
