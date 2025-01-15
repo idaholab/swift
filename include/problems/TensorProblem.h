@@ -97,8 +97,8 @@ public:
   T & getSolver() const;
 
 protected:
-  void updateDOFMap();
-  void mapBuffersToAux();
+  virtual void updateDOFMap();
+  virtual void mapBuffersToAux();
 
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
