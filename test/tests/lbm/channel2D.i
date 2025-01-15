@@ -29,6 +29,7 @@
   []
   [u]
     vector_size = 2
+    map_to_aux_variable = velocity
   []
   [u_magnitude]
     map_to_aux_variable = speed
@@ -165,6 +166,11 @@
     family = MONOMIAL
     order = CONSTANT
   []
+  [velocity]
+    family = MONOMIAL
+    order = CONSTANT
+    components = 2
+  []
 []
 
 [AuxKernels]
@@ -178,6 +184,12 @@
     type = ProjectTensorAux
     buffer = u_magnitude
     variable = speed
+    execute_on = timestep_end
+  []
+  [velocity]
+    type = ProjectVectorTensorAux
+    buffer = u
+    variable = velocity
     execute_on = timestep_end
   []
 []
