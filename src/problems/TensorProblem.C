@@ -338,14 +338,14 @@ TensorProblem::mapBuffersToAux()
     {
       {
         case 1:
-          const auto b = buffer.accessor<FLOAT_TYPE, 1>();
+          const auto b = buffer.template accessor<FLOAT_TYPE, 1>();
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]];
           break;
       }
       case 2:
       {
-        const auto b = buffer.accessor<FLOAT_TYPE, 2>();
+        const auto b = buffer.template accessor<FLOAT_TYPE, 2>();
         for (const auto j : make_range(n1))
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]][j % _n[1]];
@@ -353,7 +353,7 @@ TensorProblem::mapBuffersToAux()
       }
       case 3:
       {
-        const auto b = buffer.accessor<FLOAT_TYPE, 3>();
+        const auto b = buffer.template accessor<FLOAT_TYPE, 3>();
         for (const auto k : make_range(n2))
           for (const auto j : make_range(n1))
             for (const auto i : make_range(n0))
