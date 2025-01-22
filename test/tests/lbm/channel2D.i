@@ -105,7 +105,7 @@
       buffer = u
       f = f
       rho = rho 
-      body_force = 0.000001
+      # body_force = 0.000001
     []
     [Spped]
       type = LBMComputeVelocityMagnitude
@@ -121,6 +121,20 @@
   []
   # Any boundary that is not specified will be periodic
   [Boundary]
+    [left]
+      type = LBMFixedPressureBC2D
+      buffer = f
+      f = f
+      density = 1.0000001
+      boundary = left
+    []
+    [right]
+      type = LBMFixedPressureBC2D
+      buffer = f
+      f = f
+      density = 1.0
+      boundary = right
+    []
     [front]
       type = LBMBounceBack
       buffer = f
@@ -202,7 +216,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 2
+  num_steps = 10
 []
 
 [Outputs]
