@@ -104,6 +104,12 @@ protected:
                                 InputParameters & parameters,
                                 TensorComputeList & list);
 
+  /// execute initial conditionobjects
+  void executeTensorInitialConditions();
+
+  /// perform output tasks
+  void executeTensorOutputs(const ExecFlagType & exec_type);
+
   /// tensor options
   const torch::TensorOptions _options;
 
