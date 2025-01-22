@@ -21,7 +21,7 @@ LBMBounceBack::validParams()
   InputParameters params = LBMBoundaryCondition::validParams();
   params.addClassDescription("LBMBounceBack object");
   params.addRequiredParam<TensorInputBufferName>(
-      "f_old", "Buffer with the reciprocal of the integrated buffer");
+      "f_old", "Old state distribution function");
   return params;
 }
 
