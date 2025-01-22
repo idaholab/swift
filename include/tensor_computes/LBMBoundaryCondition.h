@@ -27,7 +27,7 @@ public:
   virtual void rightBoundary() = 0;
   virtual void frontBoundary() = 0;
   virtual void backBoundary() = 0;
-  virtual void wallBoundary() = 0;
+  virtual void wallBoundary() {};
   virtual void computeBuffer() override;
 
 protected:

@@ -180,11 +180,6 @@ LBMFixedPressureBCTempl<3>::backBoundary()
 }
 
 template <int dimension>
-void LBMFixedPressureBCTempl<dimension>::wallBoundary()
-{
-}
-
-template <int dimension>
 void
 LBMFixedPressureBCTempl<dimension>::computeBuffer()
 {
