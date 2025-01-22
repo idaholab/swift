@@ -37,8 +37,8 @@ LBMBounceBack::topBoundary()
 {
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
-      _u.index_put_({Slice(), Slice(), _grid_size[2]-1, opposite_dir}, _f_old[0].index({Slice(), Slice(), _grid_size[2]-1, _stencil._bottom[i]}));
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
+    _u.index_put_({Slice(), Slice(), _grid_size[2]-1, opposite_dir}, _f_old[0].index({Slice(), Slice(), _grid_size[2]-1, _stencil._bottom[i]}));
   }
 }
 
@@ -47,8 +47,8 @@ LBMBounceBack::bottomBoundary()
 {
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
-      _u.index_put_({Slice(), Slice(), 0, _stencil._bottom[i]}, _f_old[0].index({Slice(), Slice(), 0, opposite_dir}));
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
+    _u.index_put_({Slice(), Slice(), 0, _stencil._bottom[i]}, _f_old[0].index({Slice(), Slice(), 0, opposite_dir}));
   }
 }
 
@@ -57,8 +57,8 @@ LBMBounceBack::leftBoundary()
 {
   for (unsigned int i = 0; i < _stencil._left.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._left[i]];
-      _u.index_put_({0, Slice(), Slice(), _stencil._left[i]}, _f_old[0].index({0, Slice(), Slice(), opposite_dir}));
+    const auto & opposite_dir = _stencil._op[_stencil._left[i]];
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]}, _f_old[0].index({0, Slice(), Slice(), opposite_dir}));
   }
 }
 
@@ -67,8 +67,8 @@ LBMBounceBack::rightBoundary()
 {
   for (unsigned int i = 0; i < _stencil._left.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._left[i]];
-      _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir}, _f_old[0].index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}));
+    const auto & opposite_dir = _stencil._op[_stencil._left[i]];
+    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir}, _f_old[0].index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}));
   }
 }
 
@@ -77,8 +77,8 @@ LBMBounceBack::frontBoundary()
 {
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._front[i]];
-      _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir}, _f_old[0].index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[i]}));
+    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir}, _f_old[0].index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[i]}));
   }
 }
 
@@ -87,8 +87,8 @@ LBMBounceBack::backBoundary()
 {
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
-      const auto & opposite_dir = _stencil._op[_stencil._front[i]];
-      _u.index_put_({Slice(), 0, Slice(), _stencil._front[i]}, _f_old[0].index({Slice(), 0, Slice(), opposite_dir}));
+    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    _u.index_put_({Slice(), 0, Slice(), _stencil._front[i]}, _f_old[0].index({Slice(), 0, Slice(), opposite_dir}));
   }
 }
 
