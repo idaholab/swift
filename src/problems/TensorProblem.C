@@ -172,6 +172,9 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     // run postprocessing before output
     for (auto & pp : _pps)
       pp->computeBuffer();
+
+    // run outputs
+    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
   }
 
   FEProblem::execute(exec_type);
