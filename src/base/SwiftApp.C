@@ -94,6 +94,12 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
   addTaskDependency("add_tensor_compute", "add_tensor_buffer");
 
+  // TensorComputes/OnDemand Action
+  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/OnDemand/*", "add_tensor_on_demand");
+  syntax.registerSyntaxType("TensorComputes/OnDemand/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_on_demand", TensorOperator, false);
+  addTaskDependency("add_tensor_on_demand", "add_tensor_buffer");
+
   // TensorComputes/Postprocess Action
   registerSyntaxTask(
       "AddTensorObjectAction", "TensorComputes/Postprocess/*", "add_tensor_postprocessor");

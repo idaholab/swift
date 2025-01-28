@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "MooseTypes.h"
 #include "libmesh/fparser_ad.hh"
 #include "torch/torch.h"
 

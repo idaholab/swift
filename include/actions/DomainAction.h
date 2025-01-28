@@ -181,7 +181,7 @@ torch::Tensor
 DomainAction::cosineTransform(const torch::Tensor & t, int64_t axis) const
 {
   // size along the axis
-  const auto l = t.sizes()[axis];
+  // const auto l = t.sizes()[axis];
 
   // mirror tensor and stack onto itself (with one layer removed)
   auto t_flip = torch::flip(t, {axis});

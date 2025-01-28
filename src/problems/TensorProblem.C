@@ -85,6 +85,10 @@ TensorProblem::init()
   if (_solver)
     _solver->updateDependencies();
 
+  // update dependencies for on demand objects
+  for (auto & od : _on_demand)
+    od->updateDependencies();
+
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
@@ -132,12 +136,18 @@ TensorProblem::execute(const ExecFlagType & exec_type)
 {
   if (exec_type == EXEC_INITIAL)
   {
+    // update time
+    _sub_time = FEProblem::time();
+
     executeTensorInitialConditions();
     executeTensorOutputs(EXEC_INITIAL);
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
+    // update time
+    _sub_time = FEProblem::timeOld();
+
     // legacy time integrator system
     if (!_solver)
     {
@@ -148,7 +158,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
           max_states.second.clear();
 
       // update substepping dt
-      _sub_dt = dt() / _substeps;
+      _sub_dt = FEProblem::dt() / _substeps;
 
       for (unsigned substep = 0; substep < _substeps; ++substep)
       {
@@ -163,6 +173,8 @@ TensorProblem::execute(const ExecFlagType & exec_type)
         // advance step (this will not work with solve failures!)
         if (substep < _substeps - 1)
           advanceState();
+
+        _sub_time += _sub_dt;
       }
     }
     else
@@ -484,6 +496,14 @@ TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
 }
 
 void
+TensorProblem::addTensorComputeOnDemand(const std::string & compute_name,
+                                        const std::string & name,
+                                        InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _on_demand);
+}
+
+void
 TensorProblem::addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
@@ -587,6 +607,16 @@ TensorProblem::getCPUBuffer(const std::string & buffer_name)
       mooseError("Failed to insert read-only CPU buffer");
   }
   return it->second;
+}
+
+TensorOperatorBase &
+TensorProblem::getOnDemandCompute(const std::string & name)
+{
+  for (auto & od : _on_demand)
+    if (od->name() == name)
+      return *od;
+
+  mooseError("OnDemand compute '", name, "' not found.");
 }
 
 void

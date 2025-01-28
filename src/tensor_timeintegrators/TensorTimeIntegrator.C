@@ -19,7 +19,7 @@ TensorTimeIntegrator::validParams()
 }
 
 TensorTimeIntegrator::TensorTimeIntegrator(const InputParameters & parameters)
-  : TensorOperator(parameters), _dt(_tensor_problem.getSubDt())
+  : TensorOperator(parameters), _sub_dt(_tensor_problem.subDt())
 {
 }
 

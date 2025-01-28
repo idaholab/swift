@@ -26,5 +26,5 @@ protected:
   const std::vector<torch::Tensor> & getBufferOldByName(const TensorInputBufferName & buffer_name,
                                                         unsigned int max_states);
 
-  const Real & _dt;
+  const Real & _sub_dt;
 };
