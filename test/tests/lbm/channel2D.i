@@ -1,9 +1,9 @@
 [Domain]
   dim = 2
-  nx = 100
-  ny = 100
-  xmax = 100
-  ymax = 100
+  nx = 20
+  ny = 20
+  xmax = 20
+  ymax = 20
   device_names = 'cpu'
   mesh_mode = MANUAL
 []
@@ -11,10 +11,10 @@
 [Mesh]
   type = LatticeBoltzmannMesh
   dim = 2
-  nx = 100
-  ny = 100
-  xmax = 100
-  ymax = 100
+  nx = 20
+  ny = 20
+  xmax = 20
+  ymax = 20
 []
 
 [Stencil]
@@ -122,17 +122,17 @@
   # Any boundary that is not specified will be periodic
   [Boundary]
     [left]
-      type = LBMFixedPressureBC2D
+      type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      density = 1.0000001
+      velocity = 0.000001
       boundary = left
     []
     [right]
-      type = LBMFixedPressureBC2D
+      type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      density = 1.0
+      velocity = 0.00000199999
       boundary = right
     []
     [front]
@@ -216,7 +216,7 @@
 
 [Executioner]
   type = Transient
-  num_steps = 10
+  num_steps = 1
 []
 
 [Outputs]
