@@ -42,8 +42,8 @@ protected:
   const Real _input_dt;
 
   /// Adapt the timestep to maintain this non-linear iteration count...
-  int _min_iterations;
-  int _max_iterations;
+  const unsigned int _min_iterations;
+  const unsigned int _max_iterations;
 
   /// if specified, the postprocessor values used to determine an upper limit for the time step length
   std::vector<const PostprocessorValue *> _pps_value;
