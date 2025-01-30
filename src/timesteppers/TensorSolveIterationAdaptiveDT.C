@@ -21,10 +21,10 @@ TensorSolveIterationAdaptiveDT::validParams()
   InputParameters params = TimeStepper::validParams();
   params.addClassDescription(
       "Adjust the timestep based on the number of internal TensorSolve iterations");
-  params.addParam<int>(
+  params.addParam<unsigned int>(
       "min_iterations",
       "If the solve takes less than 'min_iterations', dt is increased by 'growth_factor'");
-  params.addParam<int>(
+  params.addParam<unsigned int>(
       "max_iterations",
       "If the solve takes more than 'max_iterations', dt is decreased by 'cutback_factor'");
 

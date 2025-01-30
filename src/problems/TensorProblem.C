@@ -212,7 +212,7 @@ TensorProblem::executeTensorInitialConditions()
 
 /// perform output tasks
 void
-TensorProblem::executeTensorOutputs(const ExecFlagType & exec_type)
+TensorProblem::executeTensorOutputs(const ExecFlagType &)
 {
   // wait for prior asynchronous activity on CPU buffers to complete
   // (this is a synchronization barrier for the threaded CPU activity)
