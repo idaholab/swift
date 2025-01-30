@@ -54,7 +54,10 @@ BroydenSolver::BroydenSolver(const InputParameters & parameters)
   // Create a 3x3 identity matrix and expand to all grid points
   _M = torch::eye(n, _options) * _eye_factor;
   for (const auto i : make_range(_dim))
+  {
+    libmesh_ignore(i);
     _M.unsqueeze_(0);
+  }
   _M = _M.expand(v);
 }
 

@@ -140,7 +140,7 @@ DomainAction::gridChanged()
   auto options = MooseTensor::floatTensorOptions();
 
   // build real space axes
-  for (const auto dim : {0, 1, 2})
+  for (const unsigned int dim : {0, 1, 2})
   {
     // error check
     if (_max_global[dim] <= _min_global[dim])
@@ -162,7 +162,7 @@ DomainAction::gridChanged()
   }
 
   // build reciprocal space axes
-  for (const auto dim : {0, 1, 2})
+  for (const unsigned int dim : {0, 1, 2})
   {
     if (dim < _dim)
     {
