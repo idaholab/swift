@@ -9,6 +9,7 @@
 #pragma once
 
 #include "GeneralPostprocessor.h"
+#include "GeneralVectorPostprocessor.h"
 #include "DomainInterface.h"
 #include "torch/torch.h"
 
@@ -17,12 +18,13 @@ class TensorProblem;
 /**
  * Postprocessor that operates on a buffer
  */
-class TensorPostprocessor : public GeneralPostprocessor, public DomainInterface
+template <class T>
+class TensorPostprocessorTempl : public T, public DomainInterface
 {
 public:
   static InputParameters validParams();
 
-  TensorPostprocessor(const InputParameters & parameters);
+  TensorPostprocessorTempl(const InputParameters & parameters);
 
 protected:
   TensorProblem & _tensor_problem;
@@ -30,3 +32,6 @@ protected:
   /// The buffer this postprocessor is operating on
   const torch::Tensor & _u;
 };
+
+typedef TensorPostprocessorTempl<GeneralPostprocessor> TensorPostprocessor;
+typedef TensorPostprocessorTempl<GeneralVectorPostprocessor> TensorVectorPostprocessor;

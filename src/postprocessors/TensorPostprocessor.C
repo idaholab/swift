@@ -9,28 +9,31 @@
 #include "TensorPostprocessor.h"
 #include "TensorProblem.h"
 
-registerMooseObject("SwiftApp", TensorProblem);
-
+template <class T>
 InputParameters
-TensorPostprocessor::validParams()
+TensorPostprocessorTempl<T>::validParams()
 {
-  InputParameters params = GeneralPostprocessor::validParams();
+  InputParameters params = T::validParams();
   params.addClassDescription("A normal Postprocessor acting on a Tensor buffer.");
   params.addRequiredParam<TensorInputBufferName>("buffer", "The buffer this compute is operating on");
   return params;
 }
 
-TensorPostprocessor::TensorPostprocessor(const InputParameters & parameters)
-  : GeneralPostprocessor(parameters),
+template <class T>
+TensorPostprocessorTempl<T>::TensorPostprocessorTempl(const InputParameters & parameters)
+  : T(parameters),
     DomainInterface(this),
     _tensor_problem(
         [this]()
         {
-          auto tensor_problem = dynamic_cast<TensorProblem *>(&_fe_problem);
+          auto tensor_problem = dynamic_cast<TensorProblem *>(&this->_fe_problem);
           if (!tensor_problem)
             mooseError("TensorPostprocessors require a TensorProblem.");
           return std::ref(*tensor_problem);
         }()),
-    _u(_tensor_problem.getBuffer(getParam<TensorInputBufferName>("buffer")))
+    _u(_tensor_problem.getBuffer(this->template getParam<TensorInputBufferName>("buffer")))
 {
 }
+
+template class TensorPostprocessorTempl<GeneralPostprocessor>;
+template class TensorPostprocessorTempl<GeneralVectorPostprocessor>;
