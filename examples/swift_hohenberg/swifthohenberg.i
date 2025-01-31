@@ -1,3 +1,8 @@
+#
+# Solve a simple Swift-Hohenberg crystal phase field problem. The initial condition is
+# a random melt, which crystalizes out.
+#
+
 [Domain]
   dim = 2
   nx = 400
@@ -39,31 +44,13 @@
   []
 []
 
-[Functions]
-  [grain1]
-    type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
-  []
-  [grain2]
-    type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'a := 0.95; -sin(sin(a)*y+cos(a)*x)^2*sin(sin(a+1/3*pi)*y+cos(a+1/3*pi)*x)^2*sin(sin(a-1/3*pi)*y+cos(a-1/3*pi)*x)^2'
-  []
-  [domain]
-    type = ParsedFunction
-    expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<(20*pi)^2, grain2, grain1)'
-    symbol_names = 'grain1 grain2'
-    symbol_values = 'grain1 grain2'
-  []
-[]
-
 [TensorComputes]
   [Initialize]
     [psi]
-      type = MooseFunctionTensor
+      type = RandomTensor
       buffer = psi
-      function = domain
+      min = 0
+      max = 0.07
     []
     [linear]
       type = SwiftHohenbergLinear
@@ -109,28 +96,30 @@
   []
 []
 
-[TensorSolver]
-  type = SemiImplicitSolver
-  buffer = psi
-  reciprocal_buffer = psibar
-  linear_reciprocal = linear
-  nonlinear_reciprocal = psi3bar
+[TensorTimeIntegrators]
+  [c]
+    type = FFTSemiImplicit
+    buffer = psi
+    reciprocal_buffer = psibar
+    linear_reciprocal = linear
+    nonlinear_reciprocal = psi3bar
+  []
 []
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 110
+  spectral_solve_substeps = 1000
 []
 
 [Executioner]
   type = Transient
-  num_steps = 120
+  num_steps = 300
   [TimeStepper]
     type = IterationAdaptiveDT
     growth_factor = 1.2
-    dt = 1.7
+    dt = 10
   []
-  dtmax = 500
+  dtmax = 1000
 []
 
 [Postprocessors]
@@ -152,14 +141,14 @@
   []
 []
 
-# [TensorOutputs]
-#   [xdmf]
-#     type = XDMFTensorOutput
-#     buffer = 'psi'
-#     output_mode = 'Node'
-#     enable_hdf5 = true
-#   []
-# []
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'psi'
+    output_mode = 'Node'
+    enable_hdf5 = true
+  []
+[]
 
 [Outputs]
   exodus = true

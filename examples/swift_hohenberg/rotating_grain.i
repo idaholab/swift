@@ -1,9 +1,20 @@
+#
+# Solve a simple Swift-Hohenberg crystal phase field problem. The initial condition is
+# a circular grain that is rotated against the surropunding matrix.
+# This example demonstrates the use of the [TensorComputes/Postprocess] system to perform
+# compute steps just prior to running the output objects. Here we perform a low-pass filtering
+# by forward transfroming the psi amplitude field into frequency space, attenuating frequencies
+# by the exponent of their wave number, and transforming back into real space. This filtering
+# makes the dislocation structure in the crystal more pronounced in the visualization.
+#
+
+w=60
 [Domain]
   dim = 2
   nx = 400
   ny = 400
-  xmax = ${fparse pi*2*30}
-  ymax = ${fparse pi*2*30}
+  xmax = ${fparse pi*2*w}
+  ymax = ${fparse pi*2*w}
 
   device_names = 'cuda'
 
@@ -39,13 +50,30 @@
   []
 []
 
+crystal = '-sin(sin(a)*y/2+cos(a)*x/2)^2*sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*x/2)^2*sin(sin(a-1/3*pi)*y/2+cos(a-1/3*pi)*x/2)^2'
+[Functions]
+  [grain1]
+    type = ParsedFunction
+    expression = 'a := 0; ${crystal}'
+  []
+  [grain2]
+    type = ParsedFunction
+    expression = 'a := 0.95; ${crystal}'
+  []
+  [domain]
+    type = ParsedFunction
+    expression = 'r := (x-${w}*pi)^2+(y-${w}*pi)^2; if(r<(${w}*2/3*pi)^2, grain2, grain1)'
+    symbol_names = 'grain1 grain2'
+    symbol_values = 'grain1 grain2'
+  []
+[]
+
 [TensorComputes]
   [Initialize]
     [psi]
-      type = RandomTensor
+      type = MooseFunctionTensor
       buffer = psi
-      min = 0
-      max = 0.07
+      function = domain
     []
     [linear]
       type = SwiftHohenbergLinear
@@ -91,30 +119,28 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = psi
-    reciprocal_buffer = psibar
-    linear_reciprocal = linear
-    nonlinear_reciprocal = psi3bar
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  buffer = psi
+  reciprocal_buffer = psibar
+  linear_reciprocal = linear
+  nonlinear_reciprocal = psi3bar
+  substeps = 100
 []
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 1000
 []
 
 [Executioner]
   type = Transient
-  num_steps = 300
+  num_steps = 120
   [TimeStepper]
     type = IterationAdaptiveDT
-    growth_factor = 1.2
-    dt = 10
+    growth_factor = 1.1
+    dt = 5
   []
-  dtmax = 1000
+  dtmax = 500
 []
 
 [Postprocessors]
@@ -135,15 +161,6 @@
     buffer = psi
   []
 []
-
-# [TensorOutputs]
-#   [xdmf]
-#     type = XDMFTensorOutput
-#     buffer = 'psi'
-#     output_mode = 'Node'
-#     enable_hdf5 = true
-#   []
-# []
 
 [Outputs]
   exodus = true

@@ -68,8 +68,8 @@ TensorProblem::init()
     torch::set_num_threads(n_threads);
   }
 
-  // initialize tensors (assuming all scalar for now, but in the future well have an TensorBufferBase
-  // pointer as well)
+  // initialize tensors (assuming all scalar for now, but in the future well have an
+  // TensorBufferBase pointer as well)
   for (auto pair : _tensor_buffer)
     pair.second = torch::zeros(_shape, _options);
 
@@ -83,6 +83,10 @@ TensorProblem::init()
   // update dependencies
   if (_solver)
     _solver->updateDependencies();
+
+  // update dependencies for on demand objects
+  for (auto & od : _on_demand)
+    od->updateDependencies();
 
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
@@ -129,27 +133,20 @@ TensorProblem::init()
 void
 TensorProblem::execute(const ExecFlagType & exec_type)
 {
-  mooseInfo("TensorProblem::execute");
-
   if (exec_type == EXEC_INITIAL)
   {
-    // run ICs
-    for (auto & ic : _ics)
-      ic->computeBuffer();
+    // update time
+    _sub_time = FEProblem::time();
 
-    // compile ist of compute output tensors
-    std::set<std::string> _is_output;
-    for (auto & cmp : _computes)
-      _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
-
-    // check for uninitialized tensors
-    for (auto & [name, t] : _tensor_buffer)
-      if (!t.defined() && _is_output.count(name) == 0)
-        mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
+    executeTensorInitialConditions();
+    executeTensorOutputs(EXEC_INITIAL);
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
+    // update time
+    _sub_time = FEProblem::timeOld();
+
     // legacy time integrator system
     if (!_solver)
     {
@@ -160,7 +157,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
           max_states.second.clear();
 
       // update substepping dt
-      _sub_dt = dt() / _substeps;
+      _sub_dt = FEProblem::dt() / _substeps;
 
       for (unsigned substep = 0; substep < _substeps; ++substep)
       {
@@ -175,6 +172,8 @@ TensorProblem::execute(const ExecFlagType & exec_type)
         // advance step (this will not work with solve failures!)
         if (substep < _substeps - 1)
           advanceState();
+
+        _sub_time += _sub_dt;
       }
     }
     else
@@ -185,30 +184,61 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     for (auto & pp : _pps)
       pp->computeBuffer();
 
-    // wait for prior asynchronous activity on CPU buffers to complete
-    // (this is a synchronization barrier for the threaded CPU activity)
-    for (auto & output : _outputs)
-      output->waitForCompletion();
-
-    // prepare CPU buffers (this is a synchronization barrier for the GPU)
-    for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
-    {
-      // get main buffer (GPU or CPU) - we already verified that it must exist
-      const auto & buffer = _tensor_buffer[name];
-      if (buffer.is_cpu())
-        cpu_buffer = buffer.clone().contiguous();
-      else
-        cpu_buffer = buffer.cpu().contiguous();
-    }
-
-    // run direct buffer outputs (asynchronous in threads)
-    for (auto & output : _outputs)
-      output->startOutput();
-
-    mapBuffersToAux();
+    // run outputs
+    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
   }
 
   FEProblem::execute(exec_type);
+}
+
+void
+TensorProblem::executeTensorInitialConditions()
+{
+  // run ICs
+  for (auto & ic : _ics)
+    ic->computeBuffer();
+
+  // compile ist of compute output tensors
+  std::set<std::string> _is_output;
+  for (auto & cmp : _computes)
+    _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
+
+  // check for uninitialized tensors
+  for (auto & [name, t] : _tensor_buffer)
+    if (!t.defined() && _is_output.count(name) == 0)
+      mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
+}
+
+/// perform output tasks
+void
+TensorProblem::executeTensorOutputs(const ExecFlagType &)
+{
+  // wait for prior asynchronous activity on CPU buffers to complete
+  // (this is a synchronization barrier for the threaded CPU activity)
+  for (auto & output : _outputs)
+    output->waitForCompletion();
+
+  // prepare CPU buffers (this is a synchronization barrier for the GPU)
+  for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
+  {
+    // get main buffer (GPU or CPU) - we already verified that it must exist
+    const auto & buffer = _tensor_buffer[name];
+    if (buffer.is_cpu())
+      cpu_buffer = buffer.clone().contiguous();
+    else
+      cpu_buffer = buffer.cpu().contiguous();
+  }
+
+  // run direct buffer outputs (asynchronous in threads)
+  for (auto & output : _outputs)
+    output->startOutput();
+
+  if (_options.dtype() == torch::kFloat64)
+    mapBuffersToAux<double>();
+  else if (_options.dtype() == torch::kFloat32)
+    mapBuffersToAux<float>();
+  else
+    mooseError("torch::Dtype unsupported by mapBuffersToAux.");
 }
 
 void
@@ -230,8 +260,9 @@ TensorProblem::updateDOFMap()
       mooseError("Unsupported variable type for mapping");
     auto var_num = var->number();
 
-    const static Point shift(
-        _grid_spacing[0] / 2.0 - min_global[0], _grid_spacing[1] / 2.0 - min_global[1], _grid_spacing[2] / 2.0 - min_global[2]);
+    const static Point shift(_grid_spacing[0] / 2.0 - min_global[0],
+                             _grid_spacing[1] / 2.0 - min_global[1],
+                             _grid_spacing[2] / 2.0 - min_global[2]);
     auto compute_iteration_index = [this](Point p, long int n0, long int n1)
     {
       switch (_dim)
@@ -292,13 +323,15 @@ TensorProblem::updateDOFMap()
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);
-        const auto iteration_index = compute_iteration_index(elem->centroid() + shift, n0, n1);
+        const auto iteration_index =
+            compute_iteration_index(elem->vertex_average() + shift, n0, n1);
         dofs[iteration_index] = dof_index;
       }
     }
   }
 }
 
+template <typename FLOAT_TYPE>
 void
 TensorProblem::mapBuffersToAux()
 {
@@ -331,14 +364,14 @@ TensorProblem::mapBuffersToAux()
     {
       {
         case 1:
-          const auto b = buffer.accessor<double, 1>();
+          const auto b = buffer.template accessor<FLOAT_TYPE, 1>();
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]];
           break;
       }
       case 2:
       {
-        const auto b = buffer.accessor<double, 2>();
+        const auto b = buffer.template accessor<FLOAT_TYPE, 2>();
         for (const auto j : make_range(n1))
           for (const auto i : make_range(n0))
             value[dofs[idx++]] = b[i % _n[0]][j % _n[1]];
@@ -346,7 +379,7 @@ TensorProblem::mapBuffersToAux()
       }
       case 3:
       {
-        const auto b = buffer.accessor<double, 3>();
+        const auto b = buffer.template accessor<FLOAT_TYPE, 3>();
         for (const auto k : make_range(n2))
           for (const auto j : make_range(n1))
             for (const auto i : make_range(n0))
@@ -462,6 +495,14 @@ TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
 }
 
 void
+TensorProblem::addTensorComputeOnDemand(const std::string & compute_name,
+                                        const std::string & name,
+                                        InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _on_demand);
+}
+
+void
 TensorProblem::addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
@@ -479,8 +520,8 @@ TensorProblem::addTensorCompute(const std::string & compute_name,
 
 void
 TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
-                                    const std::string & name,
-                                    InputParameters & parameters)
+                                       const std::string & name,
+                                       InputParameters & parameters)
 {
   // Add a pointer to the TensorProblem and the Domain
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
@@ -507,8 +548,8 @@ TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
 
 void
 TensorProblem::addTensorOutput(const std::string & output_name,
-                            const std::string & name,
-                            InputParameters & parameters)
+                               const std::string & name,
+                               InputParameters & parameters)
 {
   // Add a pointer to the TensorProblem and the Domain
   parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
@@ -567,8 +608,19 @@ TensorProblem::getCPUBuffer(const std::string & buffer_name)
   return it->second;
 }
 
-void TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
-                              const MooseTensor::Key<CreateTensorSolverAction> &)
+TensorOperatorBase &
+TensorProblem::getOnDemandCompute(const std::string & name)
+{
+  for (auto & od : _on_demand)
+    if (od->name() == name)
+      return *od;
+
+  mooseError("OnDemand compute '", name, "' not found.");
+}
+
+void
+TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
+                         const MooseTensor::Key<CreateTensorSolverAction> &)
 {
   if (_solver)
     mooseError("A solver has already been set up.");
@@ -580,4 +632,3 @@ void TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
     mooseError(
         "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
 }
-

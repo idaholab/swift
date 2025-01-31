@@ -12,6 +12,7 @@
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_ic");
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_compute");
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_postprocessor");
+registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_on_demnad");
 
 registerMooseAction("SwiftApp", AddTensorObjectAction, "add_tensor_time_integrator");
 
@@ -48,8 +49,14 @@ AddTensorObjectAction::act()
   if (_current_task == "add_tensor_postprocessor")
     tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
 
+  if (_current_task == "add_tensor_on_demand")
+    tensor_problem->addTensorComputeOnDemand(_type, _name, _moose_object_pars);
+
   if (_current_task == "add_tensor_time_integrator")
+  {
+    mooseDeprecated("TensorTimeIntegrators are deprecated, please use the TensorSolver system instead.");
     tensor_problem->addTensorTimeIntegrator(_type, _name, _moose_object_pars);
+  }
 
   if (_current_task == "add_tensor_output")
     tensor_problem->addTensorOutput(_type, _name, _moose_object_pars);

@@ -140,7 +140,7 @@ DomainAction::gridChanged()
   auto options = MooseTensor::floatTensorOptions();
 
   // build real space axes
-  for (const auto dim : {0, 1, 2})
+  for (const unsigned int dim : {0, 1, 2})
   {
     // error check
     if (_max_global[dim] <= _min_global[dim])
@@ -162,7 +162,7 @@ DomainAction::gridChanged()
   }
 
   // build reciprocal space axes
-  for (const auto dim : {0, 1, 2})
+  for (const unsigned int dim : {0, 1, 2})
   {
     if (dim < _dim)
     {
@@ -295,7 +295,7 @@ DomainAction::partitionPencils()
 void
 DomainAction::act()
 {
-  if (_current_task == "meta_action" && _mesh_mode != MeshMode::MANUAL)
+  if (_current_task == "meta_action" && _mesh_mode != MeshMode::SWIFT_MANUAL)
   {
     // check if a SetupMesh action exists
     auto mesh_actions = _awh.getActions<SetupMeshAction>();
@@ -313,7 +313,7 @@ DomainAction::act()
   }
 
   // add a DomainMeshGenerator
-  if (_current_task == "add_mesh_generator" && _mesh_mode != MeshMode::MANUAL)
+  if (_current_task == "add_mesh_generator" && _mesh_mode != MeshMode::SWIFT_MANUAL)
   {
     // Don't do mesh generators when recovering or when the user has requested for us not to
     if ((_app.isRecovering() && _app.isUltimateMaster()) || _app.masterMesh())
@@ -330,13 +330,13 @@ DomainAction::act()
     params.set<Real>("ymin") = _min_global[1];
     params.set<Real>("zmin") = _min_global[2];
 
-    if (_mesh_mode == MeshMode::DOMAIN)
+    if (_mesh_mode == MeshMode::SWIFT_DOMAIN)
     {
       params.set<unsigned int>("nx") = _n_global[0];
       params.set<unsigned int>("ny") = _n_global[1];
       params.set<unsigned int>("nz") = _n_global[2];
     }
-    else if (_mesh_mode == MeshMode::DUMMY)
+    else if (_mesh_mode == MeshMode::SWIFT_DUMMY)
     {
       params.set<unsigned int>("nx") = 1;
       params.set<unsigned int>("ny") = 1;

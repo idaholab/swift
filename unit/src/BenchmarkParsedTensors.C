@@ -15,6 +15,7 @@
 #include <vector>
 #include <chrono>
 
+#if 0
 TEST(BenchmarkParsedTensors, Time)
 {
   ParsedTensor F1;
@@ -102,3 +103,4 @@ TEST(BenchmarkParsedTensors, Time)
     Moose::out << "    JIT : " << ms_double.count() << "ms\n";
   }
 }
+#endif

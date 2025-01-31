@@ -1,0 +1,10 @@
+[Tests]
+  [test]
+    type = CSVDiff
+    input = test.i
+    csvdiff = test_out_hist_0001.csv
+    issues = '#2'
+    design = 'TensorHistogram.md'
+    requirement = 'The system shall be able to compute a histogram of a given tensor buffer'
+  []
+[]

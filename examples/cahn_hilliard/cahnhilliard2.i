@@ -1,26 +1,31 @@
+#
+# The same simple Cahn-Hilliard solve as cahnhilliard.i, but on a 3D grid
+# and using the faster TensorOutputs system.
+#
+
 [Domain]
-  dim = 2
+  dim = 3
   nx = 200
   ny = 200
-  # nz = 200
+  nz = 200
   xmax = ${fparse pi*8}
   ymax = ${fparse pi*8}
-  # zmax = ${fparse pi*8}
+  zmax = ${fparse pi*8}
 
+  # run on a CUDA device (adjust this to `cpu` if not available)
   device_names = 'cuda'
 
-  mesh_mode = DOMAIN
+  # create a single element dummy mesh. Output will use the custom XDMF output
+  # in the `TensorOutputs` system.
+  mesh_mode = DUMMY
 []
-
 
 [TensorBuffers]
   [c]
-    map_to_aux_variable = c
   []
   [cbar]
   []
   [mu]
-    map_to_aux_variable = mu
   []
   [mubar]
   []
@@ -30,6 +35,18 @@
   [Mbar]
   []
   [kappabarbar]
+  []
+[]
+
+[TensorOutputs]
+  # the TensorOutouts system supports asynchronous threaded output.
+  # for GOU calculations a copy of the solution fields is moved to the CPU,
+  # and while the output files are written the next time step is already
+  # starting to compute.
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'c mu'
+    enable_hdf5 = true
   []
 []
 
@@ -60,7 +77,6 @@
       enable_jit = true
       expression = '0.1*c^2*(c-1)^2'
       derivatives = c
-      # expression = "0.4*c^3-0.6*c^2+0.2*c"
       inputs = c
     []
     [mubar]
@@ -80,18 +96,11 @@
       buffer = cbar
       input = c
     []
-
-    # root compute
-    [cahn_hilliard]
-      type = ComputeGroup
-      computes = 'mu mubar Mbarmubar cbar'
-    []
   []
 []
 
 [TensorSolver]
   type = SemiImplicitSolver
-  root_compute = cahn_hilliard
   buffer = c
   reciprocal_buffer = cbar
   linear_reciprocal = kappabarbar
@@ -99,53 +108,27 @@
   substeps = 1000
 []
 
-[AuxVariables]
-  [mu]
-    family = MONOMIAL
-    order = CONSTANT
-  []
-  [c]
-    # family = MONOMIAL
-    # order = CONSTANT
-  []
-[]
-
-[AuxKernels]
-  # [c]
-  #   type = ProjectTensorAux
-  #   buffer = c
-  #   variable = c
-  #   execute_on = final
-  # []
-  # [f]
-  #   type = ProjectTensorAux
-  #   buffer = f
-  #   variable = f
-  #   execute_on = TIMESTEP_END
-  # []
-[]
-
 [Postprocessors]
   [min_c]
-    type = ElementExtremeValue
-    variable = c
+    type = TensorExtremeValuePostprocessor
+    buffer = c
     value_type = MIN
     execute_on = 'TIMESTEP_END'
   []
   [max_c]
-    type = ElementExtremeValue
-    variable = c
+    type = TensorExtremeValuePostprocessor
+    buffer = c
     value_type = MAX
     execute_on = 'TIMESTEP_END'
   []
-  # [F]
-  #   type = ElementIntegralVariablePostprocessor
-  #   variable = f
-  #   execute_on = 'TIMESTEP_END'
-  # []
   [C]
-    type = ElementIntegralVariablePostprocessor
-    variable = c
+    type = TensorIntegralPostprocessor
+    buffer = c
+    execute_on = 'TIMESTEP_END'
+  []
+  [cavg]
+    type = TensorAveragePostprocessor
+    buffer = c
     execute_on = 'TIMESTEP_END'
   []
 []
@@ -166,7 +149,6 @@
 []
 
 [Outputs]
-  exodus = true
   csv = true
   perf_graph = true
   execute_on = 'TIMESTEP_END'

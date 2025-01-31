@@ -8,23 +8,28 @@
 
 #pragma once
 
-#include "TensorOperator.h"
+#include "TensorPostprocessor.h"
 
 /**
- * TensorTimeIntegrator object (this is mostly a compute object)
+ * Compute the integral of a Tensor buffer
  */
-class TensorTimeIntegrator : public TensorOperator
+class TensorHistogram : public TensorVectorPostprocessor
 {
 public:
   static InputParameters validParams();
 
-  TensorTimeIntegrator(const InputParameters & parameters);
+  TensorHistogram(const InputParameters & parameters);
+
+  virtual void initialize() override {}
+  virtual void execute() override;
+  virtual void finalize() override {}
 
 protected:
-  const std::vector<torch::Tensor> & getBufferOld(const std::string & param,
-                                                  unsigned int max_states);
-  const std::vector<torch::Tensor> & getBufferOldByName(const TensorInputBufferName & buffer_name,
-                                                        unsigned int max_states);
+  const Real _min;
+  const Real _max;
+  std::size_t _bins;
+  torch::Tensor _bin_edges;
 
-  const Real & _sub_dt;
+  VectorPostprocessorValue & _bin_vec;
+  VectorPostprocessorValue & _count_vec;
 };

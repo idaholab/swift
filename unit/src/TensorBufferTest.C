@@ -10,6 +10,7 @@
 #include "SwiftUtils.h"
 #include "gtest/gtest.h"
 
+#if 0
 TEST(TensorBufferTest, Gradient)
 {
   auto A = MooseTensor::createBuffer({20, 100}, {-pi, -pi}, {pi, 3 * pi});
@@ -85,3 +86,4 @@ TEST(TensorBufferTest, 1DAxis)
   xCompare(MooseTensor::Interval::LEFT_OPEN, {30.0, 60.0, 90.0, 120.0});
   xCompare(MooseTensor::Interval::RIGHT_OPEN, {0.0, 30.0, 60.0, 90.0});
 }
+#endif

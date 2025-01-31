@@ -59,6 +59,9 @@ public:
   virtual void addTensorComputePostprocess(const std::string & compute_name,
                                            const std::string & name,
                                            InputParameters & parameters);
+  virtual void addTensorComputeOnDemand(const std::string & compute_name,
+                                           const std::string & name,
+                                           InputParameters & parameters);
 
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                        const std::string & name,
@@ -74,7 +77,10 @@ public:
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
 
-  const Real & getSubDt() const { return _sub_dt; }
+  TensorOperatorBase & getOnDemandCompute(const std::string & name);
+
+  virtual Real & subDt() { return _sub_dt; }
+  virtual Real & subTime() { return _sub_time; }
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -95,12 +101,20 @@ public:
 
 protected:
   void updateDOFMap();
+
+  template <typename FLOAT_TYPE>
   void mapBuffersToAux();
 
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
                                 TensorComputeList & list);
+
+  /// execute initial conditionobjects
+  void executeTensorInitialConditions();
+
+  /// perform output tasks
+  void executeTensorOutputs(const ExecFlagType & exec_type);
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -113,6 +127,7 @@ protected:
 
   /// substepping timestep
   Real _sub_dt;
+  Real _sub_time;
 
   /// list of TensorBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _tensor_buffer;
@@ -145,6 +160,9 @@ protected:
 
   /// postprocessing objects
   TensorComputeList _pps;
+
+  /// on demand objects that are explicitly triggered by other objects
+  TensorComputeList _on_demand;
 
   ///  time integrator objects
   std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;
