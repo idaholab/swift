@@ -18,7 +18,7 @@ InputParameters
 TensorHistogram::validParams()
 {
   InputParameters params = TensorVectorPostprocessor::validParams();
-  params.addClassDescription("Constant tensor in reciprocal space.");
+  params.addClassDescription("Compute a histogram of the given tensor.");
   params.addRequiredParam<Real>("min", "Lower bound of the histogram.");
   params.addRequiredParam<Real>("max", "Upper bound of the histogram.");
   params.addRequiredRangeCheckedParam<std::size_t>("bins", "bins>0", "Number of histogram bins.");
@@ -34,6 +34,10 @@ TensorHistogram::TensorHistogram(const InputParameters & parameters)
     _bin_vec(declareVector("bin")),
     _count_vec(declareVector("count"))
 {
+  // error check (if this is not fulfilled teh histogram will be empty)
+  if (_min > _max)
+    paramError("min", "max must be greater than min");
+
   // fill the bin vector
   _bin_vec.resize(_bins);
   _count_vec.resize(_bins);
@@ -59,4 +63,6 @@ TensorHistogram::execute()
   else if (hist.dtype() == torch::kFloat64)
     for (const auto i : make_range(int64_t(_bins)))
       _count_vec[i] = hist.index({i}).item<double>();
+  else
+    mooseError("Unsupported tensor dtype() in TensorHistogram.");
 }
