@@ -53,8 +53,20 @@ TensorHistogram::execute()
   const auto data = _u.reshape({-1, 1});
 
   // Use the histogramdd function
-  const auto pair = at::native::histogramdd(data, {_bin_edges});
-  const auto hist = std::get<0>(pair).cpu();
+  torch::Tensor hist;
+  try
+  {
+    // histogramdd does not have a cuda implementation in torch 2.1
+    // we try anyways to run on the current compute device, in case
+    // the implemntation exists for different devices or future torch versions.
+    const auto pair = at::native::histogramdd(data, {_bin_edges});
+    hist = std::get<0>(pair).cpu();
+  }
+  catch (const std::exception &)
+  {
+    const auto pair = at::native::histogramdd(data.cpu(), {_bin_edges.cpu()});
+    hist = std::get<0>(pair);
+  }
 
   // put into VPP vector
   if (hist.dtype() == torch::kFloat32)
