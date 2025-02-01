@@ -34,6 +34,7 @@ public:
   const std::array<int64_t, 3> & getReciprocalGridSize() const { return _n_reciprocal_global; }
   const std::array<int64_t, 3> & getLocalGridSize() const { return _n_local; }
   const std::array<int64_t, 3> & getLocalReciprocalGridSize() const { return _n_reciprocal_local; }
+  const Real & getVolume() const { return _volume_global; }
   const std::array<Real, 3> & getDomainMin() const { return _min_global; }
   const std::array<Real, 3> & getDomainMax() const { return _max_global; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
@@ -105,6 +106,9 @@ protected:
   const std::array<Real, 3> _min_global;
   const std::array<Real, 3> _max_global;
   ///@}
+
+  /// Volume of teh simulation domain in real space
+  Real _volume_global;
 
   const enum class MeshMode { SWIFT_DUMMY, SWIFT_DOMAIN, SWIFT_MANUAL } _mesh_mode;
 

@@ -140,6 +140,7 @@ DomainAction::gridChanged()
   auto options = MooseTensor::floatTensorOptions();
 
   // build real space axes
+  _volume_global = 1.0;
   for (const unsigned int dim : {0, 1, 2})
   {
     // error check
@@ -151,12 +152,15 @@ DomainAction::gridChanged()
 
     // real space axis
     if (dim < _dim)
+    {
       _global_axis[dim] =
           align(torch::linspace(c10::Scalar(_min_global[dim] + _grid_spacing[dim] / 2.0),
                                 c10::Scalar(_max_global[dim] - _grid_spacing[dim] / 2.0),
                                 _n_global[dim],
                                 options),
                 dim);
+      _volume_global *= _max_global[dim] - _min_global[dim];
+    }
     else
       _global_axis[dim] = torch::tensor({0.0}, options);
   }

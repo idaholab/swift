@@ -7,6 +7,7 @@
 /**********************************************************************/
 
 #include "ReciprocalIntegral.h"
+#include "DomainAction.h"
 
 registerMooseObject("SwiftApp", ReciprocalIntegral);
 
@@ -20,6 +21,7 @@ ReciprocalIntegral::validParams()
 
 ReciprocalIntegral::ReciprocalIntegral(const InputParameters & parameters)
   : TensorPostprocessor(parameters)
+
 {
 }
 
@@ -33,6 +35,15 @@ ReciprocalIntegral::execute()
 
   // Convert to std::complex<double> (TODO: or float!)
   _integral = torch::real(zero_frequency_tensor).item<double>();
+
+  // divide by number of cells in real space
+  const auto & n = _domain.getGridSize();
+  _integral /= n[0] * n[1] * n[2];
+
+  // multiply by domain size
+  const auto & volume = _domain.getVolume();
+  mooseInfo(volume);
+  _integral *= volume;
 
   // for parallelism only the proc owning the global 0 matters...
 }
