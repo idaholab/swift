@@ -1,9 +1,9 @@
 [Domain]
   dim = 2
-  nx = 20
-  ny = 20
-  xmax = 20
-  ymax = 20
+  nx = 100
+  ny = 100
+  xmax = 100
+  ymax = 100
   device_names = 'cpu'
   mesh_mode = MANUAL
 []
@@ -11,10 +11,10 @@
 [Mesh]
   type = LatticeBoltzmannMesh
   dim = 2
-  nx = 20
-  ny = 20
-  xmax = 20
-  ymax = 20
+  nx = 100
+  ny = 100
+  xmax = 100
+  ymax = 100
 []
 
 [Stencil]
@@ -83,11 +83,10 @@
   []
   [Solve]
     [Collision]
-      type = LBMBGKCollision
+      type = LBMRegularizedMRTCollision
       buffer = f_post_collision
       f = f
       feq = feq
-      tau = 1.0
     []
     [Equilibrium]
       type = LBMEquilibrium
@@ -125,14 +124,14 @@
       type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      velocity = 0.000001
+      velocity = 0.999
       boundary = left
     []
     [right]
       type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      velocity = 0.00000199999
+      velocity = 1.0
       boundary = right
     []
     [front]
@@ -211,12 +210,12 @@
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  substeps = 1000
+  substeps = 50
 []
 
 [Executioner]
   type = Transient
-  num_steps = 1
+  num_steps = 100
 []
 
 [Outputs]
