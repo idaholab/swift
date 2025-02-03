@@ -29,6 +29,7 @@ InputParameters
 XDMFTensorOutput::validParams()
 {
   auto params = TensorOutput::validParams();
+  params.addClassDescription("Output a tensor in XDMF format.");
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
 #endif

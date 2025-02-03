@@ -1,0 +1,29 @@
+[Tests]
+  [map_to_aux]
+    type = Exodiff
+    input = cahnhilliard.i
+    cli_args = 'TensorBuffers/c/map_to_aux_variable=c TensorBuffers/mu/map_to_aux_variable=mu'
+    exodiff = cahnhilliard_out.e
+    issues = '#6'
+    requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector'
+    design = 'TensorProblem.md'
+  []
+  [project_tensor]
+    type = Exodiff
+    input = cahnhilliard.i
+    cli_args = 'AuxKernels/active="c mu"'
+    exodiff = cahnhilliard_out.e
+    issues = '#6'
+    requirement = 'The system shall be able to project a tensor onto an aux variable using an aux kernel'
+    design = 'ProjectTensorAux.md'
+  []
+  [xdmf_output]
+    type = XMLDiff
+    input = cahnhilliard.i
+    cli_args = 'TensorOutputs/active="xdmf"'
+    xmldiff = cahnhilliard.xmf
+    issues = '#6'
+    requirement = 'The system shall be able to output a tensor in XDMF format'
+    design = 'XDMFTensorOutput.md'
+  []
+[]
