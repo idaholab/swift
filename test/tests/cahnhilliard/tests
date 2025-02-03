@@ -17,13 +17,22 @@
     requirement = 'The system shall be able to project a tensor onto an aux variable using an aux kernel'
     design = 'ProjectTensorAux.md'
   []
-  [xdmf_output]
+  [xdmf_output_xml]
     type = XMLDiff
     input = cahnhilliard.i
     cli_args = 'TensorOutputs/active="xdmf"'
     xmldiff = cahnhilliard.xmf
     issues = '#6'
     requirement = 'The system shall be able to output a tensor in XDMF format'
+    design = 'XDMFTensorOutput.md'
+  []
+  [xdmf_output_hdf5]
+    type = HDF5Diff
+    input = cahnhilliard.i
+    cli_args = 'TensorOutputs/active="xdmf"'
+    hdf5diff = cahnhilliard.h5
+    issues = '#6'
+    requirement = 'The system shall be able to output a tensor in XDMF format using a HDF5 data file'
     design = 'XDMFTensorOutput.md'
   []
 []
