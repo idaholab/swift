@@ -1,0 +1,40 @@
+[Tests]
+  [extreme_value]
+    type = CSVDiff
+    input = postprocessors.i
+    csvdiff = extreme_value.csv
+    cli_args = 'Outputs/file_base=extreme_value Postprocessors/active="min_c max_c"'
+    requirement = 'The system shall be able to determine the minimum and maximum item value in a tensor.'
+    issues = '#6'
+    design = 'TensorExtremeValuePostprocessor.md'
+  []
+
+  [average]
+    type = CSVDiff
+    input = postprocessors.i
+    csvdiff = average.csv
+    cli_args = 'Outputs/file_base=average Postprocessors/active="avg_c"'
+    requirement = 'The system shall be able to determine the average value in a tensor.'
+    issues = '#6'
+    design = 'TensorAveragePostprocessor.md'
+  []
+
+  [integral]
+    type = CSVDiff
+    input = postprocessors.i
+    csvdiff = integral.csv
+    cli_args = 'Outputs/file_base=integral Postprocessors/active="int_c"'
+    requirement = 'The system shall be able to compute the integral over a simulation cell tensor.'
+    issues = '#6'
+    design = 'TensorIntegralPostprocessor.md'
+  []
+  [reciprocal_integral]
+    type = CSVDiff
+    input = postprocessors.i
+    csvdiff = reciprocal_integral.csv
+    cli_args = 'Outputs/file_base=reciprocal_integral Postprocessors/active="int_c_bar"'
+    requirement = 'The system shall be able to compute the integral over a simulation cell tensor using the zero k vector in reciprocal space.'
+    issues = '#6'
+    design = 'ReciprocalIntegral.md'
+  []
+[]
