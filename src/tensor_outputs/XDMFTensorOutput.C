@@ -149,7 +149,7 @@ XDMFTensorOutput::output()
 
   // time
   auto time = grid.append_child("Time");
-  time.append_attribute("Value") = _tensor_problem.time();
+  time.append_attribute("Value") = _time;
 
   // add references
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";

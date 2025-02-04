@@ -219,6 +219,9 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
   for (auto & output : _outputs)
     output->waitForCompletion();
 
+  // update output time
+  _output_time = _time;
+
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
   for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
   {
