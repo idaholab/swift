@@ -1,0 +1,20 @@
+[Tests]
+  [shape_mismatch]
+    type = HDF5Diff
+    input = hdf5.i
+    hdf5diff = hdf5.h5
+    cli_args = 'TensorOutputs/active=xdmf Domain/nx=8 Domain/ny=8 Executioner/num_steps=3'
+  []
+  [value_mismatch]
+    type = HDF5Diff
+    input = hdf5.i
+    hdf5diff = hdf5.h5
+    cli_args = 'TensorOutputs/active=xdmf Domain/nx=4 Domain/ny=5 Executioner/num_steps=3 TensorComputes/Initialize/c/max=1'
+  []
+  [dataset_mismatch]
+    type = HDF5Diff
+    input = hdf5.i
+    hdf5diff = hdf5.h5
+    cli_args = 'TensorOutputs/active=xdmf Domain/nx=4 Domain/ny=5 Executioner/num_steps=2'
+  []
+[]

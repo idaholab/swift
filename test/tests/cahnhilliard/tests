@@ -31,6 +31,7 @@
     input = cahnhilliard.i
     cli_args = 'TensorOutputs/active="xdmf"'
     hdf5diff = cahnhilliard.h5
+    abs_tol = 1e-13
     issues = '#6'
     requirement = 'The system shall be able to output a tensor in XDMF format using a HDF5 data file'
     design = 'XDMFTensorOutput.md'

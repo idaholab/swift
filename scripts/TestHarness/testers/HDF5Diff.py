@@ -1,11 +1,11 @@
-#* This file is part of the MOOSE framework
-#* https://www.mooseframework.org
+#*                    DO NOT MODIFY THIS HEADER
+#*             Swift, a Fourier spectral solver for MOOSE
 #*
-#* All rights reserved, see COPYRIGHT for full restrictions
-#* https://github.com/idaholab/moose/blob/master/COPYRIGHT
+#*            Copyright 2024 Battelle Energy Alliance, LLC
+#*                        ALL RIGHTS RESERVED
 #*
-#* Licensed under LGPL 2.1, please see LICENSE for details
-#* https://www.gnu.org/licenses/lgpl-2.1.html
+#*        Licensed under LGPL 2.1, please see LICENSE for details
+#*             https://www.gnu.org/licenses/lgpl-2.1.html
 
 from FileTester import FileTester
 import os
@@ -66,7 +66,7 @@ class HDF5Diff(FileTester):
                 datasets = gold_file.keys()
                 if datasets != test_file.keys():
                     self.setStatus(self.fail, 'MISMATCHING DATASETS')
-                    return "Datasets in test file:\n{datasets}\nDatasets in gold file:\n{test_file.keys()}\n"
+                    return f"Datasets in gold file:\n{list(datasets)}\nDatasets in test file:\n{list(test_file.keys())}\n"
 
                 # compare all sets
                 for dataset in datasets:
