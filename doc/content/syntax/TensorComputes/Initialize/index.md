@@ -1,14 +1,7 @@
-# TensorComputes/Initialize System
+# Initialize System
 
-!alert construction title=Undocumented System
-The Initialize system has not been documented. The content listed below should be used as a starting
-point for documenting the system, which includes the typical automatic documentation associated with
-a system; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
-## Overview
-
-!! Replace this line with information regarding the Initialize system.
+Tensor operators under this system are executed at the start of the simulation to set up initial values of
+tensors. Dependency resolution is applied to automatically sort the execution order of dependent operators.
 
 ## Example Input File Syntax
 

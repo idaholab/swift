@@ -36,7 +36,7 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
     _domain(*getCheckedPointerParam<const DomainAction *>("_domain")),
     /* Outputs run in a dedicated thread. We must be careful not to access data from the problem
        calss that might be updated while the output is running, which would lead to race conditions
-       resulting in unoreductable outputs. Time is such a quantity, which is why we provide a
+       resulting in unreproducible outputs. Time is such a quantity, which is why we provide a
        dedicated output time that is not changed while the asynchonous output is running.*/
     _time(_tensor_problem.outputTime())
 {

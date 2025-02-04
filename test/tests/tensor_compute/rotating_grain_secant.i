@@ -1,19 +1,27 @@
-w=60
+w=6
+
 [Domain]
   dim = 2
-  nx = 400
-  ny = 400
-  xmax = ${fparse pi*2*${w}}
-  ymax = ${fparse pi*2*${w}}
-
-  device_names = 'cuda'
-
+  nx = 40
+  ny = 40
+  xmax = ${fparse w*pi*2}
+  ymax = ${fparse w*pi*2/sin(pi/3)}
+  device_names = 'cpu'
   mesh_mode = DOMAIN
+[]
+
+[AuxVariables]
+  [phi]
+  []
+[]
+
+[Outputs]
+  exodus = false
 []
 
 [TensorBuffers]
   [psi]
-    map_to_aux_variable = psi
+    map_to_aux_variable = phi
   []
   [psibar]
   []
@@ -24,42 +32,21 @@ w=60
   # constant tensors
   [linear]
   []
-
-  # output
-  [filter]
-    map_to_aux_variable = filter
-  []
-  [filterbar]
-  []
 []
 
-[AuxVariables]
-  [psi]
-  []
-  [filter]
-  []
-[]
-
+crystal = '-(sin(sin(a)*y/2+cos(a)*x/2)^2 + sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*x/2)^2 + sin(sin(a-1/3*pi)*y/2+cos(a-1/3*pi)*x/2)^2 - 1.5)*0.25'
 [Functions]
   [grain1]
     type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'cx:=x/4; cy:=y/4; a := 0;
-                  -0.5* sin(sin(a)*cy+cos(a)*cx)^2 *
-                        sin(sin(a+1/3*pi)*cy+cos(a+1/3*pi)*cx)^2 *
-                        sin(sin(a-1/3*pi)*cy+cos(a-1/3*pi)*cx)^2'
-[]
+    expression = 'a := 0; ${crystal}'
+  []
   [grain2]
     type = ParsedFunction
-    # expression = 'r := (x-30*pi)^2+(y-30*pi)^2; if(r<15^2, (sin((x+y)/1.41)*cos((x-y)/1.41))^2, (sin(x)*cos(y))^2)'
-    expression = 'cx:=x/4; cy:=y/4; a := 0.95;
-                  -0.5* sin(sin(a)*cy+cos(a)*cx)^2 *
-                        sin(sin(a+1/3*pi)*cy+cos(a+1/3*pi)*cx)^2 *
-                        sin(sin(a-1/3*pi)*cy+cos(a-1/3*pi)*cx)^2'
+    expression = 'a := 0.95; ${crystal}'
   []
   [domain]
     type = ParsedFunction
-    expression = 'r := (x-${w}*pi)^2+(y-${w}*pi)^2; if(r<(${w}*pi*0.66)^2, grain2, grain1)'
+    expression = 'r := (x-${w}*pi)^2+(y-${w}*pi)^2; if(r<(${w}*2/3*pi)^2, grain2, grain1)'
     symbol_names = 'grain1 grain2'
     symbol_values = 'grain1 grain2'
   []
@@ -99,27 +86,12 @@ w=60
       input = psi3
     []
   []
-
-  [Postprocess]
-    [low_pass]
-      type = ParsedCompute
-      buffer = filterbar
-      extra_symbols = true
-      expression = 'psibar * exp(-k2*10)'
-      inputs = psibar
-    []
-    [filter]
-      type = InverseFFT
-      buffer = filter
-      input = filterbar
-    []
-  []
 []
 
 [TensorSolver]
   type = SecantSolver
   buffer = psi
-  substeps = 1
+  substeps = 3
   reciprocal_buffer = psibar
   linear_reciprocal = linear
   nonlinear_reciprocal = psi3bar
@@ -131,48 +103,22 @@ w=60
 
 [Executioner]
   type = Transient
-  num_steps = 200
+  num_steps = 10
   [TimeStepper]
     type = TensorSolveIterationAdaptiveDT
     dt = 1
-    max_iterations = 500
-    min_iterations = 300
-    growth_factor = 1.1
+    max_iterations = 400
+    min_iterations = 100
+    growth_factor = 1.4
     cutback_factor = 0.9
   []
   dtmax = 500
 []
 
-[Postprocessors]
-  [min_psi]
-    type = TensorExtremeValuePostprocessor
-    buffer = psi
-    value_type = MIN
-    execute_on = 'TIMESTEP_END'
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'psi'
+    enable_hdf5 = true
   []
-  [max_psi]
-    type = TensorExtremeValuePostprocessor
-    buffer = psi
-    value_type = MAX
-    execute_on = 'TIMESTEP_END'
-  []
-  [Psi]
-    type = TensorIntegralPostprocessor
-    buffer = psi
-  []
-[]
-
-# [TensorOutputs]
-#   [xdmf]
-#     type = XDMFTensorOutput
-#     buffer = 'psi'
-#     output_mode = 'Node'
-#     enable_hdf5 = true
-#   []
-# []
-
-[Outputs]
-  exodus = true
-  perf_graph = true
-  execute_on = 'TIMESTEP_END'
 []

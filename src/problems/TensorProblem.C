@@ -47,7 +47,7 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
     _shape(_domain.getShape()),
     _solver(nullptr)
 {
-  // make sure AuxVariables are contiguous in teh solution vector
+  // make sure AuxVariables are contiguous in the solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
 }
 

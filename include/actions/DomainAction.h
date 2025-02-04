@@ -42,6 +42,9 @@ public:
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
   const torch::Tensor & getKSquare() const { return _k2; }
 
+  /// get the maximum spatial frequency
+  const std::array<Real, 3> & getMaxK() const { return _max_k; }
+
   /// get the shape of the local domain
   const torch::IntArrayRef & getShape() const { return _shape; }
   const torch::IntArrayRef & getReciprocalShape() const { return _reciprocal_shape; }
@@ -107,7 +110,7 @@ protected:
   const std::array<Real, 3> _max_global;
   ///@}
 
-  /// Volume of teh simulation domain in real space
+  /// Volume of the simulation domain in real space
   Real _volume_global;
 
   const enum class MeshMode { SWIFT_DUMMY, SWIFT_DOMAIN, SWIFT_MANUAL } _mesh_mode;
@@ -125,6 +128,9 @@ protected:
 
   /// k-square
   torch::Tensor _k2;
+
+  /// largest frequency along each axis
+  std::array<Real, 3> _max_k;
 
   /// domain shape
   torch::IntArrayRef _shape;

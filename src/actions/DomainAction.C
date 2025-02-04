@@ -145,7 +145,7 @@ DomainAction::gridChanged()
   {
     // error check
     if (_max_global[dim] <= _min_global[dim])
-      mooseError("Max coordinate must be larger than teh min coordinate in every dimension");
+      mooseError("Max coordinate must be larger than the min coordinate in every dimension");
 
     // get grid geometry
     _grid_spacing[dim] = (_max_global[dim] - _min_global[dim]) / _n_global[dim];
@@ -177,6 +177,9 @@ DomainAction::gridChanged()
     }
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
+
+    // compute max frequency along each axis
+    _max_k[dim] = libMesh::pi / _grid_spacing[dim];
 
     // get global reciprocal axis size
     _n_reciprocal_global[dim] = _global_reciprocal_axis[dim].sizes()[dim];
