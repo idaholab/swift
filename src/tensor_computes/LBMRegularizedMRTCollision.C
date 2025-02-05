@@ -30,7 +30,7 @@ LBMRegularizedMRTCollision::LBMRegularizedMRTCollision(const InputParameters & p
 {
 }
 
-const torch::Tensor &
+const torch::Tensor
 LBMRegularizedMRTCollision::regularize()
 {
   /**
@@ -117,7 +117,7 @@ LBMRegularizedMRTCollision::computeBuffer()
 
   else
   {
-    const torch::Tensor & f_neq_hat = regularize();
+    const torch::Tensor f_neq_hat = regularize();
     _u = _feq + f_neq_hat - torch::matmul(_stencil._M_inv,
                               torch::matmul(_stencil._S,
                               torch::matmul(_stencil._M,
