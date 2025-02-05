@@ -28,6 +28,7 @@ LatticeBoltzmannProblem::validParams()
   params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
   params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
   params.addParam<unsigned int>("substeps", 1, "Number of LBM iterations for every MOOSE timestep");
+  params.addParam<Real>("tolerance", 0.0, "LBM convergence tolerance");
   params.addClassDescription(
       "Problem object to enable solving lattice Boltzmann problems");
 
@@ -40,7 +41,8 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     _enable_slip(getParam<bool>("enable_slip")),
     _mfp(getParam<Real>("mfp")),
     _dx(getParam<Real>("dx")),
-    _lbm_substeps(getParam<unsigned int>("substeps"))
+    _lbm_substeps(getParam<unsigned int>("substeps")),
+    _tolerance(getParam<Real>("tolerance"))
 {
 }
 
@@ -76,6 +78,8 @@ LatticeBoltzmannProblem::init()
   // set up parameters for slip flow
   if (_enable_slip)
     enableSlipModel();
+  
+  _convergence_residual = 1.0;
 }
 
 void
@@ -85,6 +89,11 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
    * This is primarily a copy of base class execute function with a 
    * different order of operations in the main loop.
    */
+
+  // convergence check
+  if (_convergence_residual < _tolerance)
+    return;
+  
   if (exec_type == EXEC_INITIAL)
   {
     // run ICs
@@ -104,7 +113,6 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 
   if (exec_type == EXEC_TIMESTEP_BEGIN)
   {
-    _convergence_residual = 1.0;
     if (dt() != dtOld())
       for (auto & [name, max_states] : _old_tensor_buffer)
         max_states.second.clear();
