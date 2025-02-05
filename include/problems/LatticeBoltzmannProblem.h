@@ -99,6 +99,9 @@ protected:
   /// lbm substeps
   const unsigned int _lbm_substeps;
 
+  /// lbm convergence tolerance
+  const Real _tolerance;
+
 public:
   /// LBM constants
   const Real _cs = 1.0 / sqrt(3.0);

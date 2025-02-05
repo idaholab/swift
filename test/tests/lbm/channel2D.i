@@ -211,6 +211,7 @@
   type = LatticeBoltzmannProblem
   print_debug_output = true
   substeps = 50
+  tolerance = 1.0e-10
 []
 
 [Executioner]
