@@ -124,14 +124,14 @@
       type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      velocity = 0.999
+      velocity = 0.1
       boundary = left
     []
     [right]
       type = LBMFixedVelocityBC2D
       buffer = f
       f = f
-      velocity = 1.0
+      velocity = 0.09999
       boundary = right
     []
     [front]

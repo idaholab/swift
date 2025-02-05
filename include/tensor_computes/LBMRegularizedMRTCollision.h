@@ -20,7 +20,7 @@ public:
 
   LBMRegularizedMRTCollision(const InputParameters & parameters);
 
-  const torch::Tensor & regularize();
+  const torch::Tensor regularize();
 
   void enableSlip();
 
@@ -29,5 +29,5 @@ public:
 protected:
   const torch::Tensor & _feq;
   const torch::Tensor & _f;
-  const torch::IntArrayRef &_shape;
+  const std::array<int64_t, 3> _shape;
 };
