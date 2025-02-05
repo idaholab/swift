@@ -47,7 +47,7 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
     _shape(_domain.getShape()),
     _solver(nullptr)
 {
-  // make sure AuxVariables are contiguous in teh solution vector
+  // make sure AuxVariables are contiguous in the solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
 }
 
@@ -218,6 +218,9 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
   // (this is a synchronization barrier for the threaded CPU activity)
   for (auto & output : _outputs)
     output->waitForCompletion();
+
+  // update output time
+  _output_time = _time;
 
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
   for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)

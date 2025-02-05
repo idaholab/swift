@@ -29,6 +29,7 @@ InputParameters
 XDMFTensorOutput::validParams()
 {
   auto params = TensorOutput::validParams();
+  params.addClassDescription("Output a tensor in XDMF format.");
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
 #endif
@@ -148,7 +149,7 @@ XDMFTensorOutput::output()
 
   // time
   auto time = grid.append_child("Time");
-  time.append_attribute("Value") = _tensor_problem.time();
+  time.append_attribute("Value") = _time;
 
   // add references
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";
@@ -279,22 +280,34 @@ addDataToHDF5(const std::string & filename,
   // Create a new dataset
   dataspace_id = H5Screate_simple(dims.size(), dims.data(), nullptr);
   if (dataspace_id < 0)
+  {
+    H5Eprint(H5E_DEFAULT, stderr);
     mooseError("Error creating dataspace");
+  }
 
   plist_id = H5Pcreate(H5P_DATASET_CREATE);
   if (plist_id < 0)
+  {
+    H5Eprint(H5E_DEFAULT, stderr);
     mooseError("Error creating property list");
+  }
 
   status = H5Pset_chunk(plist_id, dims.size(), dims.data());
   if (status < 0)
+  {
+    H5Eprint(H5E_DEFAULT, stderr);
     mooseError("Error setting chunking");
+  }
 
   H5Pset_deflate(plist_id, 9);
 
   dataset_id = H5Dcreate(
       file_id, dataset_name.c_str(), type, dataspace_id, H5P_DEFAULT, plist_id, H5P_DEFAULT);
   if (dataset_id < 0)
+  {
+    H5Eprint(H5E_DEFAULT, stderr);
     mooseError("Error creating dataset");
+  }
 
   // Write data to the dataset
   status = H5Dwrite(dataset_id, type, H5S_ALL, dataspace_id, H5P_DEFAULT, data);

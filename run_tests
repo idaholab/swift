@@ -7,6 +7,7 @@ if os.path.exists(os.path.abspath(os.path.join('moose', 'framework', 'Makefile')
 MOOSE_DIR = os.environ.get('MOOSE_DIR', MOOSE_DIR)
 
 sys.path.append(os.path.join(MOOSE_DIR, 'python'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'scripts', 'TestHarness', 'tests'))
 
 from TestHarness import TestHarness
 TestHarness.buildAndRun(sys.argv, 'swift', MOOSE_DIR)

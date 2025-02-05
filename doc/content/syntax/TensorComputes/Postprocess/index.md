@@ -1,10 +1,9 @@
-# TensorComputes/Postprocess System
+# Postprocess System
 
-!alert construction title=Undocumented System
-The Postprocess system has not been documented. The content listed below should be used as a starting
-point for documenting the system, which includes the typical automatic documentation associated with
-a system; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
+Tensor operators under this system are executed at the end of a MOOSE timestep, right before output occurs.
+Posprocess operators allow for the computation of outputted postprocessed fields, like for example a Fourier
+filtered version of a microstructure. Dependency resolution is applied to automatically sort the execution
+order of dependent operators.
 
 ## Overview
 

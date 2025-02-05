@@ -1,14 +1,9 @@
 # TensorOutputs System
 
-!alert construction title=Undocumented System
-The TensorOutputs system has not been documented. The content listed below should be used as a starting
-point for documenting the system, which includes the typical automatic documentation associated with
-a system; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
-## Overview
-
-!! Replace this line with information regarding the TensorOutputs system.
+The `TensorOutputs` system is a custom asynchronous Swift output system that directly writes tensor data to files without
+projection to a mesh. At the time of outputting it creates copies ofa all tensors slated for output and launches the
+respective `TensorOutputs` in a separate thread. This allows the simulation to progress while data is written to disk, resulting
+in a high compute device utilization.
 
 ## Example Input File Syntax
 

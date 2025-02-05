@@ -11,7 +11,7 @@
 #include "TensorPostprocessor.h"
 
 /**
- * Fetch teh zero k-vector component
+ * Fetch the zero k-vector component
  */
 class ReciprocalIntegral : public TensorPostprocessor
 {

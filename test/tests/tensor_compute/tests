@@ -1,0 +1,20 @@
+[Tests]
+  [backandforth]
+    type = HDF5Diff
+    input = backandforth.i
+    hdf5diff = backandforth.h5
+    abs_tol = 1e-13
+    issues = '#6'
+    requirement = 'The system shall be able to transform a buffer from real space to reciprocal space and back and recover the original tensor'
+    design = PerformFFT.md
+  []
+  [rotating_grain_secant]
+    type = HDF5Diff
+    input = rotating_grain_secant.i
+    hdf5diff = rotating_grain_secant.h5
+    abs_tol = 1e-10
+    issues = '#6'
+    requirement = 'The system shall be able to solve a Swift-Hohenberg equation using a secant solve'
+    design = SecantSolver.md
+  []
+[]

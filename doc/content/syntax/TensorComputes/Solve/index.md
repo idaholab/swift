@@ -1,14 +1,7 @@
-# TensorComputes/Solve System
+# Solve System
 
-!alert construction title=Undocumented System
-The Solve system has not been documented. The content listed below should be used as a starting
-point for documenting the system, which includes the typical automatic documentation associated with
-a system; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
-## Overview
-
-!! Replace this line with information regarding the Solve system.
+Tensor operators under this system are executed by the [TensorSolver](TensorSolver/index.md) during the solver iterations.
+Dependency resolution is applied to automatically sort the execution order of dependent operators.
 
 ## Example Input File Syntax
 

@@ -1,15 +1,12 @@
 [Domain]
   dim = 2
-  nx = 50
-  ny = 50
+  nx = 20
+  ny = 20
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
-
-  device_names = 'cuda'
-
-  mesh_mode = DOMAIN
+  device_names = 'cpu'
+  mesh_mode = DUMMY
 []
-
 
 [TensorBuffers]
   [eta]
@@ -25,14 +22,21 @@
 [TensorComputes]
   [Initialize]
     [eta]
-      type = ParsedTensor
+      type = ParsedCompute
       buffer = eta
-      function = 'sin(x)+sin(y)+sin(z)'
+      expression = 'sin(x)+sin(y)+sin(z)'
+      extra_symbols = true
+    []
+    [eta2]
+      type = ConstantTensor
+      buffer = eta2
+      real = 1
     []
     [zero]
-      type = ConstantTensor
+      type = ConstantReciprocalTensor
       buffer = zero
       real = 0
+      imaginary = 0
     []
   []
 
@@ -50,28 +54,12 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [eta]
-    type = FFTSemiImplicit
-    buffer = eta
-    reciprocal_buffer = eta_bar
-    linear_reciprocal = zero
-    nonlinear_reciprocal = zero
-  []
-[]
-
-[AuxVariables]
-  [eta]
-  []
-[]
-
-[AuxKernels]
-  [eta]
-    type = ProjectTensorAux
-    buffer = eta
-    variable = eta
-    execute_on = TIMESTEP_END
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  buffer = eta
+  reciprocal_buffer = eta_bar
+  linear_reciprocal = zero
+  nonlinear_reciprocal = zero
 []
 
 [Problem]
@@ -80,9 +68,13 @@
 
 [Executioner]
   type = Transient
-  num_steps = 4
+  num_steps = 2
 []
 
-[Outputs]
-  exodus = true
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'eta eta2'
+    enable_hdf5 = true
+  []
 []

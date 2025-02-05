@@ -1,7 +1,7 @@
 #
 # Contact in RZ does not seem to work reliably, since our anvil is just a coordinate plane.
 # Let's try using a dirichlet BC that is only activated if the node penetrates and snaps
-# it back to teh coordinate plane!
+# it back to the coordinate plane!
 # THIS DOES NOT WORK
 #
 
