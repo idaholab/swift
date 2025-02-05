@@ -32,7 +32,7 @@ ParsedCompute::validParams()
                         false,
                         "Provide i (imaginary unit), kx,ky,kz (reciprocal space frequency), k2 "
                         "(square of the k-vector), x,y,z "
-                        "(real space coordinates), and pi,e.");
+                        "(real space coordinates), time t, pi, and e.");
   // Constants and their values
   params.addParam<std::vector<std::string>>(
       "constant_names",
@@ -42,14 +42,15 @@ ParsedCompute::validParams()
       "constant_expressions",
       std::vector<std::string>(),
       "Vector of values for the constants in constant_names (can be an FParser expression)");
-
+  params.addParam<bool>("real_space", true, "Is the tensor being computed a real space tensor?");
   return params;
 }
 
 ParsedCompute::ParsedCompute(const InputParameters & parameters)
   : TensorOperator(parameters),
     _use_jit(getParam<bool>("enable_jit")),
-    _extra_symbols(getParam<bool>("extra_symbols"))
+    _extra_symbols(getParam<bool>("extra_symbols")),
+    _real_space(getParam<bool>("real_space"))
 {
   const auto & expression = getParam<std::string>("expression");
   const auto & names = getParam<std::vector<TensorInputBufferName>>("inputs");
@@ -69,7 +70,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     _params.push_back(&getInputBufferByName(name));
 
   static const std::vector<std::string> reserved_symbols = {
-      "i", "x", "kx", "y", "ky", "z", "kz", "k2"};
+      "i", "x", "kx", "y", "ky", "z", "kz", "k2", "t"};
 
   // helper function to check if the name given is one of the reserved_names
   auto isReservedName = [this](const auto & name)
@@ -108,7 +109,8 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
       // append extra symbols
       variables_vec.insert(variables_vec.end(), reserved_symbols.begin(), reserved_symbols.end());
 
-      _constant_tensors.push_back(torch::tensor(c10::complex<double>(0.0, 1.0)));
+      _constant_tensors.push_back(
+          torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()));
       _params.push_back(&_constant_tensors[0]);
 
       for (const auto dim : make_range(3u))
@@ -118,6 +120,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
       }
 
       _params.push_back(&_domain.getKSquare());
+      _params.push_back(&_time_tensor);
 
       fp.AddConstant("pi", libMesh::pi);
       fp.AddConstant("e", std::exp(Real(1.0)));
@@ -185,8 +188,13 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 void
 ParsedCompute::computeBuffer()
 {
+  if (_extra_symbols)
+    _time_tensor = torch::tensor(_time, MooseTensor::floatTensorOptions());
+
+  // use local shape if we add parallel support, and add option for reciprocal shape
   if (_use_jit)
-    _u = _jit.Eval(_params);
+    _u = _jit.Eval(_params).expand(_real_space ? _domain.getShape() : _domain.getReciprocalShape());
   else
-    _u = _no_jit.Eval(_params);
+    _u = _no_jit.Eval(_params).expand(_real_space ? _domain.getShape()
+                                                  : _domain.getReciprocalShape());
 }

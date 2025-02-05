@@ -140,7 +140,7 @@ SecantSolver::secantSolve()
       if (_verbose)
       {
         const auto unorm = torch::norm(du).item<double>();
-        std::cout << _iterations << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
+        _console << _iterations << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
       }
 
       // nan check
