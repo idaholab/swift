@@ -81,6 +81,7 @@ public:
 
   virtual Real & subDt() { return _sub_dt; }
   virtual Real & subTime() { return _sub_time; }
+  virtual Real & outputTime() { return _output_time; }
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -128,6 +129,9 @@ protected:
   /// substepping timestep
   Real _sub_dt;
   Real _sub_time;
+
+  /// simulation time for the currently running output thread
+  Real _output_time;
 
   /// list of TensorBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _tensor_buffer;

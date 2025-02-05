@@ -36,6 +36,9 @@ protected:
   TensorProblem & _tensor_problem;
   const DomainAction & _domain;
 
+  /// simulation time of the step that is being output
+  const Real & _time;
+
   std::thread _output_thread;
 
   /// The buffer this output object is outputting

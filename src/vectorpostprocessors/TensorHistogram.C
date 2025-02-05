@@ -34,7 +34,7 @@ TensorHistogram::TensorHistogram(const InputParameters & parameters)
     _bin_vec(declareVector("bin")),
     _count_vec(declareVector("count"))
 {
-  // error check (if this is not fulfilled teh histogram will be empty)
+  // error check (if this is not fulfilled the histogram will be empty)
   if (_min > _max)
     paramError("min", "max must be greater than min");
 
