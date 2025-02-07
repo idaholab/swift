@@ -32,5 +32,7 @@ protected:
   ParsedJITTensor _jit;
   ParsedTensor _no_jit;
 
+  torch::Tensor _time_tensor;
   std::vector<const torch::Tensor *> _params;
+  const bool _real_space;
 };

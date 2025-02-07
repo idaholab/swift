@@ -37,4 +37,13 @@
     issues = '#6'
     design = 'ReciprocalIntegral.md'
   []
+
+  [interface_velocity]
+    type = CSVDiff
+    input = interface_velocity.i
+    csvdiff = interface_velocity_out.csv
+    requirement = 'The system shall be able to measure the maximum interfacial velocity for a given tensor.'
+    issues = '#6'
+    design = 'TensorInterfaceVelocityPostprocessor.md'
+ []
 []

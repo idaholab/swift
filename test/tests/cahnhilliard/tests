@@ -1,11 +1,20 @@
 [Tests]
-  [map_to_aux]
+  [map_to_aux_2d]
     type = Exodiff
     input = cahnhilliard.i
     cli_args = 'TensorBuffers/c/map_to_aux_variable=c TensorBuffers/mu/map_to_aux_variable=mu'
     exodiff = cahnhilliard_out.e
     issues = '#6'
-    requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector'
+    requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector in 2d'
+    design = 'TensorProblem.md'
+  []
+  [map_to_aux_3d]
+    type = Exodiff
+    input = cahnhilliard.i
+    cli_args = 'TensorBuffers/c/map_to_aux_variable=c TensorBuffers/mu/map_to_aux_variable=mu Domain/dim=3 Domain/nx=5 Domain/ny=5 Domain/nz=5 Domain/zmax=3 Outputs/file_base=map_to_aux_3d'
+    exodiff = map_to_aux_3d.e
+    issues = '#6'
+    requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector in 3d'
     design = 'TensorProblem.md'
   []
   [project_tensor]
