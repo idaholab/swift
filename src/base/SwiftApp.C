@@ -44,17 +44,14 @@ SwiftApp::validParams()
   InputParameters params = MooseApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
   params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
-
-  params.addCommandLineParam<std::string>(
-      "torch_device", "--torch_device", "", "Device to use for spectral solves.");
-
   return params;
 }
 
 SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
-  MooseTensor::swift_global_settings._torch_device = parameters.get<std::string>("torch_device");
+  MooseTensor::swift_global_settings._torch_device =
+      std::string(parameters.get<MooseEnum>("libtorch_device"));
 }
 
 SwiftApp::~SwiftApp() {}

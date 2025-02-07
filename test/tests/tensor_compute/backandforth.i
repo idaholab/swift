@@ -4,7 +4,6 @@
   ny = 20
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
-  device_names = 'cpu'
   mesh_mode = DUMMY
 []
 
