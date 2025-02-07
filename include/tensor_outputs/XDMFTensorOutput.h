@@ -58,5 +58,8 @@ protected:
 
 #ifdef LIBMESH_HAVE_HDF5
   const bool _enable_hdf5;
+
+  /// File created
+  bool _hdf5_file_created;
 #endif
 };
