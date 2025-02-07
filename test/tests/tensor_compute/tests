@@ -1,12 +1,50 @@
 [Tests]
   [backandforth]
-    type = HDF5Diff
-    input = backandforth.i
-    hdf5diff = backandforth.h5
-    abs_tol = 1e-13
     issues = '#6'
     requirement = 'The system shall be able to transform a buffer from real space to reciprocal space and back and recover the original tensor'
     design = PerformFFT.md
+    [even_1d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=1 Domain/nx=10'
+      detail = 'in one dimension with an even number of grid cells'
+    []
+    [odd_1d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=1 Domain/nx=11'
+      detail = 'in one dimension with an odd number of grid cells'
+    []
+    [even_2d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=2 Domain/nx=10 Domain/ny=8'
+      detail = 'in two dimensions with an even number of grid cells'
+    []
+    [odd_2d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=1 Domain/nx=9 Domain/ny=11'
+      detail = 'in two dimensions with an odd number of grid cells'
+    []
+    [even_3d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=2 Domain/nx=10 Domain/ny=8 Domain/nz=12'
+      detail = 'in three dimensions with an even number of grid cells'
+    []
+    [odd_3d]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=1 Domain/nx=9 Domain/ny=13 Domain/nz=11'
+      detail = 'in three dimensions with an odd number of grid cells'
+    []
   []
   [rotating_grain_secant]
     type = HDF5Diff

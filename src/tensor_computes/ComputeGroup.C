@@ -42,7 +42,14 @@ void
 ComputeGroup::computeBuffer()
 {
   for (const auto & cmp : _computes)
-    cmp->computeBuffer();
+    try
+    {
+      cmp->computeBuffer();
+    }
+    catch (const std::exception & e)
+    {
+      cmp->mooseError("Exception: ", e.what());
+    }
 }
 
 void

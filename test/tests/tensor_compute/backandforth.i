@@ -1,7 +1,4 @@
 [Domain]
-  dim = 2
-  nx = 20
-  ny = 20
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
   device_names = 'cpu'
@@ -9,6 +6,8 @@
 []
 
 [TensorBuffers]
+  [eta_gold]
+  []
   [eta]
   []
   [eta_bar]
@@ -17,15 +16,23 @@
   []
   [zero]
   []
+  [diff]
+  []
 []
 
 [TensorComputes]
   [Initialize]
+    [eta_gold]
+      type = ParsedCompute
+      buffer = eta_gold
+      expression = 'sin(x)+sin(y)+sin(z)'
+      extra_symbols = true
+    []
     [eta]
       type = ParsedCompute
       buffer = eta
-      expression = 'sin(x)+sin(y)+sin(z)'
-      extra_symbols = true
+      expression = eta_gold
+      inputs = eta_gold
     []
     [eta2]
       type = ConstantTensor
@@ -52,6 +59,22 @@
       input = eta_bar
     []
   []
+
+  [Postprocess]
+    [diff]
+      type = ParsedCompute
+      buffer = diff
+      expression = 'abs(eta - eta2) + abs(eta - eta_gold)'
+      inputs = 'eta eta2 eta_gold'
+    []
+  []
+[]
+
+[Postprocessors]
+  [norm]
+    type = TensorIntegralPostprocessor
+    buffer = diff
+  []
 []
 
 [TensorSolver]
@@ -68,13 +91,9 @@
 
 [Executioner]
   type = Transient
-  num_steps = 2
+  num_steps = 4
 []
 
-[TensorOutputs]
-  [xdmf]
-    type = XDMFTensorOutput
-    buffer = 'eta eta2'
-    enable_hdf5 = true
-  []
+[Outputs]
+  csv = true
 []

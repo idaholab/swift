@@ -41,5 +41,5 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
             self.runTests('-i', 'hdf5diffs', '--re', 'dataset_mismatch')
 
         e = cm.exception
-        self.assertRegex(e.output, "tester\.dataset_mismatch:.*\['c\.0', 'c\.1', 'c\.2', 'mu\.0', 'mu\.1', 'mu\.2'\]")
+        self.assertRegex(e.output, r"tester\.dataset_mismatch:.*\['c\.0', 'c\.1', 'c\.2', 'mu\.0', 'mu\.1', 'mu\.2'\]")
         self.checkStatus(e.output, failed=1)

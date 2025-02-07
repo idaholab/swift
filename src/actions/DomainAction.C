@@ -477,11 +477,11 @@ DomainAction::ifft(const torch::Tensor & t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::irfft(t);
+      return torch::fft::irfft(t, getShape()[0]);
     case 2:
-      return torch::fft::irfft2(t);
+      return torch::fft::irfft2(t, getShape());
     case 3:
-      return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
+      return torch::fft::irfftn(t, getShape(), {0, 1, 2});
     default:
       mooseError("Unsupported mesh dimension");
   }

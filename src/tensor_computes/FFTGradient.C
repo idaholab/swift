@@ -36,7 +36,6 @@ FFTGradient::FFTGradient(const InputParameters & parameters)
 void
 FFTGradient::computeBuffer()
 {
-  std::cout << std::endl;
   _u = _domain.ifft((_input_is_reciprocal ? _input : _domain.fft(_input)) *
                     _domain.getReciprocalAxis(_direction) * _i);
 }
