@@ -59,7 +59,7 @@ DomainAction::validParams()
 
   params.addParam<MooseEnum>("mesh_mode", meshmode, "Mesh generation mode.");
 
-  params.addRequiredParam<std::vector<std::string>>("device_names", "Compute devices to run on.");
+  params.addParam<std::vector<std::string>>("device_names", {}, "Compute devices to run on.");
   params.addParam<std::vector<unsigned int>>(
       "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
   return params;
@@ -86,49 +86,61 @@ DomainAction::DomainAction(const InputParameters & parameters)
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
 
-  // process weights
-  if (_device_weights.empty())
-    _device_weights.assign(1, _device_names.size());
-
-  if (_device_weights.size() != _device_names.size())
-    mooseError("Specify one weight per device or none at all");
-
-  // determine the processor name
-  char name[MPI_MAX_PROCESSOR_NAME + 1];
-  int len;
-  MPI_Get_processor_name(name, &len);
-  name[len] = 0;
-
-  // gather all processor names
-  std::vector<std::string> host_names;
-  _communicator.allgather(std::string(name), host_names);
-
-  // get the local rank on the current processor (used for compute device assignment)
-  std::map<std::string, unsigned int> host_rank_count;
-
-  for (const auto & host_name : host_names)
+  if (_device_names.empty())
   {
-    if (host_rank_count.find(name) == host_rank_count.end())
-      host_rank_count[host_name] = 0;
+    if (comm().size() > 1)
+      mooseError("Specify Domain/device_names for parallel operation.");
 
-    auto & local_rank = host_rank_count[host_name];
-    _local_ranks.push_back(local_rank);
-    _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
-
-    // std::cout << "Process on " << host_name << ' ' << local_rank << ' '
-    //           << _device_weights[local_rank % _device_weights.size()] << '\n';
-
-    local_rank++;
+    // set local weights and ranks for serial
+    _local_ranks = {0};
+    _local_weights = {1};
   }
+  else
+  {
+    // process weights
+    if (_device_weights.empty())
+      _device_weights.assign(1, _device_names.size());
 
-  // for (const auto i : index_range(host_names))
-  //   std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+    if (_device_weights.size() != _device_names.size())
+      mooseError("Specify one weight per device or none at all");
 
-  // pick a compute device for a list of available devices
-  auto swift_app = dynamic_cast<SwiftApp *>(&_app);
-  if (!swift_app)
-    mooseError("This action requires a SwftApp object to be present.");
-  swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
+    // determine the processor name
+    char name[MPI_MAX_PROCESSOR_NAME + 1];
+    int len;
+    MPI_Get_processor_name(name, &len);
+    name[len] = 0;
+
+    // gather all processor names
+    std::vector<std::string> host_names;
+    _communicator.allgather(std::string(name), host_names);
+
+    // get the local rank on the current processor (used for compute device assignment)
+    std::map<std::string, unsigned int> host_rank_count;
+
+    for (const auto & host_name : host_names)
+    {
+      if (host_rank_count.find(name) == host_rank_count.end())
+        host_rank_count[host_name] = 0;
+
+      auto & local_rank = host_rank_count[host_name];
+      _local_ranks.push_back(local_rank);
+      _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
+
+      // std::cout << "Process on " << host_name << ' ' << local_rank << ' '
+      //           << _device_weights[local_rank % _device_weights.size()] << '\n';
+
+      local_rank++;
+    }
+
+    // for (const auto i : index_range(host_names))
+    //   std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+
+    // pick a compute device for a list of available devices
+    auto swift_app = dynamic_cast<SwiftApp *>(&_app);
+    if (!swift_app)
+      mooseError("This action requires a SwftApp object to be present.");
+    swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
+  }
 
   // domain partitioning
   gridChanged();
@@ -247,7 +259,7 @@ DomainAction::partitionSlabs()
   for (const auto d : {0, 1})
   {
     int64_t b = 0;
-    for (const auto r: index_range(_n_local_all[d]))
+    for (const auto r : index_range(_n_local_all[d]))
     {
       _local_begin[d][r] = b;
       b += _n_local_all[d][r];

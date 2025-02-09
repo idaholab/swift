@@ -236,6 +236,7 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
     output->startOutput();
+  // output->output();
 
   if (_options.dtype() == torch::kFloat64)
     mapBuffersToAux<double>();
