@@ -35,9 +35,9 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
     _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem")),
     _domain(*getCheckedPointerParam<const DomainAction *>("_domain")),
     /* Outputs run in a dedicated thread. We must be careful not to access data from the problem
-       calss that might be updated while the output is running, which would lead to race conditions
+       class that might be updated while the output is running, which would lead to race conditions
        resulting in unreproducible outputs. Time is such a quantity, which is why we provide a
-       dedicated output time that is not changed while the asynchonous output is running.*/
+       dedicated output time that is not changed while the asynchronous output is running.*/
     _time(_tensor_problem.outputTime())
 {
   for (const auto & name : getParam<std::vector<TensorInputBufferName>>("buffer"))
