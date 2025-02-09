@@ -92,6 +92,9 @@ public:
   typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
   const TensorComputeList & getComputes() const { return _computes; }
 
+  typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
+  const TensorOutputList & getOutputs() const { return _outputs; }
+
   /// The CreateTensorSolverAction calls this to set the active solver
   void setSolver(std::shared_ptr<TensorSolver> solver,
                  const MooseTensor::Key<CreateTensorSolverAction> &);
