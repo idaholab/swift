@@ -163,6 +163,14 @@
     output_mode = 'Node Cell'
     enable_hdf5 = true
   []
+
+  [xdmf2]
+    # second output to trigger the hdf5 thread safety error
+    type = XDMFTensorOutput
+    buffer = 'c'
+    output_mode = 'Cell'
+    enable_hdf5 = true
+  []
 []
 
 [Outputs]

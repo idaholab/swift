@@ -46,7 +46,7 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
 #ifdef LIBMESH_HAVE_HDF5
     ,
     _enable_hdf5(getParam<bool>("enable_hdf5")),
-    _hdf5_file_created(false)
+    _hdf5_name(_file_base + ".h5")
 #endif
 {
   const auto & output_mode = getParam<MultiMooseEnum>("output_mode");
@@ -65,6 +65,29 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
     for (const auto i : make_range(nbuffers))
       _is_cell_data[buffer_name[i]] = (output_mode[i] == "CELL");
   }
+
+#ifdef LIBMESH_HAVE_HDF5
+  // Check if the library is thread-safe
+  hbool_t is_threadsafe;
+  H5is_library_threadsafe(&is_threadsafe);
+  if (!is_threadsafe)
+  {
+    for (const auto & output : _tensor_problem.getOutputs())
+      if (output.get() != this && dynamic_cast<XDMFTensorOutput *>(output.get()))
+        mooseError(
+            "Using an hdf5 library that is not threadsafe and multiple XDMF output objects. "
+            "Consolidate the XDMF outputs or build Swift with a thread safe build of libhdf5.");
+    mooseWarning("Using an hdf5 library that is not threadsafe.");
+  }
+#endif
+}
+
+XDMFTensorOutput::~XDMFTensorOutput()
+{
+#ifdef LIBMESH_HAVE_HDF5
+  if (_enable_hdf5)
+    H5Fclose(_hdf5_file_id);
+#endif
 }
 
 void
@@ -135,9 +158,20 @@ XDMFTensorOutput::init()
 
   // write XDMF file
   _doc.save_file((_file_base + ".xmf").c_str());
+#ifdef LIBMESH_HAVE_HDF5
   // delete HDF5 file
   if (_enable_hdf5)
-    std::filesystem::remove(_file_base + ".h5");
+  {
+    std::filesystem::remove(_hdf5_name);
+    // open new file
+    _hdf5_file_id = H5Fcreate(_hdf5_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    if (_hdf5_file_id < 0)
+    {
+      H5Eprint(H5E_DEFAULT, stderr);
+      mooseError("Error opening HDF5 file '", _hdf5_name, "'.");
+    }
+  }
+#endif
 }
 
 void
@@ -156,25 +190,6 @@ XDMFTensorOutput::output()
   // add references
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Geometry)";
-
-#ifdef LIBMESH_HAVE_HDF5
-  hid_t file_id;
-  const auto h5name = _file_base + ".h5";
-  mooseInfoRepeated("Opening HDF5 file '", h5name, "' for output.");
-  if (_enable_hdf5)
-  {
-    if (_hdf5_file_created)
-      file_id = H5Fopen(h5name.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-    else
-      file_id = H5Fcreate(h5name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    if (file_id < 0)
-    {
-      H5Eprint(H5E_DEFAULT, stderr);
-      mooseError("Error opening HDF5 file '", h5name, "'.");
-    }
-    _hdf5_file_created = true;
-  }
-#endif
 
   // loop over buffers
   for (const auto & [name, original_buffer] : _out_buffers)
@@ -197,14 +212,14 @@ XDMFTensorOutput::output()
     if (_enable_hdf5)
     {
       if (buffer.dtype() == torch::kFloat32)
-        addDataToHDF5(file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
+        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
       else if (buffer.dtype() == torch::kFloat64)
-        addDataToHDF5(file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
+        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
       else
         mooseError("Unsupported output type");
 
       data.append_attribute("Format") = "HDF";
-      const auto h5path = h5name + ":/" + setname;
+      const auto h5path = _hdf5_name + ":/" + setname;
       data.append_child(pugi::node_pcdata).set_value(h5path.c_str());
     }
     else
@@ -234,13 +249,14 @@ XDMFTensorOutput::output()
     }
   }
 
-#ifdef LIBMESH_HAVE_HDF5
-  if (_enable_hdf5)
-    H5Fclose(file_id);
-#endif
-
   // write XDMF file
   _doc.save_file((_file_base + ".xmf").c_str());
+
+#ifdef LIBMESH_HAVE_HDF5
+  // flush hdf5 file contents to disk
+  if (_enable_hdf5)
+    H5Fflush(_hdf5_file_id, H5F_SCOPE_GLOBAL);
+#endif
 
   // increment frame
   _frame++;

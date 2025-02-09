@@ -65,7 +65,7 @@ TensorProblem::init()
   unsigned int n_threads = libMesh::n_threads();
   if (n_threads != 1)
   {
-    mooseInfo("Setting libTorch to use ", n_threads, " on the CPU.");
+    mooseInfo("Setting libTorch to use ", n_threads, " threads on the CPU.");
     torch::set_num_threads(n_threads);
   }
 
