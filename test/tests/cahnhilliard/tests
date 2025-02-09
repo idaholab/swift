@@ -45,4 +45,15 @@
     requirement = 'The system shall be able to output a tensor in XDMF format using a HDF5 data file'
     design = 'XDMFTensorOutput.md'
   []
+
+  [xdmf_output_hdf5_threading_error]
+    type = RunException
+    input = cahnhilliard.i
+    cli_args = 'TensorOutputs/active="xdmf xdmf2"'
+    expect_err = 'Using an hdf5 library that is not threadsafe and multiple XDMF output objects'
+    issues = '#12'
+    requirement = 'The system shall throw an error if multiple XDMF outputs are active and the hdf5 library is not threadsave'
+    design = 'XDMFTensorOutput.md'
+    # this should have a corresponding capability check '!hdf5_thread_safe'
+  []
 []
