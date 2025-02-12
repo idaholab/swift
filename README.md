@@ -1,5 +1,7 @@
 # Swift
 
+[![Build status](https://civet.inl.gov/idaholab/swift/main/branch_status.svg)](https://civet.inl.gov/repo/idaholab/swift/)
+
 ![Swift Logo](https://github.com/idaholab/swift/blob/main/doc/content/swift.png?raw=true)
 
 **Swift** is a device independent Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org). Swift supports[^1] CPU, CUDA, and MPS[^2] with automatic detection of supported device precision.
