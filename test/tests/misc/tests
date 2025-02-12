@@ -1,0 +1,10 @@
+[Tests]
+  [shiftedfunction]
+    type = CSVDiff
+    input = shiftedfunction.i
+    csvdiff = shiftedfunction_out.csv
+    requirement = 'The system shall be able to evaluate a function shifted in space and time'
+    design = ShiftedFunction.md
+    issues = '#6'
+  []
+[]

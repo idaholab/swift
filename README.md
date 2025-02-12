@@ -1,4 +1,4 @@
-# Swift
+# Swift [<img align="right" src="https://civet.inl.gov/idaholab/swift/main/branch_status.svg/">](https://civet.inl.gov/repo/idaholab/swift/)</span>
 
 ![Swift Logo](https://github.com/idaholab/swift/blob/main/doc/content/swift.png?raw=true)
 
