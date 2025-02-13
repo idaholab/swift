@@ -60,3 +60,27 @@ TensorBufferBase::TensorBufferBase(const InputParameters & parameters)
   if (!getParam<std::vector<AuxVariableName>>("map_from_aux_variable").empty())
     paramError("functionality is not yet implemented.");
 }
+
+TensorBufferBase &
+TensorBufferBase::operator=(const torch::Tensor & rhs)
+{
+  if (this != &rhs)
+  {
+    torch::Tensor::operator=(rhs);
+    expand();
+  }
+  return *this;
+}
+
+void
+TensorBufferBase::expand()
+{
+  try
+  {
+    this->expand(_shape);
+  }
+  catch (const std::exception & e)
+  {
+    mooseError("Assignment of incompatible data to tensor '", MooseBase::name(), "'");
+  }
+}

@@ -23,8 +23,14 @@ public:
 
   TensorBufferBase(const InputParameters & parameters);
 
+  /// assignment operator
+  TensorBufferBase& operator=(const torch::Tensor& rhs);
+
 protected:
   const bool _reciprocal;
+
+  /// expand the tensor to full dimensions
+  void expand();
 
   const torch::IntArrayRef _domain_shape;
 
@@ -35,4 +41,6 @@ protected:
   torch::IntArrayRef _shape;
 
   const torch::TensorOptions _options;
+
+  using torch::Tensor::expand;
 };

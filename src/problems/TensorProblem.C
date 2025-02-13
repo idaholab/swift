@@ -372,6 +372,75 @@ TensorProblem::mapBuffersToAux()
   getAuxiliarySystem().sys().update();
 }
 
+template <typename FLOAT_TYPE>
+void
+TensorProblem::mapAuxToBuffers()
+{
+  // nothing to map?
+  if (_var_to_buffer.empty())
+    return;
+
+  TIME_SECTION("update", 3, "Mapping Variables to Tensor buffers", true);
+
+  const auto * current_solution = &getAuxiliarySystem().solution();
+  const auto * solution_vector = dynamic_cast<const PetscVector<Number> *>(current_solution);
+  if (!solution_vector)
+    mooseError(
+        "Cannot map directly to the solution vector because NumericVector is not a PetscVector!");
+
+  const auto value = solution_vector->get_array_read();
+
+  // const monomial variables
+  for (const auto & [buffer_name, tuple] : _var_to_buffer)
+  {
+    const auto & [var, dofs, is_nodal] = tuple;
+    libmesh_ignore(var);
+    const auto buffer = _tensor_cpu_buffer[buffer_name];
+    std::size_t idx = 0;
+    switch (_dim)
+    {
+      {
+        case 1:
+          auto b = buffer.template accessor<FLOAT_TYPE, 1>();
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]] = value[dofs[idx++]];
+          break;
+      }
+      case 2:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 2>();
+        for (const auto j : make_range(_n[1]))
+        {
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]][j % _n[1]] = value[dofs[idx++]];
+          if (is_nodal)
+            idx++;
+        }
+        break;
+      }
+      case 3:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 3>();
+        for (const auto k : make_range(_n[2]))
+        {
+          for (const auto j : make_range(_n[1]))
+          {
+            for (const auto i : make_range(_n[0]))
+              b[i % _n[0]][j % _n[1]][k % _n[2]] = value[dofs[idx++]];
+            if (is_nodal)
+              idx++;
+          }
+          if (is_nodal)
+            idx += _n[0] + 1;
+        }
+        break;
+      }
+      default:
+        mooseError("Unsupported dimension");
+    }
+  }
+}
+
 void
 TensorProblem::advanceState()
 {
