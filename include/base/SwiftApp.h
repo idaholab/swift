@@ -17,6 +17,7 @@ std::string torchDevice();
 }
 
 class DomainAction;
+class SwiftInit;
 
 class SwiftApp : public MooseApp
 {
@@ -31,4 +32,6 @@ public:
 
   /// called from the ComputeDevice action
   void setTorchDevice(std::string device, const MooseTensor::Key<DomainAction> &);
+  /// called from the unit test app
+  static void setTorchDeviceStatic(std::string device, const MooseTensor::Key<SwiftInit> &);
 };
