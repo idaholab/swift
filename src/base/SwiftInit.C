@@ -6,27 +6,13 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "SwiftApp.h"
-#include "gtest/gtest.h"
-
-// Moose includes
-#include "Moose.h"
 #include "SwiftInit.h"
-#include "AppFactory.h"
+#include "SwiftApp.h"
 
-#include <fstream>
-#include <string>
-
-GTEST_API_ int
-main(int argc, char ** argv)
+SwiftInit::SwiftInit(int argc, char * argv[], MPI_Comm COMM_WORLD_IN)
+  : MooseInit(argc, argv, COMM_WORLD_IN)
 {
-  // gtest removes (only) its args from argc and argv - so this  must be before moose init
-  testing::InitGoogleTest(&argc, argv);
-
-  SwiftInit init(argc, argv);
-  registerApp(SwiftApp);
-  Moose::_throw_on_error = true;
-  Moose::_throw_on_warning = true;
-
-  return RUN_ALL_TESTS();
+  for (const auto i : make_range(argc - 1))
+    if (std::string(argv[i]) == "--libtorch-device")
+      SwiftApp::setTorchDeviceStatic(argv[i + 1], {});
 }
