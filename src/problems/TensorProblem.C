@@ -452,10 +452,11 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters 
   _tensor_buffer.try_emplace(buffer_name);
 
   // store variable mapping
-  if (parameters.isParamValid("map_to_aux_variable"))
+  const auto & var_names = parameters.get<std::vector<AuxVariableName>>("map_to_aux_variable");
+  if (!var_names.empty())
   {
     const auto & aux = getAuxiliarySystem();
-    const auto & var_name = parameters.get<AuxVariableName>("map_to_aux_variable");
+    const auto var_name = var_names[0];
     if (!aux.hasVariable(var_name))
       mooseError("AuxVariable '", var_name, "' does not exist in the system.");
 
