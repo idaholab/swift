@@ -151,7 +151,7 @@ protected:
   const unsigned int & _dim;
 
   /// grid spacing
-  const std::array<Real, 3> & _grid_spacing;
+  const RealVectorValue & _grid_spacing;
 
   /// global grid size
   const std::array<int64_t, 3> & _n;
