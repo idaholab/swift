@@ -38,7 +38,7 @@ TensorIntegralChangePostprocessor::execute()
     _integral = torch::abs(_u).sum().cpu().item<double>();
 
   for (const auto dim : make_range(_domain.getDim()))
-    _integral *= _domain.getGridSpacing()[dim];
+    _integral *= _domain.getGridSpacing()(dim);
   }
 }
 

@@ -265,27 +265,11 @@ TensorProblem::updateDOFMap()
       mooseError("Unsupported variable type for mapping");
     auto var_num = var->number();
 
-    const static Point shift(_grid_spacing[0] / 2.0 - min_global[0],
-                             _grid_spacing[1] / 2.0 - min_global[1],
-                             _grid_spacing[2] / 2.0 - min_global[2]);
     auto compute_iteration_index = [this](Point p, long int n0, long int n1)
     {
-      switch (_dim)
-      {
-        case 1:
-          return static_cast<long int>(p(0) / _grid_spacing[0]);
-
-        case 2:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0;
-
-        case 3:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0 +
-                 static_cast<long int>(p(2) / _grid_spacing[2]) * n0 * n1;
-        default:
-          mooseError("Unsupported dimension");
-      }
+      return static_cast<long int>(p(0) / _grid_spacing(0)) +
+             (_dim > 1 ? static_cast<long int>(p(1) / _grid_spacing(1)) * n0 : 0) +
+             (_dim > 2 ? static_cast<long int>(p(2) / _grid_spacing(2)) * n0 * n1 : 0);
     };
 
     if (is_nodal)
@@ -293,23 +277,10 @@ TensorProblem::updateDOFMap()
       long int n0 = _n[0] + 1;
       long int n1 = _n[1] + 1;
       long int n2 = _n[2] + 1;
-
-      switch (_dim)
-      {
-        case 1:
-          dofs.resize(n0);
-          break;
-        case 2:
-          dofs.resize(n0 * n1);
-          break;
-        case 3:
-          dofs.resize(n0 * n1 * n2);
-          break;
-        default:
-          mooseError("unsupported dimension");
-      }
+      dofs.resize(n0 * (_dim > 1 ? n1 : 1) * (_dim > 2 ? n2 : 1));
 
       // loop over nodes
+      const static Point shift = _grid_spacing / 2.0 - min_global;
       for (const auto & node : _mesh.getMesh().node_ptr_range())
       {
         const auto dof_index = node->dof_number(sys_num, var_num, 0);
@@ -323,8 +294,9 @@ TensorProblem::updateDOFMap()
       long int n1 = _n[1];
       long int n2 = _n[2];
       dofs.resize(n0 * n1 * n2);
-      const static Point shift(-min_global[0], -min_global[0], -min_global[0]);
+
       // loop over elements
+      const static Point shift = -min_global;
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);

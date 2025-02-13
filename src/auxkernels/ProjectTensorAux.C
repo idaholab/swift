@@ -38,23 +38,23 @@ ProjectTensorAux::computeValue()
 {
   auto getElement = [this]()
   {
-    const Point shift(_grid_spacing[0] / 2.0, _grid_spacing[1] / 2.0, _grid_spacing[2] / 2.0);
+    const Point shift(_grid_spacing(0) / 2.0, _grid_spacing(1) / 2.0, _grid_spacing(2) / 2.0);
     Point p = isNodal() ? (*_current_node + shift) : _current_elem->vertex_average();
 
     using at::indexing::TensorIndex;
     switch (_dim)
     {
       case 1:
-        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0])});
+        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0])});
 
       case 2:
-        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0]),
-                                  TensorIndex(int64_t(p(1) / _grid_spacing[1]) % _n[1])});
+        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0]),
+                                  TensorIndex(int64_t(p(1) / _grid_spacing(1)) % _n[1])});
 
       case 3:
-        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing[0]) % _n[0]),
-                                  TensorIndex(int64_t(p(1) / _grid_spacing[1]) % _n[1]),
-                                  TensorIndex(int64_t(p(2) / _grid_spacing[2]) % _n[2])});
+        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0]),
+                                  TensorIndex(int64_t(p(1) / _grid_spacing(1)) % _n[1]),
+                                  TensorIndex(int64_t(p(2) / _grid_spacing(2)) % _n[2])});
     }
 
     mooseError("Internal error (invalid dimension)");
