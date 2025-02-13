@@ -11,12 +11,14 @@
 #include "TensorBufferBase.h"
 
 /**
- * Tensor wrapper arbitrary tensor value dimensions
+ * Symmetric rank two valued Tensor
  */
-class ScalarTensorBuffer : public TensorBufferBase
+class SR2TensorBuffer : public TensorBufferBase
 {
 public:
   static InputParameters validParams();
 
-  ScalarTensorBuffer(const InputParameters & parameters);
+  SR2TensorBuffer(const InputParameters & parameters);
+
+  // NEML2::Scalar getNEML2() { return NEML2::Scalar(*this, _domain_shape, _value_shape); }
 };

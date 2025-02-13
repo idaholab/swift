@@ -6,21 +6,21 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "ScalarTensorBuffer.h"
+#include "SR2TensorBuffer.h"
 
-registerMooseObject("SwiftApp", ScalarTensorBuffer);
+registerMooseObject("SwiftApp", SR2TensorBuffer);
 
 InputParameters
-ScalarTensorBuffer::validParams()
+SR2TensorBuffer::validParams()
 {
   InputParameters params = TensorBufferBase::validParams();
-  params.addClassDescription("Scalar valued TensorBuffer object.");
-  params.set<std::vector<int64_t>>("value_shape") = {};
+  params.addClassDescription("Symmetric rank two tensor valued TensorBuffer object.");
+  params.set<std::vector<int64_t>>("value_shape") = {6};
   params.suppressParameter<std::vector<int64_t>>("value_shape");
   return params;
 }
 
-ScalarTensorBuffer::ScalarTensorBuffer(const InputParameters & parameters)
+SR2TensorBuffer::SR2TensorBuffer(const InputParameters & parameters)
   : TensorBufferBase(parameters)
 {
 }
