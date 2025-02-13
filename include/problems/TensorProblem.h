@@ -43,7 +43,7 @@ public:
   void execute(const ExecFlagType & exec_type) override;
 
   // move tensors in time
-  void advanceState() override;
+  void advanceSubState();
 
   // recompute quantities on grid size change
   virtual void gridChanged();

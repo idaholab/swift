@@ -37,6 +37,11 @@ SemiImplicitSolver::computeBuffer()
   torch::Tensor ubar;
   _sub_dt = _dt / _substeps;
 
+  // clone for rollback
+  std::vector<torch::Tensor> _rollback;
+  for (const auto & var : _variables)
+    _rollback.push_back(var._buffer.clone());
+
   // subcycles
   for (const auto substep : make_range(_substeps))
   {
@@ -72,7 +77,7 @@ SemiImplicitSolver::computeBuffer()
     }
 
     if (substep < _substeps - 1)
-      _tensor_problem.advanceState();
+      _tensor_problem.advanceSubState();
 
     // increment substep time
     _sub_time += _sub_dt;

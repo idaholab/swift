@@ -148,38 +148,8 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     // update time
     _sub_time = FEProblem::timeOld();
 
-    // legacy time integrator system
-    if (!_solver)
-    {
-      // if the time step changed and the current time integrator does not support variable time
-      // step size, we clear the histories
-      if (dt() != dtOld())
-        for (auto & [name, max_states] : _old_tensor_buffer)
-          max_states.second.clear();
-
-      // update substepping dt
-      _sub_dt = FEProblem::dt() / _substeps;
-
-      for (unsigned substep = 0; substep < _substeps; ++substep)
-      {
-        // run computes on begin
-        for (auto & cmp : _computes)
-          cmp->computeBuffer();
-
-        // run timeintegrators
-        for (auto & ti : _time_integrators)
-          ti->computeBuffer();
-
-        // advance step (this will not work with solve failures!)
-        if (substep < _substeps - 1)
-          advanceState();
-
-        _sub_time += _sub_dt;
-      }
-    }
-    else
-      // new time integrator
-      _solver->computeBuffer();
+    // call time integrator (TensorSolver)
+    _solver->computeBuffer();
 
     // run postprocessing before output
     for (auto & pp : _pps)
@@ -401,10 +371,8 @@ TensorProblem::mapBuffersToAux()
 }
 
 void
-TensorProblem::advanceState()
+TensorProblem::advanceSubState()
 {
-  FEProblem::advanceState();
-
   if (timeStep() <= 1)
     return;
 
