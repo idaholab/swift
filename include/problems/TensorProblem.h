@@ -60,8 +60,8 @@ public:
                                            const std::string & name,
                                            InputParameters & parameters);
   virtual void addTensorComputeOnDemand(const std::string & compute_name,
-                                           const std::string & name,
-                                           InputParameters & parameters);
+                                        const std::string & name,
+                                        InputParameters & parameters);
 
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                        const std::string & name,
@@ -109,6 +109,9 @@ protected:
   template <typename FLOAT_TYPE>
   void mapBuffersToAux();
 
+  template <typename FLOAT_TYPE>
+  void mapAuxToBuffers();
+
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
@@ -151,7 +154,7 @@ protected:
   const unsigned int & _dim;
 
   /// grid spacing
-  const std::array<Real, 3> & _grid_spacing;
+  const RealVectorValue & _grid_spacing;
 
   /// global grid size
   const std::array<int64_t, 3> & _n;
@@ -182,6 +185,8 @@ protected:
   /// buffers to solution vector indices
   std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
       _buffer_to_var;
+  std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
+      _var_to_buffer;
 
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
@@ -195,10 +200,11 @@ TensorProblem::getSolver() const
 {
   if (_solver)
   {
-    const auto specialized_solver = dynamic_cast<T*>(_solver.get());
+    const auto specialized_solver = dynamic_cast<T *>(_solver.get());
     if (specialized_solver)
       return *specialized_solver;
-    mooseError("No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
+    mooseError(
+        "No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
   }
   mooseError("No TensorSolver has been set up.");
 }

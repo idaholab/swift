@@ -265,27 +265,11 @@ TensorProblem::updateDOFMap()
       mooseError("Unsupported variable type for mapping");
     auto var_num = var->number();
 
-    const static Point shift(_grid_spacing[0] / 2.0 - min_global[0],
-                             _grid_spacing[1] / 2.0 - min_global[1],
-                             _grid_spacing[2] / 2.0 - min_global[2]);
     auto compute_iteration_index = [this](Point p, long int n0, long int n1)
     {
-      switch (_dim)
-      {
-        case 1:
-          return static_cast<long int>(p(0) / _grid_spacing[0]);
-
-        case 2:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0;
-
-        case 3:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0 +
-                 static_cast<long int>(p(2) / _grid_spacing[2]) * n0 * n1;
-        default:
-          mooseError("Unsupported dimension");
-      }
+      return static_cast<long int>(p(0) / _grid_spacing(0)) +
+             (_dim > 1 ? static_cast<long int>(p(1) / _grid_spacing(1)) * n0 : 0) +
+             (_dim > 2 ? static_cast<long int>(p(2) / _grid_spacing(2)) * n0 * n1 : 0);
     };
 
     if (is_nodal)
@@ -293,23 +277,10 @@ TensorProblem::updateDOFMap()
       long int n0 = _n[0] + 1;
       long int n1 = _n[1] + 1;
       long int n2 = _n[2] + 1;
-
-      switch (_dim)
-      {
-        case 1:
-          dofs.resize(n0);
-          break;
-        case 2:
-          dofs.resize(n0 * n1);
-          break;
-        case 3:
-          dofs.resize(n0 * n1 * n2);
-          break;
-        default:
-          mooseError("unsupported dimension");
-      }
+      dofs.resize(n0 * (_dim > 1 ? n1 : 1) * (_dim > 2 ? n2 : 1));
 
       // loop over nodes
+      const static Point shift = _grid_spacing / 2.0 - min_global;
       for (const auto & node : _mesh.getMesh().node_ptr_range())
       {
         const auto dof_index = node->dof_number(sys_num, var_num, 0);
@@ -323,8 +294,9 @@ TensorProblem::updateDOFMap()
       long int n1 = _n[1];
       long int n2 = _n[2];
       dofs.resize(n0 * n1 * n2);
-      const static Point shift(-min_global[0], -min_global[0], -min_global[0]);
+
       // loop over elements
+      const static Point shift = -min_global;
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);
@@ -400,6 +372,75 @@ TensorProblem::mapBuffersToAux()
   getAuxiliarySystem().sys().update();
 }
 
+template <typename FLOAT_TYPE>
+void
+TensorProblem::mapAuxToBuffers()
+{
+  // nothing to map?
+  if (_var_to_buffer.empty())
+    return;
+
+  TIME_SECTION("update", 3, "Mapping Variables to Tensor buffers", true);
+
+  const auto * current_solution = &getAuxiliarySystem().solution();
+  const auto * solution_vector = dynamic_cast<const PetscVector<Number> *>(current_solution);
+  if (!solution_vector)
+    mooseError(
+        "Cannot map directly to the solution vector because NumericVector is not a PetscVector!");
+
+  const auto value = solution_vector->get_array_read();
+
+  // const monomial variables
+  for (const auto & [buffer_name, tuple] : _var_to_buffer)
+  {
+    const auto & [var, dofs, is_nodal] = tuple;
+    libmesh_ignore(var);
+    const auto buffer = _tensor_cpu_buffer[buffer_name];
+    std::size_t idx = 0;
+    switch (_dim)
+    {
+      {
+        case 1:
+          auto b = buffer.template accessor<FLOAT_TYPE, 1>();
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]] = value[dofs[idx++]];
+          break;
+      }
+      case 2:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 2>();
+        for (const auto j : make_range(_n[1]))
+        {
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]][j % _n[1]] = value[dofs[idx++]];
+          if (is_nodal)
+            idx++;
+        }
+        break;
+      }
+      case 3:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 3>();
+        for (const auto k : make_range(_n[2]))
+        {
+          for (const auto j : make_range(_n[1]))
+          {
+            for (const auto i : make_range(_n[0]))
+              b[i % _n[0]][j % _n[1]][k % _n[2]] = value[dofs[idx++]];
+            if (is_nodal)
+              idx++;
+          }
+          if (is_nodal)
+            idx += _n[0] + 1;
+        }
+        break;
+      }
+      default:
+        mooseError("Unsupported dimension");
+    }
+  }
+}
+
 void
 TensorProblem::advanceState()
 {
@@ -452,10 +493,11 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters 
   _tensor_buffer.try_emplace(buffer_name);
 
   // store variable mapping
-  if (parameters.isParamValid("map_to_aux_variable"))
+  const auto & var_names = parameters.get<std::vector<AuxVariableName>>("map_to_aux_variable");
+  if (!var_names.empty())
   {
     const auto & aux = getAuxiliarySystem();
-    const auto & var_name = parameters.get<AuxVariableName>("map_to_aux_variable");
+    const auto var_name = var_names[0];
     if (!aux.hasVariable(var_name))
       mooseError("AuxVariable '", var_name, "' does not exist in the system.");
 

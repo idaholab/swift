@@ -156,22 +156,22 @@ DomainAction::gridChanged()
   for (const unsigned int dim : {0, 1, 2})
   {
     // error check
-    if (_max_global[dim] <= _min_global[dim])
+    if (_max_global(dim) <= _min_global(dim))
       mooseError("Max coordinate must be larger than the min coordinate in every dimension");
 
     // get grid geometry
-    _grid_spacing[dim] = (_max_global[dim] - _min_global[dim]) / _n_global[dim];
+    _grid_spacing(dim) = (_max_global(dim) - _min_global(dim)) / _n_global[dim];
 
     // real space axis
     if (dim < _dim)
     {
       _global_axis[dim] =
-          align(torch::linspace(c10::Scalar(_min_global[dim] + _grid_spacing[dim] / 2.0),
-                                c10::Scalar(_max_global[dim] - _grid_spacing[dim] / 2.0),
+          align(torch::linspace(c10::Scalar(_min_global(dim) + _grid_spacing(dim) / 2.0),
+                                c10::Scalar(_max_global(dim) - _grid_spacing(dim) / 2.0),
                                 _n_global[dim],
                                 options),
                 dim);
-      _volume_global *= _max_global[dim] - _min_global[dim];
+      _volume_global *= _max_global(dim) - _min_global(dim);
     }
     else
       _global_axis[dim] = torch::tensor({0.0}, options);
@@ -183,15 +183,15 @@ DomainAction::gridChanged()
     if (dim < _dim)
     {
       const auto freq = (dim == _dim - 1)
-                            ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing[dim], options)
-                            : torch::fft::fftfreq(_n_global[dim], _grid_spacing[dim], options);
+                            ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing(dim), options)
+                            : torch::fft::fftfreq(_n_global[dim], _grid_spacing(dim), options);
       _global_reciprocal_axis[dim] = align(freq * 2.0 * libMesh::pi, dim);
     }
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
 
     // compute max frequency along each axis
-    _max_k[dim] = libMesh::pi / _grid_spacing[dim];
+    _max_k(dim) = libMesh::pi / _grid_spacing(dim);
 
     // get global reciprocal axis size
     _n_reciprocal_global[dim] = _global_reciprocal_axis[dim].sizes()[dim];
@@ -342,12 +342,12 @@ DomainAction::act()
     auto params = _factory.getValidParams("DomainMeshGenerator");
 
     params.set<MooseEnum>("dim") = _dim;
-    params.set<Real>("xmax") = _max_global[0];
-    params.set<Real>("ymax") = _max_global[1];
-    params.set<Real>("zmax") = _max_global[2];
-    params.set<Real>("xmin") = _min_global[0];
-    params.set<Real>("ymin") = _min_global[1];
-    params.set<Real>("zmin") = _min_global[2];
+    params.set<Real>("xmax") = _max_global(0);
+    params.set<Real>("ymax") = _max_global(1);
+    params.set<Real>("zmax") = _max_global(2);
+    params.set<Real>("xmin") = _min_global(0);
+    params.set<Real>("ymin") = _min_global(1);
+    params.set<Real>("zmin") = _min_global(2);
 
     if (_mesh_mode == MeshMode::SWIFT_DOMAIN)
     {
@@ -407,9 +407,9 @@ DomainAction::fftSerial(const torch::Tensor & t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::rfft(t);
+      return torch::fft::rfft(t, c10::nullopt, 0);
     case 2:
-      return torch::fft::rfft2(t);
+      return torch::fft::rfft2(t, c10::nullopt, {0, 1});
     case 3:
       return torch::fft::rfftn(t, c10::nullopt, {0, 1, 2});
     default:
@@ -489,9 +489,9 @@ DomainAction::ifft(const torch::Tensor & t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::irfft(t, getShape()[0]);
+      return torch::fft::irfft(t, getShape()[0], 0);
     case 2:
-      return torch::fft::irfft2(t, getShape());
+      return torch::fft::irfft2(t, getShape(), {0, 1});
     case 3:
       return torch::fft::irfftn(t, getShape(), {0, 1, 2});
     default:

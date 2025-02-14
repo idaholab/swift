@@ -6,17 +6,21 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#pragma once
+#include "VectorTensorBuffer.h"
 
-#include "TensorBufferBase.h"
+registerMooseObject("SwiftApp", VectorTensorBuffer);
 
-/**
- * Tensor wrapper arbitrary tensor value dimensions
- */
-class ScalarTensorBuffer : public TensorBufferBase
+InputParameters
+VectorTensorBuffer::validParams()
 {
-public:
-  static InputParameters validParams();
+  InputParameters params = TensorBufferBase::validParams();
+  params.addClassDescription("Scalar valued TensorBuffer object.");
+  params.set<std::vector<int64_t>>("value_shape") = {3};
+  params.suppressParameter<std::vector<int64_t>>("value_shape");
+  return params;
+}
 
-  ScalarTensorBuffer(const InputParameters & parameters);
-};
+VectorTensorBuffer::VectorTensorBuffer(const InputParameters & parameters)
+  : TensorBufferBase(parameters)
+{
+}

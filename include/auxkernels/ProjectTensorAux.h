@@ -32,5 +32,5 @@ protected:
 
   const unsigned int & _dim;
   const std::array<int64_t, 3> & _n;
-  const std::array<Real, 3> & _grid_spacing;
+  const RealVectorValue & _grid_spacing;
 };
