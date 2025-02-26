@@ -13,7 +13,7 @@
   ymax = ${fparse pi*8}
 
   # run on a CUDA device (adjust this to `cpu` if not available)
-  device_names = 'cuda'
+  #device_names = 'cuda'
 
   # automatically create a matching mesh
   mesh_mode = DOMAIN
@@ -62,6 +62,11 @@
       type = ReciprocalLaplacianSquareFactor
       factor = -0.001 # kappa
       buffer = kappabarbar
+    []
+    [mu_init]
+      type = ConstantTensor
+      buffer = mu
+      real = 0
     []
   []
 
