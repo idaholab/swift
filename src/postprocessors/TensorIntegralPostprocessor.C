@@ -30,8 +30,9 @@ TensorIntegralPostprocessor::execute()
 {
   _integral = _u.sum().cpu().item<double>();
 
+  const auto s = _domain.getDomainMax() - _domain.getDomainMin();
   for (const auto dim : make_range(_domain.getDim()))
-    _integral *= _domain.getDomainMax()[dim] - _domain.getDomainMin()[dim];
+    _integral *= s(dim);
 
   _integral /= _u.numel();
 }

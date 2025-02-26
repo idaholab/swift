@@ -11,12 +11,12 @@
 #include "TensorBufferBase.h"
 
 /**
- * Tensor wrapper arbitrary tensor value dimensions
+ * Vector valued Tensor
  */
-class ScalarTensorBuffer : public TensorBufferBase
+class VectorTensorBuffer : public TensorBufferBase
 {
 public:
   static InputParameters validParams();
 
-  ScalarTensorBuffer(const InputParameters & parameters);
+  VectorTensorBuffer(const InputParameters & parameters);
 };

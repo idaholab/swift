@@ -102,8 +102,8 @@ XDMFTensorOutput::init()
     _ndata[0].push_back(_domain.getGridSize()[i]);
     _ndata[1].push_back(_domain.getGridSize()[i] + 1);
     _nnode.push_back(_domain.getGridSize()[i] + 1);
-    dgrid.push_back(_domain.getGridSpacing()[i]);
-    origin.push_back(_domain.getDomainMin()[i]);
+    dgrid.push_back(_domain.getGridSpacing()(i));
+    origin.push_back(_domain.getDomainMin()(i));
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");
   _data_grid[1] = Moose::stringify(_ndata[1], " ");
