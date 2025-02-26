@@ -57,17 +57,11 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cAdd:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] += s[sp + 1];
-        else
-          s[sp] = s[sp] + s[sp + 1];
+        s[sp] = s[sp] + s[sp + 1];
         break;
       case cSub:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] -= s[sp + 1];
-        else
-          s[sp] = s[sp] - s[sp + 1];
+        s[sp] = s[sp] - s[sp + 1];
         break;
       case cRSub:
         --sp;
@@ -75,17 +69,11 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cMul:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] *= s[sp + 1];
-        else
-          s[sp] = s[sp] * s[sp + 1];
+        s[sp] = s[sp] * s[sp + 1];
         break;
       case cDiv:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] /= s[sp + 1];
-        else
-          s[sp] = s[sp] / s[sp + 1];
+        s[sp] = s[sp] / s[sp + 1];
         break;
       case cMod:
         --sp;
