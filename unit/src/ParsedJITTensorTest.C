@@ -7,41 +7,49 @@
 /**********************************************************************/
 
 #include "ParsedJITTensor.h"
-#include "TensorBuffer.h"
 #include "gtest/gtest.h"
 
+#include <ATen/ops/linspace.h>
 #include <string>
 #include <vector>
 
-#if 0
 TEST(ParsedJITTensorTest, Parse)
 {
-  ParsedJITTensor F;
-  std::string variables = "a, b, c";
+  const auto x = torch::unsqueeze(torch::linspace(0, 2, 10), 1);
+  const auto y = torch::unsqueeze(torch::linspace(0, 3, 15), 0);
 
-  auto A = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
-  auto B = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
-  auto C = MooseTensor::createBuffer({5, 5}, {6.0, 6.0});
+  auto eval = [x, y](const std::string & expression)
+  {
+    ParsedJITTensor fp;
+    std::string variables = "x, y";
+    if (fp.Parse(expression, variables) >= 0)
+      throw std::runtime_error("Invalid function: " + expression + "   " + fp.ErrorMsg());
 
-  auto & a = A.data();
-  auto & b = B.data();
-  auto & c = C.data();
+    // if (fp.AutoDiff(d) != -1)
+    //   FAIL() << "Failed to take derivative w.r.t. " << d << " of " << expression << '\n';
 
-  auto [x, y] = A.getAxis();
+    std::vector<const torch::Tensor *> params{&x, &y};
 
-  // function
-  a = x;
-  b = y;
-  c = 2.0 * x * y;
+    fp.setupTensors();
 
-  F.Parse("a * b + c", variables);
-  // F.Optimize();
-  F.setupTensors();
+    const auto result_no_opt = fp.Eval(params);
 
-  std::vector<const torch::Tensor *> params{&a, &b, &c};
-  auto gold = a * b + c;
+    fp.Optimize();
+    fp.setupTensors();
 
-  // compare parsed result tensor to compiled expression
-  EXPECT_NEAR((F.Eval(params) - gold).abs().max().item<double>(), 0.0, 1e-12);
+    const auto result_opt = fp.Eval(params);
+
+    return std::make_pair(result_no_opt, result_opt);
+  };
+
+  auto check = [](auto a, auto b, auto c)
+  {
+    EXPECT_NEAR((a - b).abs().max().template item<double>(), 0.0, 1e-12);
+    EXPECT_NEAR((a - c).abs().max().template item<double>(), 0.0, 1e-12);
+  };
+
+  { // check cHypot opcode
+    const auto [a, b] = eval("sqrt(x^2+y^2)");
+    check(a, b, torch::sqrt(x * x + y * y));
+  }
 }
-#endif
