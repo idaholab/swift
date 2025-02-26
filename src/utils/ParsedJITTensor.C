@@ -399,11 +399,11 @@ ParsedJITTensor::setupTensors()
         break;
       case cMax:
         --sp;
-        s[sp] = _graph->insert(aten::max, {s[sp], s[sp + 1]});
+        s[sp] = _graph->insert(aten::maximum, {s[sp], s[sp + 1]});
         break;
       case cMin:
         --sp;
-        s[sp] = _graph->insert(aten::min, {s[sp], s[sp + 1]});
+        s[sp] = _graph->insert(aten::minimum, {s[sp], s[sp + 1]});
         break;
 
       case cInt:
@@ -449,11 +449,30 @@ ParsedJITTensor::setupTensors()
 
       case cHypot:
         --sp;
-        s[sp] =
-            _graph->insert(aten::sqrt,
-                           {_graph->insert(aten::add,
-                                           {_graph->insert(aten::mul, {s[sp], s[sp]}),
-                                            _graph->insert(aten::mul, {s[sp + 1], s[sp + 1]})})});
+        s[sp] = _graph->insert(aten::hypot, {s[sp], s[sp + 1]});
+        break;
+
+      case cAcos:
+        s[sp] = _graph->insert(aten::acos, {s[sp]});
+        break;
+      case cAcosh:
+        s[sp] = _graph->insert(aten::acosh, {s[sp]});
+        break;
+      case cAsin:
+        s[sp] = _graph->insert(aten::asin, {s[sp]});
+        break;
+      case cAsinh:
+        s[sp] = _graph->insert(aten::asinh, {s[sp]});
+        break;
+      case cAtan:
+        s[sp] = _graph->insert(aten::atan, {s[sp]});
+        break;
+      case cAtan2:
+        --sp;
+        s[sp] = _graph->insert(aten::atan2, {s[sp], s[sp + 1]});
+        break;
+      case cAtanh:
+        s[sp] = _graph->insert(aten::atanh, {s[sp]});
         break;
 
       case cFetch:
