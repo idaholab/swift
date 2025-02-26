@@ -447,6 +447,15 @@ ParsedJITTensor::setupTensors()
         s[sp] = _graph->insert(aten::pow, {s[sp], const_one_third});
         break;
 
+      case cHypot:
+        --sp;
+        s[sp] =
+            _graph->insert(aten::sqrt,
+                           {_graph->insert(aten::add,
+                                           {_graph->insert(aten::mul, {s[sp], s[sp]}),
+                                            _graph->insert(aten::mul, {s[sp + 1], s[sp + 1]})})});
+        break;
+
       case cFetch:
         ++sp;
         s[sp] = s[ByteCode[++i]];

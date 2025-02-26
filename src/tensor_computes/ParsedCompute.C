@@ -155,8 +155,6 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     const auto variables = MooseUtils::join(variables_vec, ",");
 
     // parse
-    fp.Parse(expression, variables);
-
     if (fp.Parse(expression, variables) >= 0)
       paramError("expression", "Invalid function: ", fp.ErrorMsg());
 
