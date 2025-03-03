@@ -16,7 +16,7 @@
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class UniformTensorMesh;
 class TensorOperatorBase;
