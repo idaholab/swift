@@ -11,7 +11,7 @@
 #include "MooseObject.h"
 #include "SwiftTypes.h"
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class TensorProblem;
 class DomainAction;

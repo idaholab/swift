@@ -9,7 +9,7 @@
 #pragma once
 
 #include "MooseObject.h"
-#include "torch/torch.h"
+#include <torch/torch.h>
 #include <thread>
 
 class TensorProblem;

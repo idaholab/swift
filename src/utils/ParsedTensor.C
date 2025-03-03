@@ -145,7 +145,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cHypot:
         --sp;
-        s[sp] = sqrt(s[sp] * s[sp] + s[sp + 1] * s[sp + 1]);
+        s[sp] = torch::hypot(s[sp], s[sp + 1]);
         break;
 
       case cAbs:
@@ -332,6 +332,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
       case cIf:
       case cAbsIf:
       {
+        throw std::domain_error("Conditionals not implemented yet");
         // unsigned long ip = ByteCode[++i] + 1;
 
         // if (op == cIf)

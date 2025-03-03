@@ -13,7 +13,7 @@
 #include <string>
 #include <array>
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 /**
  * This class adds an TensorBuffer object.
