@@ -12,10 +12,12 @@
 #include "DomainInterface.h"
 #include "SwiftTypes.h"
 #include "SwiftUtils.h"
+#include "TensorBuffer.h"
 
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
 
+#include <memory>
 #include <torch/torch.h>
 
 class UniformTensorMesh;
@@ -48,7 +50,9 @@ public:
   // recompute quantities on grid size change
   virtual void gridChanged();
 
-  virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
+  virtual void addTensorBuffer(const std::string & buffer_type,
+                               const std::string & buffer_name,
+                               InputParameters & parameters);
 
   virtual void addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
@@ -70,12 +74,17 @@ public:
                                const std::string & name,
                                InputParameters & parameters);
 
-  torch::Tensor & getBuffer(const std::string & buffer_name);
-  const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
-                                                  unsigned int max_states);
+  /// returns teh current state of the tensor
+  template <typename T = torch::Tensor>
+  T & getBuffer(const std::string & buffer_name);
+
+  /// return the old states of the tensor
+  template <typename T = torch::Tensor>
+  const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
-  const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
+  template <typename T = torch::Tensor>
+  const T & getCPUBuffer(const std::string & buffer_name);
 
   TensorOperatorBase & getOnDemandCompute(const std::string & name);
 
@@ -123,6 +132,10 @@ protected:
   /// perform output tasks
   void executeTensorOutputs(const ExecFlagType & exec_type);
 
+  /// helper to get the TensorBuffer wrapper object that holds the actual tensor data
+  template <typename T = torch::Tensor>
+  TensorBuffer<T> & getBufferHelper(const std::string & buffer_name);
+
   /// tensor options
   const torch::TensorOptions _options;
 
@@ -140,13 +153,10 @@ protected:
   Real _output_time;
 
   /// list of TensorBuffers (i.e. tensors)
-  std::map<std::string, torch::Tensor> _tensor_buffer;
+  std::map<std::string, std::shared_ptr<TensorBufferBase>> _tensor_buffer;
 
-  /// list of read-only CPU TensorBuffers (for MOOSE objects and outputs)
-  std::map<std::string, torch::Tensor> _tensor_cpu_buffer;
-
-  /// old buffers (stores max number of states, requested, and states)
-  std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_tensor_buffer;
+  /// set of tensors that need to be copied to the CPU
+  std::set<std::string> _cpu_tensor_buffers;
 
   /// old timesteps
   std::vector<Real> _old_dt;
@@ -207,4 +217,48 @@ TensorProblem::getSolver() const
         "No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
   }
   mooseError("No TensorSolver has been set up.");
+}
+
+template <typename T>
+TensorBuffer<T> &
+TensorProblem::getBufferHelper(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+  if (it == _tensor_buffer.end())
+    mooseError("TensorBuffer '", buffer_name, "' does not exist in the system.");
+  auto tensor_buffer = dynamic_cast<TensorBuffer<T> *>(it->second.get());
+  if (!tensor_buffer)
+    mooseError("TensorBuffer '",
+               buffer_name,
+               "' of the requested type '",
+               it->second->type(),
+               "' does not exist in the system.");
+  return *tensor_buffer;
+}
+
+template <typename T>
+T &
+TensorProblem::getBuffer(const std::string & buffer_name)
+{
+  return getBufferHelper<T>(buffer_name)._u;
+}
+
+template <typename T>
+const std::vector<T> &
+TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
+{
+  auto & tensor_buffer = getBufferHelper<T>(buffer_name);
+
+  if (tensor_buffer._max_states < max_states)
+    tensor_buffer._max_states = max_states;
+
+  return tensor_buffer._u_old;
+}
+
+template <typename T>
+const T &
+TensorProblem::getCPUBuffer(const std::string & buffer_name)
+{
+  _cpu_tensor_buffers.insert(buffer_name);
+  return getBufferHelper<T>(buffer_name)._u_cpu;
 }

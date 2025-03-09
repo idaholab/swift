@@ -8,15 +8,27 @@
 
 #pragma once
 
-#include "TensorBufferBase.h"
+#ifdef NEML2_ENABLED
+
+#include "TensorBuffer.h"
+#include "neml2/tensors/Vec.h"
+#include "neml2/tensors/SR2.h"
 
 /**
- * Vector valued Tensor
+ * Tensor wrapper arbitrary tensor value dimensions
  */
-class VectorTensorBuffer : public TensorBufferBase
+template <typename T>
+class NEML2TensorBuffer : public TensorBuffer<T>
 {
 public:
   static InputParameters validParams();
 
-  VectorTensorBuffer(const InputParameters & parameters);
+  NEML2TensorBuffer(const InputParameters & parameters);
+
+  virtual void init();
 };
+
+using VectorTensor = NEML2TensorBuffer<neml2::Vec>;
+using SR2Tensor = NEML2TensorBuffer<neml2::SR2>;
+
+#endif

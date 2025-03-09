@@ -8,17 +8,17 @@
 
 #pragma once
 
-#include "TensorBufferBase.h"
+#include "TensorBuffer.h"
 
 /**
- * Symmetric rank two valued Tensor
+ * Tensor wrapper arbitrary tensor value dimensions
  */
-class SR2TensorBuffer : public TensorBufferBase
+class PlainTensorBuffer : public TensorBuffer<torch::Tensor>
 {
 public:
   static InputParameters validParams();
 
-  SR2TensorBuffer(const InputParameters & parameters);
+  PlainTensorBuffer(const InputParameters & parameters);
 
-  // NEML2::Scalar getNEML2() { return NEML2::Scalar(*this, _domain_shape, _value_shape); }
+  virtual void init();
 };

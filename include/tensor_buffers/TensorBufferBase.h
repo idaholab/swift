@@ -16,7 +16,7 @@
 /**
  * Tensor wrapper arbitrary tensor value dimensions
  */
-class TensorBufferBase : public torch::Tensor, public MooseObject, public DomainInterface
+class TensorBufferBase : public MooseObject, public DomainInterface
 {
 public:
   static InputParameters validParams();
@@ -24,23 +24,27 @@ public:
   TensorBufferBase(const InputParameters & parameters);
 
   /// assignment operator
-  TensorBufferBase& operator=(const torch::Tensor& rhs);
+  TensorBufferBase & operator=(const torch::Tensor & rhs);
+
+  /// advance state, returns the new number of old states
+  virtual std::size_t advanceState() = 0;
+
+  /// clear old states
+  virtual void clearStates() = 0;
+
+  /// create a contiguous CPU copy of the current tensor
+  virtual void makeCPUCopy() = 0;
+
+  /// initialize the tensor
+  virtual void init() = 0;
 
 protected:
-  const bool _reciprocal;
-
   /// expand the tensor to full dimensions
   void expand();
 
+  const bool _reciprocal;
+
   const torch::IntArrayRef _domain_shape;
 
-  const std::vector<int64_t> _value_shape_buffer;
-  const torch::IntArrayRef _value_shape;
-
-  const std::vector<int64_t> _shape_buffer;
-  torch::IntArrayRef _shape;
-
   const torch::TensorOptions _options;
-
-  using torch::Tensor::expand;
 };

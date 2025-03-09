@@ -13,10 +13,25 @@
 /**
  * Tensor wrapper arbitrary tensor value dimensions
  */
-class ScalarTensorBuffer : public TensorBufferBase
+template <typename T>
+class TensorBuffer : public TensorBufferBase
 {
 public:
   static InputParameters validParams();
 
-  ScalarTensorBuffer(const InputParameters & parameters);
+  TensorBuffer(const InputParameters & parameters);
+
+  virtual std::size_t advanceState();
+  virtual void clearStates();
+  virtual void makeCPUCopy();
+
+  /// current state of the tensor
+  T _u;
+
+  /// potential CPU copy of the tensor (if requested)
+  T _u_cpu;
+
+  /// old states of the tensor
+  std::vector<T> _u_old;
+  std::size_t _max_states;
 };

@@ -6,21 +6,24 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "SR2TensorBuffer.h"
+#include "PlainTensorBuffer.h"
 
-registerMooseObject("SwiftApp", SR2TensorBuffer);
+registerMooseObject("SwiftApp", PlainTensorBuffer);
 
 InputParameters
-SR2TensorBuffer::validParams()
+PlainTensorBuffer::validParams()
 {
-  InputParameters params = TensorBufferBase::validParams();
-  params.addClassDescription("Symmetric rank two tensor valued TensorBuffer object.");
-  params.set<std::vector<int64_t>>("value_shape") = {6};
-  params.suppressParameter<std::vector<int64_t>>("value_shape");
+  InputParameters params = TensorBuffer<torch::Tensor>::validParams();
   return params;
 }
 
-SR2TensorBuffer::SR2TensorBuffer(const InputParameters & parameters)
-  : TensorBufferBase(parameters)
+PlainTensorBuffer::PlainTensorBuffer(const InputParameters & parameters)
+  : TensorBuffer<torch::Tensor>(parameters)
 {
+}
+
+void
+PlainTensorBuffer::init()
+{
+  // _u = torch::zeros(_shape, _options);
 }
