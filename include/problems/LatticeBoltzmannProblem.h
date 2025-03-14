@@ -28,25 +28,25 @@ public:
   void init() override;
 
   void execute(const ExecFlagType & exec_type) override;
-  
+
   void advanceState() override;
-  
+
   void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters) override;
 
   void addStencil(const std::string & stencil_name,
-                              const std::string & name,
-                              InputParameters & parameters);
+                  const std::string & name,
+                  InputParameters & parameters);
 
-  const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
+  const LatticeBoltzmannStencilBase & getStencil() const { return *_stencil; }
 
-  const bool & isSlipEnabled() const {return _enable_slip; }
+  const bool & isSlipEnabled() const { return _enable_slip; }
 
-  const torch::Tensor & getSlipRelaxationMatrix() const {return _slip_relaxation_matrix;}
+  const torch::Tensor & getSlipRelaxationMatrix() const { return _slip_relaxation_matrix; }
 
-  const int & getTotalSteps() const {return _t_total;}
+  const int & getTotalSteps() const { return _t_total; }
 
-  const std::array<int64_t, 3> & getGridSize() const {return _n;}
-  
+  const std::array<int64_t, 3> & getGridSize() const { return _n; }
+
   /// sets up slip model
   void enableSlipModel();
 
@@ -57,11 +57,11 @@ public:
   void maskedFillSolids(torch::Tensor & t, const Real & value);
 
   /// prints the tensor buffer, good for debugging
-  void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
+  void
+  printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
 
 protected:
   void updateDOFMap() override;
-  void mapBuffersToAux() override;
 
   /// LBM Mesh object
   LatticeBoltzmannMesh * _lbm_mesh;
@@ -107,7 +107,6 @@ public:
   const Real _cs = 1.0 / sqrt(3.0);
   const Real _cs2 = _cs * _cs;
   const Real _cs4 = _cs2 * _cs2;
-
 };
 
 #endif
