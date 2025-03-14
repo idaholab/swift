@@ -9,7 +9,7 @@
 #pragma once
 
 #include "MooseObject.h"
-#include "torch/torch.h"
+#include <torch/torch.h>
 #include <thread>
 
 class TensorProblem;
@@ -35,6 +35,9 @@ protected:
 
   TensorProblem & _tensor_problem;
   const DomainAction & _domain;
+
+  /// simulation time of the step that is being output
+  const Real & _time;
 
   std::thread _output_thread;
 

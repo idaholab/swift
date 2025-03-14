@@ -44,23 +44,26 @@ SwiftApp::validParams()
   InputParameters params = MooseApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
   params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
-
-  params.addCommandLineParam<std::string>(
-      "torch_device", "--torch_device", "", "Device to use for spectral solves.");
-
   return params;
 }
 
 SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
-  MooseTensor::swift_global_settings._torch_device = parameters.get<std::string>("torch_device");
+  MooseTensor::swift_global_settings._torch_device =
+      std::string(parameters.get<MooseEnum>("libtorch_device"));
 }
 
 SwiftApp::~SwiftApp() {}
 
 void
 SwiftApp::setTorchDevice(std::string device, const MooseTensor::Key<DomainAction> &)
+{
+  MooseTensor::swift_global_settings._torch_device = device;
+}
+
+void
+SwiftApp::setTorchDeviceStatic(std::string device, const MooseTensor::Key<SwiftInit> &)
 {
   MooseTensor::swift_global_settings._torch_device = device;
 }
@@ -106,6 +109,12 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
   addTaskDependency("add_tensor_compute", "add_tensor_buffer");
 
+  // TensorComputes/OnDemand Action
+  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/OnDemand/*", "add_tensor_on_demand");
+  syntax.registerSyntaxType("TensorComputes/OnDemand/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_on_demand", TensorOperator, false);
+  addTaskDependency("add_tensor_on_demand", "add_tensor_buffer");
+
   // TensorComputes/Postprocess Action
   registerSyntaxTask(
       "AddTensorObjectAction", "TensorComputes/Postprocess/*", "add_tensor_postprocessor");
@@ -116,7 +125,8 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
 
   // TensorTimeIntegrator Action
-  registerSyntaxTask("AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
+  registerSyntaxTask(
+      "AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
   syntax.registerSyntaxType("TensorTimeIntegrators/*", "TensorTimeIntegratorName");
   registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
   addTaskDependency("add_tensor_time_integrator", "add_tensor_postprocessor");
@@ -128,8 +138,7 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   addTaskDependency("add_tensor_output", "add_tensor_time_integrator");
 
   // Create TensorSolver
-  registerSyntaxTask(
-      "CreateTensorSolverAction", "TensorSolver", "create_tensor_solver");
+  registerSyntaxTask("CreateTensorSolverAction", "TensorSolver", "create_tensor_solver");
   registerMooseObjectTask("create_tensor_solver", TensorSolver, false);
   addTaskDependency("create_tensor_solver", "add_tensor_output");
 

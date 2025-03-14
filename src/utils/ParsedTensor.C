@@ -57,17 +57,11 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cAdd:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] += s[sp + 1];
-        else
-          s[sp] = s[sp] + s[sp + 1];
+        s[sp] = s[sp] + s[sp + 1];
         break;
       case cSub:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] -= s[sp + 1];
-        else
-          s[sp] = s[sp] - s[sp + 1];
+        s[sp] = s[sp] - s[sp + 1];
         break;
       case cRSub:
         --sp;
@@ -75,17 +69,11 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cMul:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] *= s[sp + 1];
-        else
-          s[sp] = s[sp] * s[sp + 1];
+        s[sp] = s[sp] * s[sp + 1];
         break;
       case cDiv:
         --sp;
-        if (s[sp].sizes() == s[sp + 1].sizes())
-          s[sp] /= s[sp + 1];
-        else
-          s[sp] = s[sp] / s[sp + 1];
+        s[sp] = s[sp] / s[sp + 1];
         break;
       case cMod:
         --sp;
@@ -157,7 +145,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         break;
       case cHypot:
         --sp;
-        s[sp] = sqrt(s[sp] * s[sp] + s[sp + 1] * s[sp + 1]);
+        s[sp] = torch::hypot(s[sp], s[sp + 1]);
         break;
 
       case cAbs:
@@ -344,6 +332,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
       case cIf:
       case cAbsIf:
       {
+        throw std::domain_error("Conditionals not implemented yet");
         // unsigned long ip = ByteCode[++i] + 1;
 
         // if (op == cIf)

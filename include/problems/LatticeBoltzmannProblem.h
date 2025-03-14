@@ -60,8 +60,8 @@ public:
   void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
 
 protected:
-  void updateDOFMap() override;
-  void mapBuffersToAux() override;
+  // void updateDOFMap() override;
+  // void mapBuffersToAux() override;
 
   /// LBM Mesh object
   LatticeBoltzmannMesh * _lbm_mesh;

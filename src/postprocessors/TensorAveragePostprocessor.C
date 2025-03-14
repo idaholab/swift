@@ -14,7 +14,7 @@ InputParameters
 TensorAveragePostprocessor::validParams()
 {
   InputParameters params = TensorPostprocessor::validParams();
-  params.addClassDescription("Compute the average value over a buffer");
+  params.addClassDescription("Compute the average value over a buffer.");
   return params;
 }
 

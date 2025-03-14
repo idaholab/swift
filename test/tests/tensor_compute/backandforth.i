@@ -1,17 +1,12 @@
 [Domain]
-  dim = 2
-  nx = 50
-  ny = 50
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
-
-  device_names = 'cuda'
-
-  mesh_mode = DOMAIN
+  mesh_mode = DUMMY
 []
 
-
 [TensorBuffers]
+  [eta_gold]
+  []
   [eta]
   []
   [eta_bar]
@@ -20,19 +15,34 @@
   []
   [zero]
   []
+  [diff]
+  []
 []
 
 [TensorComputes]
   [Initialize]
+    [eta_gold]
+      type = ParsedCompute
+      buffer = eta_gold
+      expression = 'sin(x)+sin(y)+sin(z)'
+      extra_symbols = true
+    []
     [eta]
-      type = ParsedTensor
+      type = ParsedCompute
       buffer = eta
-      function = 'sin(x)+sin(y)+sin(z)'
+      expression = eta_gold
+      inputs = eta_gold
+    []
+    [eta2]
+      type = ConstantTensor
+      buffer = eta2
+      real = 1
     []
     [zero]
-      type = ConstantTensor
+      type = ConstantReciprocalTensor
       buffer = zero
       real = 0
+      imaginary = 0
     []
   []
 
@@ -48,30 +58,30 @@
       input = eta_bar
     []
   []
-[]
 
-[TensorTimeIntegrators]
-  [eta]
-    type = FFTSemiImplicit
-    buffer = eta
-    reciprocal_buffer = eta_bar
-    linear_reciprocal = zero
-    nonlinear_reciprocal = zero
+  [Postprocess]
+    [diff]
+      type = ParsedCompute
+      buffer = diff
+      expression = 'abs(eta - eta2) + abs(eta - eta_gold)'
+      inputs = 'eta eta2 eta_gold'
+    []
   []
 []
 
-[AuxVariables]
-  [eta]
+[Postprocessors]
+  [norm]
+    type = TensorIntegralPostprocessor
+    buffer = diff
   []
 []
 
-[AuxKernels]
-  [eta]
-    type = ProjectTensorAux
-    buffer = eta
-    variable = eta
-    execute_on = TIMESTEP_END
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  buffer = eta
+  reciprocal_buffer = eta_bar
+  linear_reciprocal = zero
+  nonlinear_reciprocal = zero
 []
 
 [Problem]
@@ -84,5 +94,5 @@
 []
 
 [Outputs]
-  exodus = true
+  csv = true
 []

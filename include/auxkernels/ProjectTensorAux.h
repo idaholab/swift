@@ -11,7 +11,7 @@
 #include "AuxKernel.h"
 #include "TensorProblemInterface.h"
 #include "DomainInterface.h"
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class TensorProblem;
 

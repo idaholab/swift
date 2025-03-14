@@ -21,10 +21,10 @@ TensorSolveIterationAdaptiveDT::validParams()
   InputParameters params = TimeStepper::validParams();
   params.addClassDescription(
       "Adjust the timestep based on the number of internal TensorSolve iterations");
-  params.addParam<int>(
+  params.addParam<unsigned int>(
       "min_iterations",
       "If the solve takes less than 'min_iterations', dt is increased by 'growth_factor'");
-  params.addParam<int>(
+  params.addParam<unsigned int>(
       "max_iterations",
       "If the solve takes more than 'max_iterations', dt is decreased by 'cutback_factor'");
 
@@ -53,8 +53,8 @@ TensorSolveIterationAdaptiveDT::TensorSolveIterationAdaptiveDT(const InputParame
     PostprocessorInterface(this),
     _dt_old(declareRestartableData<Real>("dt_old", 0.0)),
     _input_dt(getParam<Real>("dt")),
-    _min_iterations(getParam<int>("min_iterations")),
-    _max_iterations(getParam<int>("max_iterations")),
+    _min_iterations(getParam<unsigned int>("min_iterations")),
+    _max_iterations(getParam<unsigned int>("max_iterations")),
     _growth_factor(getParam<Real>("growth_factor")),
     _cutback_factor(getParam<Real>("cutback_factor")),
     _cutback_occurred(declareRestartableData<bool>("cutback_occurred", false)),

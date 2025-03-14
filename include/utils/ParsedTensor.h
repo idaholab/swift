@@ -8,8 +8,9 @@
 
 #pragma once
 
+#include "MooseTypes.h"
 #include "libmesh/fparser_ad.hh"
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class ParsedTensor : public FunctionParserAD
 {

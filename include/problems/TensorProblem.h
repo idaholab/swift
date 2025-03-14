@@ -16,7 +16,7 @@
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class UniformTensorMesh;
 class TensorOperatorBase;
@@ -62,6 +62,9 @@ public:
   virtual void addTensorComputePostprocess(const std::string & compute_name,
                                            const std::string & name,
                                            InputParameters & parameters);
+  virtual void addTensorComputeOnDemand(const std::string & compute_name,
+                                           const std::string & name,
+                                           InputParameters & parameters);
 
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                        const std::string & name,
@@ -77,7 +80,11 @@ public:
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
 
-  const Real & getSubDt() const { return _sub_dt; }
+  TensorOperatorBase & getOnDemandCompute(const std::string & name);
+
+  virtual Real & subDt() { return _sub_dt; }
+  virtual Real & subTime() { return _sub_time; }
+  virtual Real & outputTime() { return _output_time; }
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -88,6 +95,9 @@ public:
   typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
   const TensorComputeList & getComputes() const { return _computes; }
 
+  typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
+  const TensorOutputList & getOutputs() const { return _outputs; }
+
   /// The CreateTensorSolverAction calls this to set the active solver
   void setSolver(std::shared_ptr<TensorSolver> solver,
                  const MooseTensor::Key<CreateTensorSolverAction> &);
@@ -97,13 +107,21 @@ public:
   T & getSolver() const;
 
 protected:
-  virtual void updateDOFMap();
-  virtual void mapBuffersToAux();
+  void updateDOFMap();
+
+  template <typename FLOAT_TYPE>
+  void mapBuffersToAux();
 
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
                                 TensorComputeList & list);
+
+  /// execute initial conditionobjects
+  void executeTensorInitialConditions();
+
+  /// perform output tasks
+  void executeTensorOutputs(const ExecFlagType & exec_type);
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -116,6 +134,10 @@ protected:
 
   /// substepping timestep
   Real _sub_dt;
+  Real _sub_time;
+
+  /// simulation time for the currently running output thread
+  Real _output_time;
 
   /// list of TensorBuffers (i.e. tensors)
   std::map<std::string, torch::Tensor> _tensor_buffer;
@@ -151,6 +173,9 @@ protected:
 
   /// bc objects
   TensorComputeList _bcs;
+
+  /// on demand objects that are explicitly triggered by other objects
+  TensorComputeList _on_demand;
 
   ///  time integrator objects
   std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;

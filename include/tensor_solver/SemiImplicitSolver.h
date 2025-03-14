@@ -24,4 +24,6 @@ public:
 
 protected:
   unsigned int _substeps;
+  Real & _sub_dt;
+  Real & _sub_time;
 };

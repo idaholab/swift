@@ -158,7 +158,7 @@
     block = 1
   []
   # lag the effective plastic strain rate
-  # we might want to node patch recover this to avoid teh checkerboarding artifacts
+  # we might want to node patch recover this to avoid the checkerboarding artifacts
   [effective_plastic_strain_rate]
     type = ParsedMaterial
     property_name = ep_dot

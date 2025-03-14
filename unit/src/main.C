@@ -11,7 +11,7 @@
 
 // Moose includes
 #include "Moose.h"
-#include "MooseInit.h"
+#include "SwiftInit.h"
 #include "AppFactory.h"
 
 #include <fstream>
@@ -23,7 +23,7 @@ main(int argc, char ** argv)
   // gtest removes (only) its args from argc and argv - so this  must be before moose init
   testing::InitGoogleTest(&argc, argv);
 
-  MooseInit init(argc, argv);
+  SwiftInit init(argc, argv);
   registerApp(SwiftApp);
   Moose::_throw_on_error = true;
   Moose::_throw_on_warning = true;

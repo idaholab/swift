@@ -17,7 +17,7 @@
 #endif
 
 /**
- * Postprocessor that operates on a buffer
+ * XDMF (XML + binary/hdf5) file output
  */
 class XDMFTensorOutput : public TensorOutput
 {
@@ -25,6 +25,7 @@ public:
   static InputParameters validParams();
 
   XDMFTensorOutput(const InputParameters & parameters);
+  ~XDMFTensorOutput();
 
   virtual void init() override;
 
@@ -58,5 +59,11 @@ protected:
 
 #ifdef LIBMESH_HAVE_HDF5
   const bool _enable_hdf5;
+
+  /// HDF5 file name
+  const std::string _hdf5_name;
+
+  /// HDF5 file handle
+  hid_t _hdf5_file_id;
 #endif
 };

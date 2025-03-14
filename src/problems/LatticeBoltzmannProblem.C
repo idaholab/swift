@@ -165,7 +165,7 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
     for (auto & output : _outputs)
       output->startOutput();
 
-    mapBuffersToAux();
+    // mapBuffersToAux();
   }
   FEProblem::execute(exec_type);
 }
@@ -212,22 +212,21 @@ LatticeBoltzmannProblem::advanceState()
   }
 }
 
+// void
+// LatticeBoltzmannProblem::updateDOFMap()
+// { 
+//   /**
+//    * 
+//    */
+// }
 
-void
-LatticeBoltzmannProblem::updateDOFMap()
-{ 
-  /**
-   * 
-   */
-}
-
-void
-LatticeBoltzmannProblem::mapBuffersToAux()
-{
-  /**
-   * 
-   */
-}
+// void
+// LatticeBoltzmannProblem::mapBuffersToAux()
+// {
+//   /**
+//    * 
+//    */
+// }
 
 void
 LatticeBoltzmannProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)

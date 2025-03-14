@@ -33,7 +33,8 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
     _z(_domain.getAxis(2)),
     _i(_domain.getReciprocalAxis(0)),
     _j(_domain.getReciprocalAxis(1)),
-    _k(_domain.getReciprocalAxis(2))
+    _k(_domain.getReciprocalAxis(2)),
+    _time(_tensor_problem.subTime())
 {
 }
 

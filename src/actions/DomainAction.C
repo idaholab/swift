@@ -59,7 +59,7 @@ DomainAction::validParams()
 
   params.addParam<MooseEnum>("mesh_mode", meshmode, "Mesh generation mode.");
 
-  params.addRequiredParam<std::vector<std::string>>("device_names", "Compute devices to run on.");
+  params.addParam<std::vector<std::string>>("device_names", {}, "Compute devices to run on.");
   params.addParam<std::vector<unsigned int>>(
       "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
   return params;
@@ -86,49 +86,61 @@ DomainAction::DomainAction(const InputParameters & parameters)
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
 
-  // process weights
-  if (_device_weights.empty())
-    _device_weights.assign(1, _device_names.size());
-
-  if (_device_weights.size() != _device_names.size())
-    mooseError("Specify one weight per device or none at all");
-
-  // determine the processor name
-  char name[MPI_MAX_PROCESSOR_NAME + 1];
-  int len;
-  MPI_Get_processor_name(name, &len);
-  name[len] = 0;
-
-  // gather all processor names
-  std::vector<std::string> host_names;
-  _communicator.allgather(std::string(name), host_names);
-
-  // get the local rank on the current processor (used for compute device assignment)
-  std::map<std::string, unsigned int> host_rank_count;
-
-  for (const auto & host_name : host_names)
+  if (_device_names.empty())
   {
-    if (host_rank_count.find(name) == host_rank_count.end())
-      host_rank_count[host_name] = 0;
+    if (comm().size() > 1)
+      mooseError("Specify Domain/device_names for parallel operation.");
 
-    auto & local_rank = host_rank_count[host_name];
-    _local_ranks.push_back(local_rank);
-    _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
-
-    // std::cout << "Process on " << host_name << ' ' << local_rank << ' '
-    //           << _device_weights[local_rank % _device_weights.size()] << '\n';
-
-    local_rank++;
+    // set local weights and ranks for serial
+    _local_ranks = {0};
+    _local_weights = {1};
   }
+  else
+  {
+    // process weights
+    if (_device_weights.empty())
+      _device_weights.assign(1, _device_names.size());
 
-  // for (const auto i : index_range(host_names))
-  //   std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+    if (_device_weights.size() != _device_names.size())
+      mooseError("Specify one weight per device or none at all");
 
-  // pick a compute device for a list of available devices
-  auto swift_app = dynamic_cast<SwiftApp *>(&_app);
-  if (!swift_app)
-    mooseError("This action requires a SwftApp object to be present.");
-  swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
+    // determine the processor name
+    char name[MPI_MAX_PROCESSOR_NAME + 1];
+    int len;
+    MPI_Get_processor_name(name, &len);
+    name[len] = 0;
+
+    // gather all processor names
+    std::vector<std::string> host_names;
+    _communicator.allgather(std::string(name), host_names);
+
+    // get the local rank on the current processor (used for compute device assignment)
+    std::map<std::string, unsigned int> host_rank_count;
+
+    for (const auto & host_name : host_names)
+    {
+      if (host_rank_count.find(name) == host_rank_count.end())
+        host_rank_count[host_name] = 0;
+
+      auto & local_rank = host_rank_count[host_name];
+      _local_ranks.push_back(local_rank);
+      _local_weights.push_back(_device_weights[local_rank % _device_weights.size()]);
+
+      // std::cout << "Process on " << host_name << ' ' << local_rank << ' '
+      //           << _device_weights[local_rank % _device_weights.size()] << '\n';
+
+      local_rank++;
+    }
+
+    // for (const auto i : index_range(host_names))
+    //   std::cout << host_names[i] << '\t' << _local_ranks[i] << '\n';
+
+    // pick a compute device for a list of available devices
+    auto swift_app = dynamic_cast<SwiftApp *>(&_app);
+    if (!swift_app)
+      mooseError("This action requires a SwftApp object to be present.");
+    swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
+  }
 
   // domain partitioning
   gridChanged();
@@ -140,29 +152,33 @@ DomainAction::gridChanged()
   auto options = MooseTensor::floatTensorOptions();
 
   // build real space axes
-  for (const auto dim : {0, 1, 2})
+  _volume_global = 1.0;
+  for (const unsigned int dim : {0, 1, 2})
   {
     // error check
     if (_max_global[dim] <= _min_global[dim])
-      mooseError("Max coordinate must be larger than teh min coordinate in every dimension");
+      mooseError("Max coordinate must be larger than the min coordinate in every dimension");
 
     // get grid geometry
     _grid_spacing[dim] = (_max_global[dim] - _min_global[dim]) / _n_global[dim];
 
     // real space axis
     if (dim < _dim)
+    {
       _global_axis[dim] =
           align(torch::linspace(c10::Scalar(_min_global[dim] + _grid_spacing[dim] / 2.0),
                                 c10::Scalar(_max_global[dim] - _grid_spacing[dim] / 2.0),
                                 _n_global[dim],
                                 options),
                 dim);
+      _volume_global *= _max_global[dim] - _min_global[dim];
+    }
     else
       _global_axis[dim] = torch::tensor({0.0}, options);
   }
 
   // build reciprocal space axes
-  for (const auto dim : {0, 1, 2})
+  for (const unsigned int dim : {0, 1, 2})
   {
     if (dim < _dim)
     {
@@ -173,6 +189,9 @@ DomainAction::gridChanged()
     }
     else
       _global_reciprocal_axis[dim] = torch::tensor({0.0}, options);
+
+    // compute max frequency along each axis
+    _max_k[dim] = libMesh::pi / _grid_spacing[dim];
 
     // get global reciprocal axis size
     _n_reciprocal_global[dim] = _global_reciprocal_axis[dim].sizes()[dim];
@@ -240,7 +259,7 @@ DomainAction::partitionSlabs()
   for (const auto d : {0, 1})
   {
     int64_t b = 0;
-    for (const auto r: index_range(_n_local_all[d]))
+    for (const auto r : index_range(_n_local_all[d]))
     {
       _local_begin[d][r] = b;
       b += _n_local_all[d][r];
@@ -295,7 +314,7 @@ DomainAction::partitionPencils()
 void
 DomainAction::act()
 {
-  if (_current_task == "meta_action" && _mesh_mode != MeshMode::MANUAL)
+  if (_current_task == "meta_action" && _mesh_mode != MeshMode::SWIFT_MANUAL)
   {
     // check if a SetupMesh action exists
     auto mesh_actions = _awh.getActions<SetupMeshAction>();
@@ -313,7 +332,7 @@ DomainAction::act()
   }
 
   // add a DomainMeshGenerator
-  if (_current_task == "add_mesh_generator" && _mesh_mode != MeshMode::MANUAL)
+  if (_current_task == "add_mesh_generator" && _mesh_mode != MeshMode::SWIFT_MANUAL)
   {
     // Don't do mesh generators when recovering or when the user has requested for us not to
     if ((_app.isRecovering() && _app.isUltimateMaster()) || _app.masterMesh())
@@ -330,13 +349,13 @@ DomainAction::act()
     params.set<Real>("ymin") = _min_global[1];
     params.set<Real>("zmin") = _min_global[2];
 
-    if (_mesh_mode == MeshMode::DOMAIN)
+    if (_mesh_mode == MeshMode::SWIFT_DOMAIN)
     {
       params.set<unsigned int>("nx") = _n_global[0];
       params.set<unsigned int>("ny") = _n_global[1];
       params.set<unsigned int>("nz") = _n_global[2];
     }
-    else if (_mesh_mode == MeshMode::DUMMY)
+    else if (_mesh_mode == MeshMode::SWIFT_DUMMY)
     {
       params.set<unsigned int>("nx") = 1;
       params.set<unsigned int>("ny") = 1;
@@ -470,11 +489,11 @@ DomainAction::ifft(const torch::Tensor & t) const
   switch (_dim)
   {
     case 1:
-      return torch::fft::irfft(t);
+      return torch::fft::irfft(t, getShape()[0]);
     case 2:
-      return torch::fft::irfft2(t);
+      return torch::fft::irfft2(t, getShape());
     case 3:
-      return torch::fft::irfftn(t, c10::nullopt, {0, 1, 2});
+      return torch::fft::irfftn(t, getShape(), {0, 1, 2});
     default:
       mooseError("Unsupported mesh dimension");
   }

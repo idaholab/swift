@@ -15,7 +15,7 @@
 #ifdef LIBMESH_HAVE_HDF5
 namespace
 {
-void addDataToHDF5(const std::string & filename,
+void addDataToHDF5(hid_t file_id,
                    const std::string & dataset_name,
                    const char * data,
                    std::vector<std::size_t> & ndim,
@@ -29,6 +29,7 @@ InputParameters
 XDMFTensorOutput::validParams()
 {
   auto params = TensorOutput::validParams();
+  params.addClassDescription("Output a tensor in XDMF format.");
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
 #endif
@@ -44,7 +45,8 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
     ,
-    _enable_hdf5(getParam<bool>("enable_hdf5"))
+    _enable_hdf5(getParam<bool>("enable_hdf5")),
+    _hdf5_name(_file_base + ".h5")
 #endif
 {
   const auto & output_mode = getParam<MultiMooseEnum>("output_mode");
@@ -63,6 +65,29 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
     for (const auto i : make_range(nbuffers))
       _is_cell_data[buffer_name[i]] = (output_mode[i] == "CELL");
   }
+
+#ifdef LIBMESH_HAVE_HDF5
+  // Check if the library is thread-safe
+  hbool_t is_threadsafe;
+  H5is_library_threadsafe(&is_threadsafe);
+  if (!is_threadsafe)
+  {
+    for (const auto & output : _tensor_problem.getOutputs())
+      if (output.get() != this && dynamic_cast<XDMFTensorOutput *>(output.get()))
+        mooseError(
+            "Using an hdf5 library that is not threadsafe and multiple XDMF output objects. "
+            "Consolidate the XDMF outputs or build Swift with a thread safe build of libhdf5.");
+    mooseWarning("Using an hdf5 library that is not threadsafe.");
+  }
+#endif
+}
+
+XDMFTensorOutput::~XDMFTensorOutput()
+{
+#ifdef LIBMESH_HAVE_HDF5
+  if (_enable_hdf5)
+    H5Fclose(_hdf5_file_id);
+#endif
 }
 
 void
@@ -133,14 +158,26 @@ XDMFTensorOutput::init()
 
   // write XDMF file
   _doc.save_file((_file_base + ".xmf").c_str());
+#ifdef LIBMESH_HAVE_HDF5
   // delete HDF5 file
   if (_enable_hdf5)
-    std::filesystem::remove(_file_base + ".h5");
+  {
+    std::filesystem::remove(_hdf5_name);
+    // open new file
+    _hdf5_file_id = H5Fcreate(_hdf5_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    if (_hdf5_file_id < 0)
+    {
+      H5Eprint(H5E_DEFAULT, stderr);
+      mooseError("Error opening HDF5 file '", _hdf5_name, "'.");
+    }
+  }
+#endif
 }
 
 void
 XDMFTensorOutput::output()
 {
+  mooseInfoRepeated("Writing XDMF file '", _file_base, ".xmf' for output.");
   // add grid for new timestep
   auto grid = _tgrid.append_child("Grid");
   grid.append_attribute("Name") = ("T" + Moose::stringify(_frame)).c_str();
@@ -148,7 +185,7 @@ XDMFTensorOutput::output()
 
   // time
   auto time = grid.append_child("Time");
-  time.append_attribute("Value") = _tensor_problem.time();
+  time.append_attribute("Value") = _time;
 
   // add references
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Topology)";
@@ -174,16 +211,15 @@ XDMFTensorOutput::output()
 #ifdef LIBMESH_HAVE_HDF5
     if (_enable_hdf5)
     {
-      const auto h5name = _file_base + ".h5";
       if (buffer.dtype() == torch::kFloat32)
-        addDataToHDF5(h5name, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
+        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
       else if (buffer.dtype() == torch::kFloat64)
-        addDataToHDF5(h5name, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
+        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
       else
         mooseError("Unsupported output type");
 
       data.append_attribute("Format") = "HDF";
-      const auto h5path = h5name + ":/" + setname;
+      const auto h5path = _hdf5_name + ":/" + setname;
       data.append_child(pugi::node_pcdata).set_value(h5path.c_str());
     }
     else
@@ -215,6 +251,12 @@ XDMFTensorOutput::output()
 
   // write XDMF file
   _doc.save_file((_file_base + ".xmf").c_str());
+
+#ifdef LIBMESH_HAVE_HDF5
+  // flush hdf5 file contents to disk
+  if (_enable_hdf5)
+    H5Fflush(_hdf5_file_id, H5F_SCOPE_GLOBAL);
+#endif
 
   // increment frame
   _frame++;
@@ -254,27 +296,23 @@ XDMFTensorOutput::extendTensor(torch::Tensor tensor)
 namespace
 {
 void
-addDataToHDF5(const std::string & filename,
+addDataToHDF5(hid_t file_id,
               const std::string & dataset_name,
               const char * data,
               std::vector<std::size_t> & ndim,
               hid_t type)
 {
-  hid_t file_id, dataset_id, dataspace_id, plist_id;
+  hid_t dataset_id, dataspace_id, plist_id;
   herr_t status;
 
   // Open the file in read/write mode, create if it doesn't exist
-  if (MooseUtils::checkFileWriteable(filename, false))
-    file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-  else
-    file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
   // hsize_t chunk_dims[RANK];
   std::vector<hsize_t> dims(ndim.begin(), ndim.end());
 
   // Check if the dataset already exists
   if (H5Lexists(file_id, dataset_name.c_str(), H5P_DEFAULT) > 0)
-    mooseError("Dataset '", dataset_name, "' already exists in HDF5 file '", filename, "'.");
+    mooseError("Dataset '", dataset_name, "' already exists in HDF5 file.");
 
   // Create a new dataset
   dataspace_id = H5Screate_simple(dims.size(), dims.data(), nullptr);
@@ -289,12 +327,39 @@ addDataToHDF5(const std::string & filename,
   if (status < 0)
     mooseError("Error setting chunking");
 
-  H5Pset_deflate(plist_id, 9);
+  if (H5Zfilter_avail(H5Z_FILTER_DEFLATE))
+  {
+    unsigned filter_info;
+    H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filter_info);
+    if (filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED)
+    {
+      status = H5Pset_deflate(plist_id, 9);
+      if (status < 0)
+        mooseError("Error setting compression filter");
+    }
+  }
 
   dataset_id = H5Dcreate(
       file_id, dataset_name.c_str(), type, dataspace_id, H5P_DEFAULT, plist_id, H5P_DEFAULT);
   if (dataset_id < 0)
+  {
+    mooseInfo(dataset_id,
+              ' ',
+              file_id,
+              ' ',
+              dataset_name.c_str(),
+              ' ',
+              type,
+              ' ',
+              dataspace_id,
+              ' ',
+              H5P_DEFAULT,
+              ' ',
+              plist_id,
+              ' ',
+              H5P_DEFAULT);
     mooseError("Error creating dataset");
+  }
 
   // Write data to the dataset
   status = H5Dwrite(dataset_id, type, H5S_ALL, dataspace_id, H5P_DEFAULT, data);
@@ -303,7 +368,6 @@ addDataToHDF5(const std::string & filename,
   H5Pclose(plist_id);
   H5Dclose(dataset_id);
   H5Sclose(dataspace_id);
-  H5Fclose(file_id);
 }
 }
 #endif

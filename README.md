@@ -1,12 +1,21 @@
-# Swift
+# Swift [<img align="right" src="https://civet.inl.gov/idaholab/swift/main/branch_status.svg/">](https://civet.inl.gov/repo/idaholab/swift/)</span>
 
-![Swift Logo](https://github.com/dschwen/swift/blob/main/doc/content/swift.png?raw=true)
+![Swift Logo](https://github.com/idaholab/swift/blob/main/doc/content/swift.png?raw=true)
 
-**Swift** is a Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org).
+**Swift** is a device independent Fourier spectral solver application based on the [MOOSE Finite Element Framework](http://mooseframework.org). Swift supports[^1] CPU, CUDA, and MPS[^2] with automatic detection of supported device precision.
+
+[^1]: more compute device types might be supported, but have not been tested.
+[^2]: torch MPS supports only single precision calculations!
+
+> Note: This is not the Hydride modeling code SWIFT by Los Alamos National Laboratory
 
 ## Contacts
 
 The primary developer of Swift is _Daniel Schwen_. In case of questions or problems please file a GitHub issue.
+
+## Install
+
+- MacOS [installation instructions](INSTALL_MacOS.md)
 
 ## Why another spectral solver?
 

@@ -13,7 +13,7 @@
 #include <string>
 #include <array>
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 /**
  * This class adds an TensorBuffer object.
@@ -34,12 +34,16 @@ public:
   const std::array<int64_t, 3> & getReciprocalGridSize() const { return _n_reciprocal_global; }
   const std::array<int64_t, 3> & getLocalGridSize() const { return _n_local; }
   const std::array<int64_t, 3> & getLocalReciprocalGridSize() const { return _n_reciprocal_local; }
+  const Real & getVolume() const { return _volume_global; }
   const std::array<Real, 3> & getDomainMin() const { return _min_global; }
   const std::array<Real, 3> & getDomainMax() const { return _max_global; }
   const std::array<Real, 3> & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
   const torch::Tensor & getKSquare() const { return _k2; }
+
+  /// get the maximum spatial frequency
+  const std::array<Real, 3> & getMaxK() const { return _max_k; }
 
   /// get the shape of the local domain
   const torch::IntArrayRef & getShape() const { return _shape; }
@@ -106,7 +110,10 @@ protected:
   const std::array<Real, 3> _max_global;
   ///@}
 
-  const enum class MeshMode { DUMMY, DOMAIN, MANUAL } _mesh_mode;
+  /// Volume of the simulation domain in real space
+  Real _volume_global;
+
+  const enum class MeshMode { SWIFT_DUMMY, SWIFT_DOMAIN, SWIFT_MANUAL } _mesh_mode;
 
   /// grid spacing
   std::array<Real, 3> _grid_spacing;
@@ -121,6 +128,9 @@ protected:
 
   /// k-square
   torch::Tensor _k2;
+
+  /// largest frequency along each axis
+  std::array<Real, 3> _max_k;
 
   /// domain shape
   torch::IntArrayRef _shape;
@@ -181,7 +191,7 @@ torch::Tensor
 DomainAction::cosineTransform(const torch::Tensor & t, int64_t axis) const
 {
   // size along the axis
-  const auto l = t.sizes()[axis];
+  // const auto l = t.sizes()[axis];
 
   // mirror tensor and stack onto itself (with one layer removed)
   auto t_flip = torch::flip(t, {axis});

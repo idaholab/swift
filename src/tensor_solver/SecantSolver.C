@@ -24,7 +24,7 @@ SecantSolver::validParams()
   params.addParam<Real>("damping", 1.0, "Damping factor for the update step.");
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
-  params.set<unsigned int>("substeps") = 0;
+  params.set<unsigned int>("substeps") = 1;
   params.addParam<bool>("verbose", false, "Show convergence history.");
   return params;
 }
@@ -63,9 +63,11 @@ SecantSolver::secantSolve()
   std::vector<torch::Tensor> uprev(n);
   std::vector<Real> R0norm(n);
 
+  if (_verbose)
+    _console << "Substep " << _substep << '\n';
+
   // initial guess computed using semi-implicit Euler
   _compute->computeBuffer();
-
   for (const auto i : make_range(n))
   {
     auto & u_out = _variables[i]._buffer;
@@ -89,7 +91,7 @@ SecantSolver::secantSolve()
     u_out = _domain.ifft((u + dt_epsilon * N) / (1.0 - dt_epsilon * L));
 
     if (_verbose)
-      std::cout << "|R0|=" << R0norm[i] << std::endl;
+      _console << "|R0|=" << R0norm[i] << std::endl;
   }
 
   // forward predict (on solver outputs)
@@ -138,7 +140,7 @@ SecantSolver::secantSolve()
       if (_verbose)
       {
         const auto unorm = torch::norm(du).item<double>();
-        std::cout << _iterations << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
+        _console << _iterations << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
       }
 
       // nan check
@@ -146,7 +148,7 @@ SecantSolver::secantSolve()
       {
         all_converged = false;
         _iterations = _max_iterations;
-        std::cout << "NaN detected, aborting solve.\n";
+        _console << "NaN detected, aborting solve.\n";
         break;
       }
 
@@ -166,7 +168,7 @@ SecantSolver::secantSolve()
 
   if (!all_converged)
   {
-    std::cout << "Solve not converged.\n";
+    _console << "Solve not converged.\n";
 
     // restore old solution (TODO: fix time, etc)
     for (const auto i : make_range(n))

@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">
+	<Domain>
+		<Topology TopologyType="2DCoRectMesh" Dimensions="21 21" />
+		<Geometry Type="ORIGIN_DXDY">
+			<DataItem Format="XML" Dimensions="2">0 0</DataItem>
+			<DataItem Format="XML" Dimensions="2">0.15 0.15</DataItem>
+		</Geometry>
+		<Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
+			<Grid Name="T0" GridType="Uniform">
+				<Time Value="0" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.0</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.0</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T1" GridType="Uniform">
+				<Time Value="0.001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.1</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.1</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T2" GridType="Uniform">
+				<Time Value="0.002" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.2</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.2</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T3" GridType="Uniform">
+				<Time Value="0.0030000000000000001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.3</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.3</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T4" GridType="Uniform">
+				<Time Value="0.0040000000000000001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.4</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.4</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T5" GridType="Uniform">
+				<Time Value="0.0050000000000000001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.5</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.5</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T6" GridType="Uniform">
+				<Time Value="0.0060000000000000001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.6</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.6</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T7" GridType="Uniform">
+				<Time Value="0.0070000000000000001" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.7</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.7</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T8" GridType="Uniform">
+				<Time Value="0.0080000000000000002" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.8</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.8</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T9" GridType="Uniform">
+				<Time Value="0.0090000000000000011" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.9</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.9</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T10" GridType="Uniform">
+				<Time Value="0.010000000000000002" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="c" Center="Node">
+					<DataItem DataType="Float" Dimensions="21 21" Format="HDF">cahnhilliard.h5:/c.10</DataItem>
+				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">cahnhilliard.h5:/mu.10</DataItem>
+				</Attribute>
+			</Grid>
+		</Grid>
+	</Domain>
+</Xdmf>

@@ -10,7 +10,7 @@
 
 #include "libmesh/fparser_ad.hh"
 #include <torch/csrc/jit/ir/ir.h>
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 namespace torch
 {

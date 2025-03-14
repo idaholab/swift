@@ -13,7 +13,7 @@
 #include "DependencyResolverInterface.h"
 #include "TensorBufferBase.h"
 
-#include "torch/torch.h"
+#include <torch/torch.h>
 
 class TensorProblem;
 class DomainAction;
@@ -61,4 +61,7 @@ protected:
 
   /// reciprocal axes
   const torch::Tensor &_i, &_j, &_k;
+
+  /// substep time
+  const Real & _time;
 };
