@@ -58,8 +58,8 @@ LBMRegularizedMRTCollision::regularize()
   // Compute tensor products
   for (int ic = 0; ic < _stencil._q; ic++)
   {
-    auto exyz_ic = e_xyz.index({Slice(), ic}).unsqueeze(0);
-    torch::Tensor ccr = torch::bmm(exyz_ic.unsqueeze(2), exyz_ic.unsqueeze(1)).squeeze().flatten();
+    auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
+    torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic).flatten();
     fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, 9}));
   }
 
@@ -67,16 +67,16 @@ LBMRegularizedMRTCollision::regularize()
   torch::Tensor H2 = torch::zeros({1, 9}, MooseTensor::floatTensorOptions());
   for (int ic = 0; ic < _stencil._q; ic++)
   {
-    auto exyz_ic = e_xyz.index({Slice(), ic}).unsqueeze(0);
-    torch::Tensor ccr = torch::bmm(exyz_ic.unsqueeze(2), exyz_ic.unsqueeze(1)).squeeze() /
-                         _lb_problem._cs2 - torch::eye(3);
+    auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
+    torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic) /
+                         _lb_problem._cs2 - torch::eye(3, MooseTensor::floatTensorOptions());
     H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, 9});
 
     // Compute regularized non-equilibrium distribution
     f_neq_hat.index_put_({Slice(), ic}, (_stencil._weights[ic] * (1.0 / (2.0 * _lb_problem._cs2)) *
                                  (fneqtimescc * H2).sum(1)));
   }
-
+  
   // Back to the correct shape
   return f_neq_hat.view({nx, ny, nz, _stencil._q});
 }
