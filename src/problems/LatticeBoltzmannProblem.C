@@ -212,13 +212,13 @@ LatticeBoltzmannProblem::advanceState()
   }
 }
 
-// void
-// LatticeBoltzmannProblem::updateDOFMap()
-// { 
-//   /**
-//    * 
-//    */
-// }
+void
+LatticeBoltzmannProblem::updateDOFMap()
+{ 
+  /**
+   * This function temporarily bypasses 'Unsupported variable type for mapping' error in TensorProblem
+   */
+}
 
 // void
 // LatticeBoltzmannProblem::mapBuffersToAux()

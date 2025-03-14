@@ -107,7 +107,7 @@ public:
   T & getSolver() const;
 
 protected:
-  void updateDOFMap();
+  virtual void updateDOFMap();
 
   template <typename FLOAT_TYPE>
   void mapBuffersToAux();
