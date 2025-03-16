@@ -26,6 +26,8 @@ public:
 protected:
     const torch::Tensor & _chem_pot;
     const torch::Tensor & _M;
+    const torch::Tensor & _psi;
+    const Real _epsilon;
 
     /// imaginary unit i
     const torch::Tensor _imag;
