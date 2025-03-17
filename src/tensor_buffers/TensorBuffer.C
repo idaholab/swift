@@ -56,3 +56,5 @@ TensorBuffer<T>::makeCPUCopy()
   else
     _u_cpu = _u.cpu().contiguous();
 }
+
+template class TensorBuffer<torch::Tensor>;

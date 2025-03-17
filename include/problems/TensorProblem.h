@@ -16,6 +16,7 @@
 
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
+#include "libmesh/print_trace.h"
 
 #include <memory>
 #include <torch/torch.h>
@@ -54,6 +55,9 @@ public:
                                const std::string & buffer_name,
                                InputParameters & parameters);
 
+  template <typename T>
+  std::shared_ptr<TensorBuffer<T>> addTensorBuffer(const std::string & buffer_name);
+
   virtual void addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
                                           InputParameters & parameters);
@@ -74,7 +78,7 @@ public:
                                const std::string & name,
                                InputParameters & parameters);
 
-  /// returns teh current state of the tensor
+  /// returns the current state of the tensor
   template <typename T = torch::Tensor>
   T & getBuffer(const std::string & buffer_name);
 
@@ -224,16 +228,20 @@ TensorBuffer<T> &
 TensorProblem::getBufferHelper(const std::string & buffer_name)
 {
   auto it = _tensor_buffer.find(buffer_name);
+
   if (it == _tensor_buffer.end())
-    mooseError("TensorBuffer '", buffer_name, "' does not exist in the system.");
-  auto tensor_buffer = dynamic_cast<TensorBuffer<T> *>(it->second.get());
-  if (!tensor_buffer)
-    mooseError("TensorBuffer '",
-               buffer_name,
-               "' of the requested type '",
-               it->second->type(),
-               "' does not exist in the system.");
-  return *tensor_buffer;
+    return *addTensorBuffer<T>(buffer_name);
+  else
+  {
+    auto tensor_buffer = dynamic_cast<TensorBuffer<T> *>(it->second.get());
+    if (!tensor_buffer)
+      mooseError("TensorBuffer '",
+                 buffer_name,
+                 "' of the requested type '",
+                 it->second->type(),
+                 "' does not exist in the system.");
+    return *tensor_buffer;
+  }
 }
 
 template <typename T>
@@ -261,4 +269,32 @@ TensorProblem::getCPUBuffer(const std::string & buffer_name)
 {
   _cpu_tensor_buffers.insert(buffer_name);
   return getBufferHelper<T>(buffer_name)._u_cpu;
+}
+
+template <typename T>
+std::shared_ptr<TensorBuffer<T>>
+TensorProblem::addTensorBuffer(const std::string & buffer_name)
+{
+  if (_debug)
+    mooseInfoRepeated("Automatically adding tensor '",
+                      buffer_name,
+                      "' of type '",
+                      libMesh::demangle(typeid(T).name()),
+                      "'");
+  auto params = TensorBuffer<T>::validParams();
+  params.template set<std::string>("_object_name") = buffer_name;
+  params.template set<FEProblem *>("_fe_problem") = this;
+  params.template set<FEProblemBase *>("_fe_problem_base") = this;
+  params.template set<THREAD_ID>("_tid") = 0;
+  params.template set<std::string>("_type") = "TensorBufferBase";
+  params.template set<MooseApp *>("_moose_app") = &getMooseApp();
+  params.finalize(buffer_name);
+
+  // params.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  // params.addPrivateParam<const DomainAction *>("_domain", &_domain);
+
+  auto tensor_buffer = std::make_shared<TensorBuffer<T>>(params);
+
+  _tensor_buffer.try_emplace(buffer_name, tensor_buffer);
+  return tensor_buffer;
 }

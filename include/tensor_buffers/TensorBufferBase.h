@@ -36,7 +36,7 @@ public:
   virtual void makeCPUCopy() = 0;
 
   /// initialize the tensor
-  virtual void init() = 0;
+  virtual void init() {}
 
 protected:
   /// expand the tensor to full dimensions
