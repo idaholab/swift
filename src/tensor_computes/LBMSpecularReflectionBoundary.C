@@ -22,10 +22,9 @@ LBMSpecularReflectionBoundary::validParams()
     params.addParam<Real>("r", 0.5, "Combination coefficeint");
     params.addClassDescription("LBM combination of bounce-back and specular reflection boundary condition");
     params.addRequiredParam<TensorInputBufferName>(
-        "f_old", "Buffer with the reciprocal of the integrated buffer");
+        "f_old", "Old timestep distribution function");
     return params;
 }
-
 
 LBMSpecularReflectionBoundary::LBMSpecularReflectionBoundary(const InputParameters & parameters)
     : LBMBoundaryCondition(parameters),
@@ -33,7 +32,6 @@ LBMSpecularReflectionBoundary::LBMSpecularReflectionBoundary(const InputParamete
     _r(getParam<Real>("r"))
 {
 }
-
 
 void
 LBMSpecularReflectionBoundary::buildBoundaryMask()
