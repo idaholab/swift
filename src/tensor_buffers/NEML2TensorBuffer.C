@@ -25,6 +25,7 @@ template <typename T>
 NEML2TensorBuffer<T>::NEML2TensorBuffer(const InputParameters & parameters)
   : TensorBuffer<T>(parameters)
 {
+  mooseInfoRepeated("Instantiating NEML2 tensor class ", libMesh::demangle(typeid(T).name()));
 }
 
 template <typename T>

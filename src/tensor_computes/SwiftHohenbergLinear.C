@@ -13,7 +13,7 @@ registerMooseObject("SwiftApp", SwiftHohenbergLinear);
 InputParameters
 SwiftHohenbergLinear::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("Reciprocal space linear term in the semi-implicit time integration "
                              "of the Swift-Hohenberg equation IC.");
   params.addParam<Real>("r", -0.5, "Phase field crystal parameter r");
@@ -22,7 +22,7 @@ SwiftHohenbergLinear::validParams()
 }
 
 SwiftHohenbergLinear::SwiftHohenbergLinear(const InputParameters & parameters)
-  : TensorOperator(parameters),
+  : TensorOperator<>(parameters),
     _r(getParam<Real>("r")),
     _alpha(getParam<Real>("alpha")),
     _k2(_domain.getKSquare())

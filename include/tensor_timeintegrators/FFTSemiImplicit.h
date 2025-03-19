@@ -13,7 +13,7 @@
 /**
  * TensorTimeIntegrator object (this is mostly a compute object)
  */
-class FFTSemiImplicit : public TensorTimeIntegrator
+class FFTSemiImplicit : public TensorTimeIntegrator<>
 {
 public:
   static InputParameters validParams();

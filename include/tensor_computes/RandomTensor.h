@@ -13,7 +13,7 @@
 /**
  * Random IC
  */
-class RandomTensor : public TensorOperator
+class RandomTensor : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

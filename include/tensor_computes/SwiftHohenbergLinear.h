@@ -13,7 +13,7 @@
 /**
  * Swift-Hohenberg linear operator
  */
-class SwiftHohenbergLinear : public TensorOperator
+class SwiftHohenbergLinear : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

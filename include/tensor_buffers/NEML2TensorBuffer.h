@@ -29,6 +29,9 @@ public:
 };
 
 using VectorTensor = NEML2TensorBuffer<neml2::Vec>;
+registerTensorType(VectorTensor, neml2::Vec);
+
 using SR2Tensor = NEML2TensorBuffer<neml2::SR2>;
+registerTensorType(SR2Tensor, neml2::SR2);
 
 #endif

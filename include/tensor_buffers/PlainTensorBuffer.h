@@ -22,3 +22,5 @@ public:
 
   virtual void init();
 };
+
+registerTensorType(PlainTensorBuffer, torch::Tensor);

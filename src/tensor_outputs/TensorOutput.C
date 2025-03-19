@@ -40,8 +40,10 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
        dedicated output time that is not changed while the asynchronous output is running.*/
     _time(_tensor_problem.outputTime())
 {
+  const TensorBufferBase & getBufferBase(const std::string & buffer_name);
+
   for (const auto & name : getParam<std::vector<TensorInputBufferName>>("buffer"))
-    _out_buffers[name] = &_tensor_problem.getCPUBuffer(name);
+    _out_buffers[name] = &_tensor_problem.getBufferBase(name).getRawCPUTensor();
 }
 
 void

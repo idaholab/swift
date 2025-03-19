@@ -10,6 +10,7 @@
 
 #include "MooseObject.h"
 #include "SwiftTypes.h"
+#include "TensorProblem.h"
 #include "DependencyResolverInterface.h"
 #include "TensorBufferBase.h"
 
@@ -44,11 +45,17 @@ public:
   virtual void gridChanged() {}
 
 protected:
-  const torch::Tensor & getInputBuffer(const std::string & param);
-  const torch::Tensor & getInputBufferByName(const TensorInputBufferName & buffer_name);
+  template <typename T = torch::Tensor>
+  const T & getInputBuffer(const std::string & param);
 
-  torch::Tensor & getOutputBuffer(const std::string & param);
-  torch::Tensor & getOutputBufferByName(const TensorOutputBufferName & buffer_name);
+  template <typename T = torch::Tensor>
+  const T & getInputBufferByName(const TensorInputBufferName & buffer_name);
+
+  template <typename T = torch::Tensor>
+  T & getOutputBuffer(const std::string & param);
+
+  template <typename T = torch::Tensor>
+  T & getOutputBufferByName(const TensorOutputBufferName & buffer_name);
 
   std::set<std::string> _requested_buffers;
   std::set<std::string> _supplied_buffers;
@@ -65,3 +72,33 @@ protected:
   /// substep time
   const Real & _time;
 };
+
+template <typename T>
+const T &
+TensorOperatorBase::getInputBuffer(const std::string & param)
+{
+  return getInputBufferByName<T>(getParam<TensorInputBufferName>(param));
+}
+
+template <typename T>
+const T &
+TensorOperatorBase::getInputBufferByName(const TensorInputBufferName & buffer_name)
+{
+  _requested_buffers.insert(buffer_name);
+  return _tensor_problem.getBuffer<T>(buffer_name);
+}
+
+template <typename T>
+T &
+TensorOperatorBase::getOutputBuffer(const std::string & param)
+{
+  return getOutputBufferByName<T>(getParam<TensorOutputBufferName>(param));
+}
+
+template <typename T>
+T &
+TensorOperatorBase::getOutputBufferByName(const TensorOutputBufferName & buffer_name)
+{
+  _supplied_buffers.insert(buffer_name);
+  return _tensor_problem.getBuffer<T>(buffer_name);
+}

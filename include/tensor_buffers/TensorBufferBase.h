@@ -38,7 +38,12 @@ public:
   /// initialize the tensor
   virtual void init() {}
 
-protected:
+  /// get a raw torch tensor representation
+  virtual const torch::Tensor & getRawTensor() const = 0;
+
+  /// get a raw torch tensor representation
+  virtual const torch::Tensor & getRawCPUTensor() = 0;
+
   /// expand the tensor to full dimensions
   void expand();
 

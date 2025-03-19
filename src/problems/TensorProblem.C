@@ -8,6 +8,7 @@
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
 #include "TensorProblem.h"
+#include "TensorSolver.h"
 #include "UniformTensorMesh.h"
 
 #include "TensorOperatorBase.h"
@@ -223,11 +224,8 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
   _output_time = _time;
 
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
-  for (const auto & name : _cpu_tensor_buffers)
-  {
-    // get main buffer (GPU or CPU) - we already verified that it must exist
-    _tensor_buffer.at(name)->makeCPUCopy();
-  }
+  for (const auto & pair : _tensor_buffer)
+    pair.second->makeCPUCopy();
 
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
@@ -392,7 +390,7 @@ TensorProblem::mapAuxToBuffers()
   {
     const auto & [var, dofs, is_nodal] = tuple;
     libmesh_ignore(var);
-    const auto buffer = getBufferHelper<torch::Tensor>(buffer_name)._u_cpu;
+    const auto buffer = getBufferBase(buffer_name).getRawCPUTensor();
     std::size_t idx = 0;
     switch (_dim)
     {
@@ -508,7 +506,9 @@ TensorProblem::addTensorBuffer(const std::string & buffer_type,
                  "variables of any other type.");
 
     _buffer_to_var[buffer_name] = std::make_tuple(&var, std::vector<std::size_t>{}, is_nodal);
-    getCPUBuffer(buffer_name);
+
+    // call this to mark the CPU copy as requested
+    getRawCPUBuffer(buffer_name);
   }
 }
 
@@ -583,7 +583,7 @@ TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_type,
                  "'.");
 
   // Create the object
-  auto time_integrator_object = _factory.create<TensorTimeIntegrator>(
+  auto time_integrator_object = _factory.create<TensorTimeIntegrator<>>(
       time_integrator_type, time_integrator_name, parameters, 0);
   logAdd("TensorTimeIntegrator", time_integrator_name, time_integrator_type, parameters);
   _time_integrators.push_back(time_integrator_object);
@@ -627,4 +627,19 @@ TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
   if (!_time_integrators.empty())
     mooseError(
         "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
+}
+
+TensorBufferBase &
+TensorProblem::getBufferBase(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+  if (it == _tensor_buffer.end())
+    mooseError("TensorBuffer '", buffer_name, " does not exist in the system.");
+  return *it->second.get();
+}
+
+const torch::Tensor &
+TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
+{
+  return getBufferBase(buffer_name).getRawCPUTensor();
 }

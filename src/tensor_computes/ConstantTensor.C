@@ -17,7 +17,7 @@ template <bool reciprocal>
 InputParameters
 ConstantTensorTempl<reciprocal>::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   if constexpr (reciprocal)
   {
     params.addClassDescription("Constant tensor in reciprocal space.");

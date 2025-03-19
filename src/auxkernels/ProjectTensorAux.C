@@ -26,7 +26,7 @@ ProjectTensorAux::ProjectTensorAux(const InputParameters & parameters)
   : AuxKernel(parameters),
     TensorProblemInterface(this),
     DomainInterface(this),
-    _cpu_buffer(_tensor_problem.getCPUBuffer(getParam<TensorInputBufferName>("buffer"))),
+    _cpu_buffer(_tensor_problem.getRawCPUBuffer(getParam<TensorInputBufferName>("buffer"))),
     _dim(_domain.getDim()),
     _n(_domain.getGridSize()),
     _grid_spacing(_domain.getGridSpacing())

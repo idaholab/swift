@@ -23,6 +23,7 @@
 
 class UniformTensorMesh;
 class TensorOperatorBase;
+template <typename T = torch::Tensor>
 class TensorTimeIntegrator;
 class TensorOutput;
 class TensorSolver;
@@ -82,13 +83,15 @@ public:
   template <typename T = torch::Tensor>
   T & getBuffer(const std::string & buffer_name);
 
+  /// requests a tensor regardless of type
+  TensorBufferBase & getBufferBase(const std::string & buffer_name);
+
   /// return the old states of the tensor
   template <typename T = torch::Tensor>
   const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
-  template <typename T = torch::Tensor>
-  const T & getCPUBuffer(const std::string & buffer_name);
+  const torch::Tensor & getRawCPUBuffer(const std::string & buffer_name);
 
   TensorOperatorBase & getOnDemandCompute(const std::string & name);
 
@@ -159,9 +162,6 @@ protected:
   /// list of TensorBuffers (i.e. tensors)
   std::map<std::string, std::shared_ptr<TensorBufferBase>> _tensor_buffer;
 
-  /// set of tensors that need to be copied to the CPU
-  std::set<std::string> _cpu_tensor_buffers;
-
   /// old timesteps
   std::vector<Real> _old_dt;
 
@@ -189,7 +189,7 @@ protected:
   TensorComputeList _on_demand;
 
   ///  time integrator objects
-  std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;
+  std::vector<std::shared_ptr<TensorTimeIntegrator<>>> _time_integrators;
 
   std::vector<std::shared_ptr<TensorOutput>> _outputs;
 
@@ -205,8 +205,6 @@ protected:
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
 };
-
-#include "TensorSolver.h"
 
 template <typename T>
 T &
@@ -238,8 +236,10 @@ TensorProblem::getBufferHelper(const std::string & buffer_name)
       mooseError("TensorBuffer '",
                  buffer_name,
                  "' of the requested type '",
+                 libMesh::demangle(typeid(T).name()),
+                 "' was previously declared as '",
                  it->second->type(),
-                 "' does not exist in the system.");
+                 "'.");
     return *tensor_buffer;
   }
 }
@@ -248,27 +248,14 @@ template <typename T>
 T &
 TensorProblem::getBuffer(const std::string & buffer_name)
 {
-  return getBufferHelper<T>(buffer_name)._u;
+  return getBufferHelper<T>(buffer_name).getTensor();
 }
 
 template <typename T>
 const std::vector<T> &
 TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
 {
-  auto & tensor_buffer = getBufferHelper<T>(buffer_name);
-
-  if (tensor_buffer._max_states < max_states)
-    tensor_buffer._max_states = max_states;
-
-  return tensor_buffer._u_old;
-}
-
-template <typename T>
-const T &
-TensorProblem::getCPUBuffer(const std::string & buffer_name)
-{
-  _cpu_tensor_buffers.insert(buffer_name);
-  return getBufferHelper<T>(buffer_name)._u_cpu;
+  return getBufferHelper<T>(buffer_name).getOldTensor(max_states);
 }
 
 template <typename T>
@@ -293,7 +280,7 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
   // params.addPrivateParam<TensorProblem *>("_tensor_problem", this);
   // params.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
-  auto tensor_buffer = std::make_shared<TensorBuffer<T>>(params);
+  auto tensor_buffer = std::make_shared<typename TensorBufferSpecialization<T>::type>(params);
 
   _tensor_buffer.try_emplace(buffer_name, tensor_buffer);
   return tensor_buffer;

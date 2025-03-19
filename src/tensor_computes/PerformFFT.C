@@ -17,7 +17,7 @@ template <bool forward>
 InputParameters
 PerformFFTTempl<forward>::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("PerformFFT object.");
   params.addParam<TensorInputBufferName>("input", "Input buffer name");
   return params;
@@ -25,7 +25,7 @@ PerformFFTTempl<forward>::validParams()
 
 template <bool forward>
 PerformFFTTempl<forward>::PerformFFTTempl(const InputParameters & parameters)
-  : TensorOperator(parameters), _input(getInputBuffer("input"))
+  : TensorOperator<>(parameters), _input(getInputBuffer("input"))
 {
 }
 

@@ -31,7 +31,7 @@ XDMFTensorOutput::validParams()
   auto params = TensorOutput::validParams();
   params.addClassDescription("Output a tensor in XDMF format.");
 #ifdef LIBMESH_HAVE_HDF5
-  params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
+  params.addParam<bool>("enable_hdf5", false, "Use HDF5 for binary data storage.");
 #endif
   MultiMooseEnum outputMode("CELL NODE");
   params.addParam<MultiMooseEnum>("output_mode", outputMode, "Output as cell or node data");
@@ -194,6 +194,10 @@ XDMFTensorOutput::output()
   // loop over buffers
   for (const auto & [name, original_buffer] : _out_buffers)
   {
+    // skip empty tensors (no device)
+    if (!original_buffer->defined())
+      continue;
+
     const auto is_cell = _is_cell_data[name];
     auto attr = grid.append_child("Attribute");
     attr.append_attribute("Name") = name.c_str();

@@ -15,7 +15,7 @@ registerMooseObject("SwiftApp", FFTElasticChemicalPotential);
 InputParameters
 FFTElasticChemicalPotential::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("FFT based elastic strain energy chemical potential solve.");
   params.addParam<std::vector<TensorInputBufferName>>("displacements", "Displacements");
   params.addParam<TensorInputBufferName>("cbar", "FFT of concentration buffer");
@@ -26,7 +26,7 @@ FFTElasticChemicalPotential::validParams()
 }
 
 FFTElasticChemicalPotential::FFTElasticChemicalPotential(const InputParameters & parameters)
-  : TensorOperator(parameters),
+  : TensorOperator<>(parameters),
     _two_pi_i(torch::tensor(c10::complex<double>(0.0, 2.0 * pi),
                             MooseTensor::complexFloatTensorOptions())),
     _mu(getParam<Real>("mu")),

@@ -17,7 +17,8 @@ TensorBuffer<T>::validParams()
 }
 
 template <typename T>
-TensorBuffer<T>::TensorBuffer(const InputParameters & parameters) : TensorBufferBase(parameters)
+TensorBuffer<T>::TensorBuffer(const InputParameters & parameters)
+  : TensorBufferBase(parameters), _cpu_copy_requested(false), _max_states(0)
 {
 }
 
@@ -51,10 +52,34 @@ template <typename T>
 void
 TensorBuffer<T>::makeCPUCopy()
 {
-  if (_u.is_cpu())
-    _u_cpu = _u.clone().contiguous();
-  else
-    _u_cpu = _u.cpu().contiguous();
+  if (_cpu_copy_requested)
+  {
+    try
+    {
+      if (_u.is_cpu())
+        _u_cpu = _u.clone().contiguous();
+      else
+        _u_cpu = _u.cpu().contiguous();
+    }
+    catch (...)
+    {
+    }
+  }
+}
+
+template <typename T>
+const torch::Tensor &
+TensorBuffer<T>::getRawTensor() const
+{
+  return _u;
+}
+
+template <typename T>
+const torch::Tensor &
+TensorBuffer<T>::getRawCPUTensor()
+{
+  _cpu_copy_requested = true;
+  return _u_cpu;
 }
 
 template class TensorBuffer<torch::Tensor>;

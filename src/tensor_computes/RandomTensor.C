@@ -15,7 +15,7 @@ registerMooseObject("SwiftApp", RandomTensor);
 InputParameters
 RandomTensor::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("Uniform random IC with values between `min` and `max`.");
   params.addRequiredParam<Real>("min", "Minimum value.");
   params.addRequiredParam<Real>("max", "Maximum value.");
@@ -23,9 +23,7 @@ RandomTensor::validParams()
   return params;
 }
 
-RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator(parameters)
-{
-}
+RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator<>(parameters) {}
 
 void
 RandomTensor::computeBuffer()
