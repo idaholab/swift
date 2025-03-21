@@ -94,19 +94,19 @@ LBMBounceBack::backBoundary()
 
 void LBMBounceBack::wallBoundary()
 {
-  const torch::Tensor & mesh_expanded =  _mesh.getBinaryMesh().unsqueeze(-1).expand_as(_f_old[0]);
-  torch::Tensor boundary_mask = (mesh_expanded == 2) & (_u == 0);
-  boundary_mask = boundary_mask.to(torch::kBool);
-  torch::Tensor f_bounce_back = torch::zeros_like(_f_old[0]);
+  // build boundary mask in the begining of simulation
+  if (_lb_problem.getTotalSteps() == 0)
+  {
+    LBMBoundaryCondition::buildBoundaryIndices();
+  }
 
   for (int ic = 1; ic < _stencil._q; ic++)
-  {
-    int64_t index = _stencil._op[ic].item<int64_t>();
-    auto lattice_slice = _f_old[0].index({Slice(), Slice(), Slice(), index});
-    auto bounce_back_slice = f_bounce_back.index({Slice(), Slice(), Slice(), ic});
-    bounce_back_slice.copy_(lattice_slice);
+  { 
+    const auto & opposite_dir = _stencil._op[_stencil._front[ic]];
+
+    _u.index_put_({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], ic}, 
+      _f_old[0].index({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], opposite_dir}));
   }
-  _u.index_put_({boundary_mask}, f_bounce_back.index({boundary_mask}));
 }
 
 void
