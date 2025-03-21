@@ -43,7 +43,7 @@ public:
   virtual void backBoundary() = 0;
   virtual void wallBoundary() {};
 
-  void buildBoundaryIndices();
+  virtual void buildBoundaryIndices();
   virtual void computeBuffer() override;
 
 protected:
@@ -60,7 +60,7 @@ protected:
   } _boundary;
 
   torch::Tensor _boundary_indices;
-  
+
   // Pre-calculated table for complex LBM boundary conditions
   const torch::Tensor _if_stream = torch::tensor({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1,
