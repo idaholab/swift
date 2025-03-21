@@ -60,8 +60,6 @@ LBMBoundaryCondition::buildBoundaryIndices()
     _mesh.getElementsInDimension(2),
     _stencil._q};
   
-  // _boundary_indices = torch::zeros(expected_shape, MooseTensor::intTensorOptions());
-
   const torch::Tensor & mesh_expanded = _mesh.getBinaryMesh().unsqueeze(3).expand(expected_shape);
   auto mask = (mesh_expanded == 2) & (_u == 0);
   _boundary_indices = torch::nonzero(mask);

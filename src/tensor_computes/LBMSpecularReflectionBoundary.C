@@ -34,7 +34,7 @@ LBMSpecularReflectionBoundary::LBMSpecularReflectionBoundary(const InputParamete
 }
 
 void
-LBMSpecularReflectionBoundary::buildBoundaryMask()
+LBMSpecularReflectionBoundary::buildBoundaryIndices()
 {
   /**
    * Building boundary mask
@@ -44,32 +44,31 @@ LBMSpecularReflectionBoundary::buildBoundaryMask()
                                         _mesh.getElementsInDimension(2),
                                         _stencil._q};
 
-  const torch::Tensor & mesh_expanded = _mesh.getBinaryMesh().unsqueeze(3).expand(expected_shape);
-  _boundary_mask = (mesh_expanded == 2) & (_u == 0);
-  _boundary_mask = _boundary_mask.to(torch::kBool);
+  // call parent class method
+  LBMBoundaryCondition::buildBoundaryIndices();
 
   _specular_reflection_indices = torch::zeros(expected_shape, MooseTensor::intTensorOptions());
   _specular_reflection_indices.fill_(0);
 
   determineBoundaryTypes();
 
-  int k = 0;
-  for (int i = 0; i < expected_shape[0]; i++)
-    for (int j = 0; j < expected_shape[1]; j++)
-      for (int ic = 0; ic < _stencil._q; ic++)
+  int64_t k = 0;
+  for (int64_t i = 0; i < expected_shape[0]; i++)
+    for (int64_t j = 0; j < expected_shape[1]; j++)
+      for (int64_t ic = 0; ic < _stencil._q; ic++)
       {
-        if (_boundary_types[i][j][k].item<int>()== -1)
+        if (_boundary_types[i][j][k].item<int64_t>()== -1)
           _specular_reflection_indices[i][j][k][ic] = ic;
 
         else
         {
-          int if_stream_index = _all_boundary_types.size(0) * ic + _boundary_types[i][j][k].item<int>();
+          int64_t if_stream_index = _all_boundary_types.size(0) * ic + _boundary_types[i][j][k].item<int64_t>();
 
-          // when streaming along ic is possible at i, j, k
-          if (_if_stream[if_stream_index].item<int>() != 0)
+          // when streaming along ic is possible at i, j, k, i.e nonzero
+          if (_if_stream[if_stream_index].item<int64_t>() != 0)
             _specular_reflection_indices[i][j][k][ic] = ic;
 
-          // when streaming along ic is NOT possible at i, j, k
+          // when streaming along ic is NOT possible at i, j, k i.e zero
           else
           {
             /*
@@ -77,7 +76,7 @@ LBMSpecularReflectionBoundary::buildBoundaryMask()
               and _boundary_mask[i][j][k][ic] = 1; means streaming at that location with that direction is not allowed
               so boundary condition will be applied
             */
-            _boundary_mask[i][j][k][ic] = 1;
+            // _boundary_indices[i][j][k][ic] = 1;
 
             // _icsr was precomputed using MATLAB so indices start from 1
             _specular_reflection_indices[i][j][k][ic] = _icsr[if_stream_index] - 1;
@@ -101,22 +100,22 @@ LBMSpecularReflectionBoundary::determineBoundaryTypes()
   _boundary_types.fill_(-1);
 
   // changes the order of D2Q9
-  std::vector<int> d2q9_order_to_new_order{7, 3, 6, 4, 0, 2, 8, 1, 5};
+  std::vector<int64_t> d2q9_order_to_new_order{7, 3, 6, 4, 0, 2, 8, 1, 5};
 
-  int k = 0;
+  int64_t k = 0;
 
-  for (int i = 0; i < _mesh.getElementsInDimension(0); i++)
-    for (int j = 0; j < _mesh.getElementsInDimension(1); j++)
+  for (int64_t i = 0; i < _mesh.getElementsInDimension(0); i++)
+    for (int64_t j = 0; j < _mesh.getElementsInDimension(1); j++)
     {
-      if (binary_mesh[i][j][k].item<int>() != 0)
+      if (binary_mesh[i][j][k].item<int64_t>() != 0)
       {
         // assembling binary string
         std::string string_of_binary_digits;
         // search in all directions
-        for (int ic = 0; ic < _stencil._q; ic++)
+        for (int64_t ic = 0; ic < _stencil._q; ic++)
         {
-          int i_prime = i + _stencil._ex[d2q9_order_to_new_order[ic]].item<int>();
-          int j_prime = j + _stencil._ey[d2q9_order_to_new_order[ic]].item<int>();
+          int64_t i_prime = i + _stencil._ex[d2q9_order_to_new_order[ic]].item<int64_t>();
+          int64_t j_prime = j + _stencil._ey[d2q9_order_to_new_order[ic]].item<int64_t>();
 
           // ensuring periodicity
           i_prime = (i_prime < 0) ? i_prime + _mesh.getElementsInDimension(0) : i_prime;
@@ -126,14 +125,15 @@ LBMSpecularReflectionBoundary::determineBoundaryTypes()
           j_prime = (j_prime >= _mesh.getElementsInDimension(1)) ? j_prime - _mesh.getElementsInDimension(1) : j_prime;
 
           //
-          if (binary_mesh[i_prime][j_prime][k].item<int>() == 0)
+          if (binary_mesh[i_prime][j_prime][k].item<int64_t>() == 0)
             string_of_binary_digits += '0';
           else
             string_of_binary_digits += '1';
         }
+
         // convert binary to decimal
         std::bitset<32> binary(string_of_binary_digits);
-        int decimal_number = binary.to_ulong();
+        int64_t decimal_number = binary.to_ulong();
         if (decimal_number != 511)
         {
           auto comparison_result = (_all_boundary_types == decimal_number);
@@ -147,7 +147,7 @@ LBMSpecularReflectionBoundary::determineBoundaryTypes()
           else
           {
             // the index where boundary type matches decimal_number
-            auto index = torch::nonzero(comparison_result).item<int>();
+            int64_t index = torch::nonzero(comparison_result).item<int64_t>();
 
             _boundary_types[i][j][k] = index;
           }
@@ -162,27 +162,21 @@ LBMSpecularReflectionBoundary::wallBoundary()
   // build boundary mask in the begining of simulation
   if (_lb_problem.getTotalSteps() == 0)
   {
-    buildBoundaryMask();
-  }
-
-  torch::Tensor f_bounce_back = torch::zeros_like(_f_old[0]);
-  torch::Tensor f_specular_reflect = torch::zeros_like(_f_old[0]);
-
-  // Bounce-back
-  for (int ic = 0; ic < _stencil._q; ic++)
-  {
-    int bounce_back_index = _stencil._op[ic].item<int64_t>();
-    auto lattice_slice = _f_old[0].index({Slice(), Slice(), Slice(), ic});
-    f_bounce_back.index_put_({Slice(), Slice(), Slice(), bounce_back_index}, lattice_slice);
+    _f_specular_reflect = torch::zeros_like(_f_old[0]);
+    buildBoundaryIndices();
   }
 
   // Specular reflection
-  f_specular_reflect.index_put_({Slice(), Slice(), Slice(), Slice()},
-                   _f_old[0].gather(3, _specular_reflection_indices.to(torch::kInt64)));
+  _f_specular_reflect.index_put_({Slice(), Slice(), Slice(), Slice()},
+                   _f_old[0].gather(3, _specular_reflection_indices));
 
-  // Combine bounce-back and specular reflection
-  torch::Tensor combined_boundary_conditions = _r * f_bounce_back + (1 - _r) * f_specular_reflect;
-  _u.index_put_({_boundary_mask}, combined_boundary_conditions.index({_boundary_mask}));
+  for (int ic = 1; ic < _stencil._q; ic++)
+  { 
+    const auto & opposite_dir = _stencil._op[_stencil._front[ic]];
+    _u.index_put_({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], ic}, 
+                  _r * _f_old[0].index({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], opposite_dir}) + \
+                  (1 - _r) * _f_specular_reflect.index({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], ic}));
+  }
 }
 
 void

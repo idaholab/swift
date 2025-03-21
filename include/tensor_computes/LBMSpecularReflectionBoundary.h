@@ -20,7 +20,7 @@ public:
 
   LBMSpecularReflectionBoundary(const InputParameters & parameters);
 
-  void buildBoundaryMask();
+  // void buildBoundaryMask();
   void determineBoundaryTypes();
   void topBoundary() override {}
   void bottomBoundary() override {}
@@ -29,12 +29,15 @@ public:
   void frontBoundary() override {}
   void backBoundary() override {}
   void wallBoundary() override;
+
+  void buildBoundaryIndices() override;
   void computeBuffer() override;
 
 protected:
   const std::vector<torch::Tensor> &  _f_old;
+  torch::Tensor _f_specular_reflect;
   torch::Tensor _boundary_types;
   torch::Tensor _specular_reflection_indices;
-  torch::Tensor _boundary_mask;
+  // torch::Tensor _boundary_mask;
   const Real _r; // combination coefficient
 };
