@@ -100,13 +100,15 @@ void LBMBounceBack::wallBoundary()
     LBMBoundaryCondition::buildBoundaryIndices();
   }
 
-  for (int ic = 1; ic < _stencil._q; ic++)
-  { 
-    const auto & opposite_dir = _stencil._op[_stencil._front[ic]];
-
-    _u.index_put_({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], ic}, 
-      _f_old[0].index({_boundary_indices[Slice(), 0], _boundary_indices[Slice(), 1], _boundary_indices[Slice(), 2], opposite_dir}));
-  }
+  // bounce-back
+  _u.index_put_({_boundary_indices.index({Slice(), 0}), 
+                  _boundary_indices.index({Slice(), 1}), 
+                  _boundary_indices.index({Slice(), 2}),
+                  _stencil._op.index_select(0, _boundary_indices.index({Slice(), 3}))}, 
+      _f_old[0].index({_boundary_indices.index({Slice(), 0}), 
+                      _boundary_indices.index({Slice(), 1}), 
+                      _boundary_indices.index({Slice(), 2}), 
+                      _boundary_indices.index({Slice(), 3})}));
 }
 
 void
