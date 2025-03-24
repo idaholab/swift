@@ -24,7 +24,7 @@ public:
   void buildMesh() override;
 
   void loadMeshFromDatFile();
-  void loadMeshFromVTKFile();
+  void loadMeshFromVTKFile(const std::string&, torch::Tensor&, torch::Tensor&, torch::Tensor&);
   const torch::Tensor & getBinaryMesh() const {return _binary_mesh;};
   const torch::Tensor & getKn() const {return _Knudsen_number;};
   const torch::Tensor & getPoreSize() const {return _local_pore_size;};
