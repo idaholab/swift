@@ -20,8 +20,6 @@ public:
 
   LBMSpecularReflectionBoundary(const InputParameters & parameters);
 
-  // void buildBoundaryMask();
-  void determineBoundaryTypes();
   void topBoundary() override {}
   void bottomBoundary() override {}
   void leftBoundary() override {}
@@ -35,9 +33,6 @@ public:
 
 protected:
   const std::vector<torch::Tensor> &  _f_old;
-  torch::Tensor _f_specular_reflect;
-  torch::Tensor _boundary_types;
   torch::Tensor _specular_reflection_indices;
-  // torch::Tensor _boundary_mask;
   const Real _r; // combination coefficient
 };
