@@ -11,31 +11,24 @@
 #include "TensorOperator.h"
 
 /**
- * ReciprocalMatDiffusion (\nabla M \nabla \mu) object
+ * ReciprocalAllenCahn (\nabla M \nabla \mu) object
  */
-
-class ReciprocalMatDiffusion : public TensorOperator
+class ReciprocalAllenCahn : public TensorOperator
 {
 public:
   static InputParameters validParams();
 
-  ReciprocalMatDiffusion(const InputParameters & parameters);
+  ReciprocalAllenCahn(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _chem_pot;
-  const torch::Tensor & _M;
+  const torch::Tensor & _dF_chem_deta;
+  const torch::Tensor & _L;
   /// imaginary unit i
   const torch::Tensor _imag;
   const torch::Tensor & _psi;
-  const Real _epsilon;
-
   bool _update_psi;
   const bool _always_update_psi;
-
   torch::Tensor _psi_thresh;
-  torch::Tensor _grad_psi_x_by_psi;
-  torch::Tensor _grad_psi_y_by_psi;
-  torch::Tensor _grad_psi_z_by_psi;
 };
