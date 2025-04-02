@@ -12,24 +12,20 @@
 /**
  * TensorTimeIntegrator object (this is mostly a compute object)
  */
- class ExplicitSolverBase : public TensorSolver
- {
- public:
-   static InputParameters validParams();
+class ExplicitSolverBase : public TensorSolver
+{
+public:
+  static InputParameters validParams();
 
-   ExplicitSolverBase(const InputParameters & parameters);
+  ExplicitSolverBase(const InputParameters & parameters);
 
- protected:
-   const unsigned int _history_size;
+protected:
+  struct Variable
+  {
+    torch::Tensor & _buffer;
+    const torch::Tensor & _reciprocal_buffer;
+    const torch::Tensor & _time_derivative_reciprocal;
+  };
 
-   struct Variable
-   {
-     torch::Tensor & _buffer;
-     const torch::Tensor & _reciprocal_buffer;
-     const torch::Tensor & _time_derivative_reciprocal;
-     const std::vector<torch::Tensor> & _old_reciprocal_buffer;
-     const std::vector<torch::Tensor> & _old_time_derivative_reciprocal;
-   };
-
-   std::vector<Variable> _variables;
- };
+  std::vector<Variable> _variables;
+};

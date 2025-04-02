@@ -32,8 +32,6 @@ ForwardEulerSolver::ForwardEulerSolver(const InputParameters & parameters)
 void
 ForwardEulerSolver::computeBuffer()
 {
-  const bool dt_changed = (_dt != _dt_old);
-
   torch::Tensor ubar;
   _sub_dt = _dt / _substeps;
 
@@ -44,27 +42,9 @@ ForwardEulerSolver::computeBuffer()
     _compute->computeBuffer();
 
     // integrate all variables
-    for (auto & [u,
-                 reciprocal_buffer,
-                 time_derivative_reciprocal,
-                 old_reciprocal_buffer,
-                 old_time_derivative_reciprocal] : _variables)
+    for (auto & [u, reciprocal_buffer, time_derivative_reciprocal] : _variables)
     {
-      const auto n_old = std::min(old_reciprocal_buffer.size(), old_time_derivative_reciprocal.size());
-
-    //   if (n_old == 0 || (substep == 0 && dt_changed))
-        // compute FFT time update (1st order)
-      ubar = (reciprocal_buffer + _sub_dt * time_derivative_reciprocal);
-
-    //   if (n_old >= 1)
-    //     // compute FFT time update (2nd order) - this probably breaks for adaptive _sub_dt!
-    //     // ubar = (4.0 * _reciprocal_buffer - _old_reciprocal_buffer[0] +
-    //     //         (2.0 * _sub_dt) * (2.0 * _non_linear_reciprocal - _old_non_linear_reciprocal[0]))
-    //     //         /
-    //     //        (3.0 - (2.0 * _sub_dt) * _linear_reciprocal);
-    //     ubar = (reciprocal_buffer +
-    //             _sub_dt / 2.0 * (3.0 * nonlinear_reciprocal - old_non_linear_reciprocal[0])) /
-    //            (1.0 - _sub_dt * linear_reciprocal);
+      ubar = reciprocal_buffer + _sub_dt * time_derivative_reciprocal;
 
       u = _domain.ifft(ubar);
     }

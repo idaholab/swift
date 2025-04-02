@@ -23,13 +23,11 @@ ExplicitSolverBase::validParams()
       "reciprocal_buffer", "Buffer with the reciprocal of the integrated buffer");
   params.addRequiredParam<std::vector<TensorInputBufferName>>(
       "time_derivative_reciprocal", "Buffer with the reciprocal of the time derivative function");
-  params.addParam<unsigned int>(
-      "history_size", 1, "How many old states to use (determines time integration order).");
   return params;
 }
 
 ExplicitSolverBase::ExplicitSolverBase(const InputParameters & parameters)
-  : TensorSolver(parameters), _history_size(getParam<unsigned int>("history_size"))
+  : TensorSolver(parameters)
 {
   auto buffers = getParam<std::vector<TensorOutputBufferName>>("buffer");
   auto reciprocal_buffers = getParam<std::vector<TensorInputBufferName>>("reciprocal_buffer");
@@ -43,9 +41,9 @@ ExplicitSolverBase::ExplicitSolverBase(const InputParameters & parameters)
                "'time_derivative_reciprocal'.");
 
   for (const auto i : make_range(n))
-    _variables.push_back(Variable{getOutputBufferByName(buffers[i]),
-                                  getInputBufferByName(reciprocal_buffers[i]),
-                                  getInputBufferByName(time_derivative_reciprocals[i]),
-                                  getBufferOldByName(reciprocal_buffers[i], _history_size),
-                                  getBufferOldByName(time_derivative_reciprocals[i], _history_size)});
+    _variables.push_back(Variable{
+        getOutputBufferByName(buffers[i]),
+        getInputBufferByName(reciprocal_buffers[i]),
+        getInputBufferByName(time_derivative_reciprocals[i]),
+    });
 }
