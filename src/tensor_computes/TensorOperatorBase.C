@@ -33,6 +33,9 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
     _i(_domain.getReciprocalAxis(0)),
     _j(_domain.getReciprocalAxis(1)),
     _k(_domain.getReciprocalAxis(2)),
-    _time(_tensor_problem.subTime())
+    _imaginary(
+        torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions())),
+    _time(_tensor_problem.subTime()),
+    _dim(_domain.getDim())
 {
 }

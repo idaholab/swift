@@ -69,8 +69,14 @@ protected:
   /// reciprocal axes
   const torch::Tensor &_i, &_j, &_k;
 
+  /// Imaginary unit i
+  const torch::Tensor _imaginary;
+
   /// substep time
   const Real & _time;
+
+  /// problem dimension
+  const unsigned int & _dim;
 };
 
 template <typename T>
