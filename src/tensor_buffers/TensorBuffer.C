@@ -6,24 +6,6 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#pragma once
+#include "TensorBuffer.h"
 
-#include "TensorOperator.h"
-#include "FunctionInterface.h"
-
-class Function;
-
-/**
- * Constant Tensor
- */
-class MooseFunctionTensor : public TensorOperator<>, public FunctionInterface
-{
-public:
-  static InputParameters validParams();
-
-  MooseFunctionTensor(const InputParameters & parameters);
-
-  virtual void computeBuffer() override;
-
-  const Function & _func;
-};
+template class TensorBuffer<torch::Tensor>;

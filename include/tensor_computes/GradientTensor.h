@@ -6,16 +6,30 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "ScalarTensorBuffer.h"
+#pragma once
 
-registerMooseObject("SwiftApp", ScalarTensorBuffer);
+#ifdef NEML2_ENABLED
 
-InputParameters
-ScalarTensorBuffer::validParams()
+#include "TensorOperator.h"
+#include "neml2/tensors/Vec.h"
+
+/**
+ * Gradient of a tensor field
+ */
+class GradientTensor : public TensorOperator<neml2::Vec>
 {
-  InputParameters params = TensorBufferBase::validParams();
-  params.addClassDescription("Add a scalar valued TensorBuffer object.");
-  return params;
-}
+public:
+  static InputParameters validParams();
 
-ScalarTensorBuffer::ScalarTensorBuffer(const InputParameters & parameters) : TensorBufferBase(parameters) {}
+  GradientTensor(const InputParameters & parameters);
+
+  virtual void computeBuffer() override;
+
+protected:
+  const torch::Tensor & _input;
+  const bool _input_is_reciprocal;
+
+  const torch::Tensor _zero;
+};
+
+#endif

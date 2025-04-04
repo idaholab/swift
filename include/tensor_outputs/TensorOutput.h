@@ -9,9 +9,10 @@
 #pragma once
 
 #include "MooseObject.h"
-#include <torch/torch.h>
 #include <thread>
+#include <torch/torch.h>
 
+class TensorBufferBase;
 class TensorProblem;
 class DomainAction;
 

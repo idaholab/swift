@@ -8,23 +8,30 @@
 
 #pragma once
 
-#include "TensorOperator.h"
+#ifdef NEML2_ENABLED
+
+#include "TensorBuffer.h"
+#include "neml2/tensors/Vec.h"
+#include "neml2/tensors/SR2.h"
 
 /**
- * TensorTimeIntegrator object (this is mostly a compute object)
+ * Tensor wrapper arbitrary tensor value dimensions
  */
 template <typename T>
-class TensorTimeIntegrator : public TensorOperator<T>
+class NEML2TensorBuffer : public TensorBuffer<T>
 {
 public:
   static InputParameters validParams();
 
-  TensorTimeIntegrator(const InputParameters & parameters);
+  NEML2TensorBuffer(const InputParameters & parameters);
 
-protected:
-  const std::vector<T> & getBufferOld(const std::string & param, unsigned int max_states);
-  const std::vector<T> & getBufferOldByName(const TensorInputBufferName & buffer_name,
-                                            unsigned int max_states);
-
-  const Real & _sub_dt;
+  virtual void init();
 };
+
+using VectorTensor = NEML2TensorBuffer<neml2::Vec>;
+registerTensorType(VectorTensor, neml2::Vec);
+
+using SR2Tensor = NEML2TensorBuffer<neml2::SR2>;
+registerTensorType(SR2Tensor, neml2::SR2);
+
+#endif

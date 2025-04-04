@@ -8,11 +8,10 @@
 
 #pragma once
 
-#include "TensorOperator.h"
-#include "TensorProblem.h"
+#include "TensorOperatorBase.h"
 
 /**
- * TensorTimeIntegrator object (this is mostly a compute object)
+ * TensorSolver object (this is mostly a compute object)
  */
 class TensorSolver : public TensorOperatorBase
 {

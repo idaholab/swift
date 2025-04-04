@@ -14,7 +14,7 @@ registerMooseObject("SwiftApp", FFTGradient);
 InputParameters
 FFTGradient::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("Tensor gradient.");
   params.addRequiredParam<TensorInputBufferName>("input", "Input buffer name");
   params.addParam<bool>("input_is_reciprocal", false, "Input buffer is already in reciprocal space");
@@ -24,12 +24,11 @@ FFTGradient::validParams()
 }
 
 FFTGradient::FFTGradient(const InputParameters & parameters)
-  : TensorOperator(parameters),
+  : TensorOperator<>(parameters),
     _input(getInputBuffer("input")),
     _input_is_reciprocal(getParam<bool>("input_is_reciprocal")),
     _direction(getParam<MooseEnum>("direction")),
-    _i(torch::tensor(c10::complex<double>(0.0, 1.0),
-                     MooseTensor::complexFloatTensorOptions()))
+    _i(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()))
 {
 }
 

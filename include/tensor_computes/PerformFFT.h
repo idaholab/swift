@@ -14,7 +14,7 @@
  * PerformFFT object
  */
 template <bool forward>
-class PerformFFTTempl : public TensorOperator
+class PerformFFTTempl : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

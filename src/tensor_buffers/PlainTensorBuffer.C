@@ -6,20 +6,24 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "TensorOperator.h"
-#include "TensorBuffer.h"
-#include "TensorProblem.h"
+#include "PlainTensorBuffer.h"
+
+registerMooseObject("SwiftApp", PlainTensorBuffer);
 
 InputParameters
-TensorOperator::validParams()
+PlainTensorBuffer::validParams()
 {
-  InputParameters params = TensorOperatorBase::validParams();
-  params.addRequiredParam<TensorOutputBufferName>("buffer", "The buffer this compute is writing to");
-  params.addClassDescription("TensorOperator object.");
+  InputParameters params = TensorBuffer<torch::Tensor>::validParams();
   return params;
 }
 
-TensorOperator::TensorOperator(const InputParameters & parameters)
-  : TensorOperatorBase(parameters), _u(getOutputBuffer("buffer"))
+PlainTensorBuffer::PlainTensorBuffer(const InputParameters & parameters)
+  : TensorBuffer<torch::Tensor>(parameters)
 {
+}
+
+void
+PlainTensorBuffer::init()
+{
+  // _u = torch::zeros(_shape, _options);
 }

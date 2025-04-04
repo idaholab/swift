@@ -15,8 +15,8 @@ InputParameters
 AddTensorBufferAction::validParams()
 {
   InputParameters params = MooseObjectAction::validParams();
-  params.addClassDescription("Add an TensorBuffer object to the simulation.");
-  params.set<std::string>("type") = "ScalarTensorBuffer";
+  params.addClassDescription("Add a TensorBuffer object to the simulation.");
+  params.set<std::string>("type") = "PlainTensorBuffer";
   return params;
 }
 
@@ -32,5 +32,5 @@ AddTensorBufferAction::act()
   if (!tensor_problem)
     mooseError("Tensor Buffers are only supported if the problem class is set to `TensorProblem`");
 
-  tensor_problem->addTensorBuffer(_name, _moose_object_pars);
+  tensor_problem->addTensorBuffer(_type, _name, _moose_object_pars);
 }
