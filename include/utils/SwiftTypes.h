@@ -27,4 +27,6 @@ typedef std::string TensorOutputName;
 
 /// Forward declarations
 class TensorBufferBase;
+
+template <typename T>
 class TensorOperator;

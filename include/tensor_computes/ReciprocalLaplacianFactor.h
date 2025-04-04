@@ -13,7 +13,7 @@
 /**
  * Sinusoidal IC
  */
-class ReciprocalLaplacianFactor : public TensorOperator
+class ReciprocalLaplacianFactor : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

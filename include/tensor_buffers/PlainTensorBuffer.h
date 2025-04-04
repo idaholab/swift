@@ -8,12 +8,19 @@
 
 #pragma once
 
-#include "TensorBufferBase.h"
+#include "TensorBuffer.h"
 
-class ScalarTensorBuffer : public TensorBufferBase
+/**
+ * Tensor wrapper arbitrary tensor value dimensions
+ */
+class PlainTensorBuffer : public TensorBuffer<torch::Tensor>
 {
 public:
   static InputParameters validParams();
 
-  ScalarTensorBuffer(const InputParameters & parameters);
+  PlainTensorBuffer(const InputParameters & parameters);
+
+  virtual void init();
 };
+
+registerTensorType(PlainTensorBuffer, torch::Tensor);

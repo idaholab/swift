@@ -67,3 +67,82 @@ protected:
   hid_t _hdf5_file_id;
 #endif
 };
+
+/*
+
+#include <torch/torch.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+void outputScalarFields(const torch::Tensor& tensor, int spatial_dim, const std::string&
+filename_prefix) { auto sizes = tensor.sizes(); int total_dims = sizes.size();
+
+    if (spatial_dim < 1 || spatial_dim > 3) {
+        std::cerr << "spatial_dim must be between 1 and 3." << std::endl;
+        return;
+    }
+
+    int scalar_dims = total_dims - spatial_dim;
+    if (scalar_dims < 0) {
+        std::cerr << "Tensor has fewer dimensions than specified spatial_dim." << std::endl;
+        return;
+    }
+
+    int num_scalar_fields = 1;
+    for (int i = spatial_dim; i < total_dims; ++i) {
+        num_scalar_fields *= sizes[i];
+    }
+
+    std::vector<int64_t> reshape_sizes(sizes.begin(), sizes.begin() + spatial_dim);
+    reshape_sizes.push_back(num_scalar_fields);
+    torch::Tensor reshaped = tensor.reshape(reshape_sizes);
+
+    for (int field_idx = 0; field_idx < num_scalar_fields; ++i) {
+        torch::Tensor scalar_field = reshaped.select(spatial_dim, field_idx);
+
+        std::string filename = filename_prefix + "_field_" + std::to_string(i) + ".txt";
+        std::ofstream outfile(filename);
+
+        if (!outfile.is_open()) {
+            std::cerr << "Failed to open file " << filename << std::endl;
+            continue;
+        }
+
+        auto accessor = scalar_field.accessor<float, spatial_dim>();
+
+        if (spatial_dim == 1) {
+            for (int64_t x = 0; x < scalar_field.size(0); ++x) {
+                outfile << scalar_field[x].item<float>() << "\n";
+            }
+        } else if (spatial_dim == 2) {
+            for (int64_t i = 0; i < scalar_field.size(0); ++i) {
+                for (int64_t j = 0; j < scalar_field.size(1); ++j) {
+                    outfile << scalar_field[i][j].item<float>() << " ";
+                }
+                outfile << "\n";
+            }
+        } else if (spatial_dim == 3) {
+            for (int64_t i = 0; i < scalar_field.size(0); ++i) {
+                for (int64_t j = 0; j < scalar_field.size(1); ++j) {
+                    for (int64_t k = 0; k < scalar_field.size(2); ++k) {
+                        outfile << scalar_field[i][j][k].item<float>() << " ";
+                    }
+                    outfile << "\n";
+                }
+                outfile << "\n";
+            }
+        }
+
+        outfile.close();
+        std::cout << "Saved Scalar Field " << field_idx << " to " << filename << std::endl;
+    }
+}
+
+int main() {
+    torch::Tensor tensor = torch::rand({20, 20, 20, 3});  // example 3D vector field
+    outputScalarFields(tensor, 3, "tensor_output");
+    return 0;
+}
+
+*/

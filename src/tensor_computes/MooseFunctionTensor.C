@@ -42,7 +42,7 @@ MooseFunctionTensor::computeBuffer()
       case 1:
         auto b = buffer.accessor<double, 1>();
         for (const auto i : make_range(n[0]))
-          b[i] = _func.value(0, Point(i * dx[0] + dx[0] / 2.0, 0.0, 0.0));
+          b[i] = _func.value(0, Point(i * dx(0) + dx(0) / 2.0, 0.0, 0.0));
         break;
     }
     case 2:
@@ -50,7 +50,7 @@ MooseFunctionTensor::computeBuffer()
       auto b = buffer.accessor<double, 2>();
       for (const auto j : make_range(n[1]))
         for (const auto i : make_range(n[0]))
-          b[i][j] = _func.value(0, Point(i * dx[0] + dx[0] / 2.0, j * dx[1] + dx[1] / 2.0, 0.0));
+          b[i][j] = _func.value(0, Point(i * dx(0) + dx(0) / 2.0, j * dx(1) + dx(1) / 2.0, 0.0));
       break;
     }
     case 3:
@@ -61,7 +61,7 @@ MooseFunctionTensor::computeBuffer()
           for (const auto i : make_range(n[0]))
             b[i][j][k] = _func.value(
                 0,
-                Point(i * dx[0] + dx[0] / 2.0, j * dx[1] + dx[1] / 2.0, k * dx[2] + dx[2] / 2.0));
+                Point(i * dx(0) + dx(0) / 2.0, j * dx(1) + dx(1) / 2.0, k * dx(2) + dx(2) / 2.0));
       break;
     }
     default:

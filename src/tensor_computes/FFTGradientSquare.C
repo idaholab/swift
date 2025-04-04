@@ -14,7 +14,7 @@ registerMooseObject("SwiftApp", FFTGradientSquare);
 InputParameters
 FFTGradientSquare::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<>::validParams();
   params.addClassDescription("Tensor gradient.");
   params.addRequiredParam<TensorInputBufferName>("input", "Input buffer name");
   params.addParam<bool>(
@@ -24,13 +24,12 @@ FFTGradientSquare::validParams()
 }
 
 FFTGradientSquare::FFTGradientSquare(const InputParameters & parameters)
-  : TensorOperator(parameters),
+  : TensorOperator<>(parameters),
     _input(getInputBuffer("input")),
     _input_is_reciprocal(getParam<bool>("input_is_reciprocal")),
     _factor(getParam<Real>("factor")),
     _dim(_domain.getDim()),
-    _i(torch::tensor(c10::complex<double>(0.0, 1.0),
-                     MooseTensor::complexFloatTensorOptions()))
+    _i(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()))
 {
 }
 

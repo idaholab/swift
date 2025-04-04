@@ -15,7 +15,7 @@
 /**
  * ParsedCompute object
  */
-class ParsedCompute : public TensorOperator
+class ParsedCompute : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

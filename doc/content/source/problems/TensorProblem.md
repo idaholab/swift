@@ -6,7 +6,7 @@
  `TensorBuffers`, `TensorComputes`, and `TensorOutputs`.
 
 The TensorProblem object handles the execution of `TensorComputes`, schedules `TensorOutputs`, and supports
-fast mapping for tensor buffers onto conforming meshes using the [!param](/TensorBuffers/ScalarTensorBuffer/map_to_aux_variable) option.
+fast mapping for tensor buffers onto conforming meshes using the [!param](/TensorBuffers/PlainTensorBuffer/map_to_aux_variable) option.
 
 ## Overview
 

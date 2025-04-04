@@ -13,7 +13,7 @@
 /**
  * Constant Tensor
  */
-class FFTGradientSquare : public TensorOperator
+class FFTGradientSquare : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

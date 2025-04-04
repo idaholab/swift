@@ -7,6 +7,7 @@
 /**********************************************************************/
 
 #include "TensorProblem.h"
+#include "TensorSolver.h"
 #include "UniformTensorMesh.h"
 
 #include "TensorOperatorBase.h"
@@ -71,7 +72,7 @@ TensorProblem::init()
   // initialize tensors (assuming all scalar for now, but in the future well have an
   // TensorBufferBase pointer as well)
   for (auto pair : _tensor_buffer)
-    pair.second = torch::zeros(_shape, _options);
+    pair.second->init();
 
   // compute grid dependent quantities
   gridChanged();
@@ -153,8 +154,8 @@ TensorProblem::execute(const ExecFlagType & exec_type)
       // if the time step changed and the current time integrator does not support variable time
       // step size, we clear the histories
       if (dt() != dtOld())
-        for (auto & [name, max_states] : _old_tensor_buffer)
-          max_states.second.clear();
+        for (auto & pair : _tensor_buffer)
+          pair.second->clearStates();
 
       // update substepping dt
       _sub_dt = FEProblem::dt() / _substeps;
@@ -203,10 +204,10 @@ TensorProblem::executeTensorInitialConditions()
   for (auto & cmp : _computes)
     _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
 
-  // check for uninitialized tensors
-  for (auto & [name, t] : _tensor_buffer)
-    if (!t.defined() && _is_output.count(name) == 0)
-      mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
+  // // check for uninitialized tensors
+  // for (auto & [name, t] : _tensor_buffer)
+  //   if (!t.defined() && _is_output.count(name) == 0)
+  //     mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
 }
 
 /// perform output tasks
@@ -222,15 +223,8 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
   _output_time = _time;
 
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
-  for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
-  {
-    // get main buffer (GPU or CPU) - we already verified that it must exist
-    const auto & buffer = _tensor_buffer[name];
-    if (buffer.is_cpu())
-      cpu_buffer = buffer.clone().contiguous();
-    else
-      cpu_buffer = buffer.cpu().contiguous();
-  }
+  for (const auto & pair : _tensor_buffer)
+    pair.second->makeCPUCopy();
 
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
@@ -264,27 +258,11 @@ TensorProblem::updateDOFMap()
       mooseError("Unsupported variable type for mapping");
     auto var_num = var->number();
 
-    const static Point shift(_grid_spacing[0] / 2.0 - min_global[0],
-                             _grid_spacing[1] / 2.0 - min_global[1],
-                             _grid_spacing[2] / 2.0 - min_global[2]);
     auto compute_iteration_index = [this](Point p, long int n0, long int n1)
     {
-      switch (_dim)
-      {
-        case 1:
-          return static_cast<long int>(p(0) / _grid_spacing[0]);
-
-        case 2:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0;
-
-        case 3:
-          return static_cast<long int>(p(0) / _grid_spacing[0]) +
-                 static_cast<long int>(p(1) / _grid_spacing[1]) * n0 +
-                 static_cast<long int>(p(2) / _grid_spacing[2]) * n0 * n1;
-        default:
-          mooseError("Unsupported dimension");
-      }
+      return static_cast<long int>(p(0) / _grid_spacing(0)) +
+             (_dim > 1 ? static_cast<long int>(p(1) / _grid_spacing(1)) * n0 : 0) +
+             (_dim > 2 ? static_cast<long int>(p(2) / _grid_spacing(2)) * n0 * n1 : 0);
     };
 
     if (is_nodal)
@@ -292,23 +270,10 @@ TensorProblem::updateDOFMap()
       long int n0 = _n[0] + 1;
       long int n1 = _n[1] + 1;
       long int n2 = _n[2] + 1;
-
-      switch (_dim)
-      {
-        case 1:
-          dofs.resize(n0);
-          break;
-        case 2:
-          dofs.resize(n0 * n1);
-          break;
-        case 3:
-          dofs.resize(n0 * n1 * n2);
-          break;
-        default:
-          mooseError("unsupported dimension");
-      }
+      dofs.resize(n0 * (_dim > 1 ? n1 : 1) * (_dim > 2 ? n2 : 1));
 
       // loop over nodes
+      const static Point shift = _grid_spacing / 2.0 - min_global;
       for (const auto & node : _mesh.getMesh().node_ptr_range())
       {
         const auto dof_index = node->dof_number(sys_num, var_num, 0);
@@ -322,8 +287,9 @@ TensorProblem::updateDOFMap()
       long int n1 = _n[1];
       long int n2 = _n[2];
       dofs.resize(n0 * n1 * n2);
-      const static Point shift(-min_global[0], -min_global[0], -min_global[0]);
+
       // loop over elements
+      const static Point shift = -min_global;
       for (const auto & elem : _mesh.getMesh().element_ptr_range())
       {
         const auto dof_index = elem->dof_number(sys_num, var_num, 0);
@@ -362,7 +328,8 @@ TensorProblem::mapBuffersToAux()
     const long int n1 = is_nodal ? _n[1] + 1 : _n[1];
     const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
 
-    const auto buffer = _tensor_cpu_buffer[buffer_name];
+    // TODO: better design that works for NEML2 tensors as well
+    const auto buffer = getBuffer<torch::Tensor>(buffer_name);
     std::size_t idx = 0;
     switch (_dim)
     {
@@ -399,6 +366,75 @@ TensorProblem::mapBuffersToAux()
   getAuxiliarySystem().sys().update();
 }
 
+template <typename FLOAT_TYPE>
+void
+TensorProblem::mapAuxToBuffers()
+{
+  // nothing to map?
+  if (_var_to_buffer.empty())
+    return;
+
+  TIME_SECTION("update", 3, "Mapping Variables to Tensor buffers", true);
+
+  const auto * current_solution = &getAuxiliarySystem().solution();
+  const auto * solution_vector = dynamic_cast<const PetscVector<Number> *>(current_solution);
+  if (!solution_vector)
+    mooseError(
+        "Cannot map directly to the solution vector because NumericVector is not a PetscVector!");
+
+  const auto value = solution_vector->get_array_read();
+
+  // const monomial variables
+  for (const auto & [buffer_name, tuple] : _var_to_buffer)
+  {
+    const auto & [var, dofs, is_nodal] = tuple;
+    libmesh_ignore(var);
+    const auto buffer = getBufferBase(buffer_name).getRawCPUTensor();
+    std::size_t idx = 0;
+    switch (_dim)
+    {
+      {
+        case 1:
+          auto b = buffer.template accessor<FLOAT_TYPE, 1>();
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]] = value[dofs[idx++]];
+          break;
+      }
+      case 2:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 2>();
+        for (const auto j : make_range(_n[1]))
+        {
+          for (const auto i : make_range(_n[0]))
+            b[i % _n[0]][j % _n[1]] = value[dofs[idx++]];
+          if (is_nodal)
+            idx++;
+        }
+        break;
+      }
+      case 3:
+      {
+        auto b = buffer.template accessor<FLOAT_TYPE, 3>();
+        for (const auto k : make_range(_n[2]))
+        {
+          for (const auto j : make_range(_n[1]))
+          {
+            for (const auto i : make_range(_n[0]))
+              b[i % _n[0]][j % _n[1]][k % _n[2]] = value[dofs[idx++]];
+            if (is_nodal)
+              idx++;
+          }
+          if (is_nodal)
+            idx += _n[0] + 1;
+        }
+        break;
+      }
+      default:
+        mooseError("Unsupported dimension");
+    }
+  }
+}
+
 void
 TensorProblem::advanceState()
 {
@@ -409,21 +445,8 @@ TensorProblem::advanceState()
 
   // move buffers in time
   std::size_t total_max = 0;
-  for (auto & [name, max_states] : _old_tensor_buffer)
-  {
-    auto & [max, states] = max_states;
-    if (max > total_max)
-      total_max = max;
-
-    if (states.size() < max)
-      states.push_back(torch::tensor({}, _options));
-    if (!states.empty())
-    {
-      for (std::size_t i = states.size() - 1; i > 0; --i)
-        states[i] = states[i - 1];
-      states[0] = _tensor_buffer[name];
-    }
-  }
+  for (auto & pair : _tensor_buffer)
+    total_max = std::max(total_max, pair.second->advanceState());
 
   // move dt in time (UGH, we need the _substep_dt!!!!)
   if (_old_dt.size() < total_max)
@@ -443,18 +466,30 @@ TensorProblem::gridChanged()
 }
 
 void
-TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)
+TensorProblem::addTensorBuffer(const std::string & buffer_type,
+                               const std::string & buffer_name,
+                               InputParameters & parameters)
 {
   // add buffer
   if (_tensor_buffer.find(buffer_name) != _tensor_buffer.end())
     mooseError("TensorBuffer '", buffer_name, "' already exists in the system");
-  _tensor_buffer.try_emplace(buffer_name);
+
+  // Add a pointer to the TensorProblem and the Domain
+  // parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  // parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
+
+  // Create the object
+  auto tensor_buffer = _factory.create<TensorBufferBase>(buffer_type, buffer_name, parameters, 0);
+  logAdd("TensorBufferBase", buffer_name, buffer_type, parameters);
+
+  _tensor_buffer.try_emplace(buffer_name, tensor_buffer);
 
   // store variable mapping
-  if (parameters.isParamValid("map_to_aux_variable"))
+  const auto & var_names = parameters.get<std::vector<AuxVariableName>>("map_to_aux_variable");
+  if (!var_names.empty())
   {
     const auto & aux = getAuxiliarySystem();
-    const auto & var_name = parameters.get<AuxVariableName>("map_to_aux_variable");
+    const auto var_name = var_names[0];
     if (!aux.hasVariable(var_name))
       mooseError("AuxVariable '", var_name, "' does not exist in the system.");
 
@@ -470,24 +505,26 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name, InputParameters 
                  "variables of any other type.");
 
     _buffer_to_var[buffer_name] = std::make_tuple(&var, std::vector<std::size_t>{}, is_nodal);
-    getCPUBuffer(buffer_name);
+
+    // call this to mark the CPU copy as requested
+    getRawCPUBuffer(buffer_name);
   }
 }
 
 void
-TensorProblem::addTensorComputeSolve(const std::string & compute_name,
-                                     const std::string & name,
+TensorProblem::addTensorComputeSolve(const std::string & compute_type,
+                                     const std::string & compute_name,
                                      InputParameters & parameters)
 {
-  addTensorCompute(compute_name, name, parameters, _computes);
+  addTensorCompute(compute_type, compute_name, parameters, _computes);
 }
 
 void
-TensorProblem::addTensorComputeInitialize(const std::string & compute_name,
-                                          const std::string & name,
+TensorProblem::addTensorComputeInitialize(const std::string & compute_type,
+                                          const std::string & compute_name,
                                           InputParameters & parameters)
 {
-  addTensorCompute(compute_name, name, parameters, _ics);
+  addTensorCompute(compute_type, compute_name, parameters, _ics);
 }
 
 void
@@ -499,16 +536,16 @@ TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
 }
 
 void
-TensorProblem::addTensorComputeOnDemand(const std::string & compute_name,
-                                        const std::string & name,
+TensorProblem::addTensorComputeOnDemand(const std::string & compute_type,
+                                        const std::string & compute_name,
                                         InputParameters & parameters)
 {
-  addTensorCompute(compute_name, name, parameters, _on_demand);
+  addTensorCompute(compute_type, compute_name, parameters, _on_demand);
 }
 
 void
-TensorProblem::addTensorCompute(const std::string & compute_name,
-                                const std::string & name,
+TensorProblem::addTensorCompute(const std::string & compute_type,
+                                const std::string & compute_name,
                                 InputParameters & parameters,
                                 TensorComputeList & list)
 {
@@ -517,14 +554,15 @@ TensorProblem::addTensorCompute(const std::string & compute_name,
   parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
-  auto compute_object = _factory.create<TensorOperatorBase>(compute_name, name, parameters, 0);
-  logAdd("TensorOperatorBase", name, compute_name, parameters);
+  auto compute_object =
+      _factory.create<TensorOperatorBase>(compute_type, compute_name, parameters, 0);
+  logAdd("TensorOperatorBase", compute_name, compute_type, parameters);
   list.push_back(compute_object);
 }
 
 void
-TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
-                                       const std::string & name,
+TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_type,
+                                       const std::string & time_integrator_name,
                                        InputParameters & parameters)
 {
   // Add a pointer to the TensorProblem and the Domain
@@ -540,19 +578,19 @@ TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_name,
                  "' is already advanced by time integrator '",
                  ti->name(),
                  "'. Cannot add '",
-                 name,
+                 time_integrator_name,
                  "'.");
 
   // Create the object
-  auto time_integrator_object =
-      _factory.create<TensorTimeIntegrator>(time_integrator_name, name, parameters, 0);
-  logAdd("TensorTimeIntegrator", name, time_integrator_name, parameters);
+  auto time_integrator_object = _factory.create<TensorTimeIntegrator<>>(
+      time_integrator_type, time_integrator_name, parameters, 0);
+  logAdd("TensorTimeIntegrator", time_integrator_name, time_integrator_type, parameters);
   _time_integrators.push_back(time_integrator_object);
 }
 
 void
-TensorProblem::addTensorOutput(const std::string & output_name,
-                               const std::string & name,
+TensorProblem::addTensorOutput(const std::string & output_type,
+                               const std::string & output_name,
                                InputParameters & parameters)
 {
   // Add a pointer to the TensorProblem and the Domain
@@ -560,56 +598,9 @@ TensorProblem::addTensorOutput(const std::string & output_name,
   parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
-  auto output_object = _factory.create<TensorOutput>(output_name, name, parameters, 0);
-  logAdd("TensorInitialCondition", name, output_name, parameters);
+  auto output_object = _factory.create<TensorOutput>(output_type, output_name, parameters, 0);
+  logAdd("TensorInitialCondition", output_name, output_type, parameters);
   _outputs.push_back(output_object);
-}
-
-torch::Tensor &
-TensorProblem::getBuffer(const std::string & buffer_name)
-{
-  auto it = _tensor_buffer.find(buffer_name);
-  if (it == _tensor_buffer.end())
-    mooseError("TensorBuffer '", buffer_name, "' does not exist in the system");
-  return it->second;
-}
-
-const std::vector<torch::Tensor> &
-TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
-{
-  auto it = _old_tensor_buffer.find(buffer_name);
-  if (it == _old_tensor_buffer.end())
-  {
-    auto [newit, success] = _old_tensor_buffer.emplace(
-        buffer_name, std::make_pair(max_states, std::vector<torch::Tensor>{}));
-    if (success)
-      it = newit;
-    else
-      mooseError("Failed to insert old buffer state");
-  }
-  else
-    it->second.first = std::max(it->second.first, max_states);
-  return it->second.second;
-}
-
-const torch::Tensor &
-TensorProblem::getCPUBuffer(const std::string & buffer_name)
-{
-  // does the buffer we request to copy to the CPU actually exist?
-  if (_tensor_buffer.find(buffer_name) == _tensor_buffer.end())
-    mooseError("Buffer '", buffer_name, "' does not exist. Cannot request a CPU copy of it.");
-
-  // add it to the list of buffers to be copied
-  auto it = _tensor_cpu_buffer.find(buffer_name);
-  if (it == _tensor_cpu_buffer.end())
-  {
-    auto [newit, success] = _tensor_cpu_buffer.try_emplace(buffer_name);
-    if (success)
-      it = newit;
-    else
-      mooseError("Failed to insert read-only CPU buffer");
-  }
-  return it->second;
 }
 
 TensorOperatorBase &
@@ -635,4 +626,19 @@ TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
   if (!_time_integrators.empty())
     mooseError(
         "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
+}
+
+TensorBufferBase &
+TensorProblem::getBufferBase(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+  if (it == _tensor_buffer.end())
+    mooseError("TensorBuffer '", buffer_name, " does not exist in the system.");
+  return *it->second.get();
+}
+
+const torch::Tensor &
+TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
+{
+  return getBufferBase(buffer_name).getRawCPUTensor();
 }

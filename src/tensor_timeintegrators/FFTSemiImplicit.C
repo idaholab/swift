@@ -29,7 +29,7 @@ FFTSemiImplicit::validParams()
 }
 
 FFTSemiImplicit::FFTSemiImplicit(const InputParameters & parameters)
-  : TensorTimeIntegrator(parameters),
+  : TensorTimeIntegrator<>(parameters),
     _history_size(getParam<unsigned int>("history_size")),
     _reciprocal_buffer(getInputBuffer("reciprocal_buffer")),
     _linear_reciprocal(getInputBuffer("linear_reciprocal")),
