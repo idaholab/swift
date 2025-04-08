@@ -86,7 +86,6 @@
             enable_jit = true
             expression = 'Mbar*mubar - Mkappabarbar*cbar'
             inputs = 'Mbar mubar Mkappabarbar cbar'
-            real_space = false
         []
         [cbar]
             type = ForwardFFT

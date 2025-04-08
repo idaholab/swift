@@ -2,7 +2,7 @@
   dim = 2
   nx = 10
   ny = 2
-  xmax = ${fparse pi*4}
+  xmax = '${fparse pi*4}'
   mesh_mode = DUMMY
   device_names = cpu
 []
@@ -19,6 +19,7 @@
       buffer = c
       extra_symbols = true
       expression = sin(x+0.2*t)
+      expand = REAL
     []
   []
 []
