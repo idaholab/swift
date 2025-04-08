@@ -24,6 +24,7 @@ public:
 
 protected:
   unsigned int _substeps;
+  std::size_t _order;
   Real & _sub_dt;
   Real & _sub_time;
 };
