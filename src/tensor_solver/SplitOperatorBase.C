@@ -50,6 +50,5 @@ SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters)
                                   getInputBufferByName(reciprocal_buffers[i]),
                                   getInputBufferByName(linear_reciprocals[i]),
                                   getInputBufferByName(nonlinear_reciprocals[i]),
-                                  getBufferOldByName(reciprocal_buffers[i], _history_size),
                                   getBufferOldByName(nonlinear_reciprocals[i], _history_size)});
 }

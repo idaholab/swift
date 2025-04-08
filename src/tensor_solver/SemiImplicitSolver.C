@@ -24,19 +24,31 @@ InputParameters
 SemiImplicitSolver::validParams()
 {
   InputParameters params = SplitOperatorBase::validParams();
-  params.addClassDescription("Semi-implicit time integration solver.");
+  params.addClassDescription("Adams-Bashforth-Moulton semi-implicit time integration solver.");
   params.addParam<unsigned int>("substeps", 1, "semi-implicit substeps per time step.");
-  params.addRangeCheckedParam<std::size_t>("order",
+  params.addRangeCheckedParam<std::size_t>("predictor_order",
                                            2,
-                                           "order > 0 & order <= " + Moose::stringify(max_order),
-                                           "semi-implicit substeps per time step.");
+                                           "predictor_order > 0 & predictor_order <= " +
+                                               Moose::stringify(max_order),
+                                           "Order of the Adams-Bashforth predictor.");
+  params.addRangeCheckedParam<std::size_t>("corrector_order",
+                                           2,
+                                           "corrector_order > 0 & corrector_order <= " +
+                                               Moose::stringify(max_order),
+                                           "Order of the Adams-Moulton corrector.");
+  params.addParam<std::size_t>(
+      "corrector_steps",
+      0,
+      "Number the Adams-Moulton corrector steps to take (one is usually sufficient).");
   return params;
 }
 
 SemiImplicitSolver::SemiImplicitSolver(const InputParameters & parameters)
   : SplitOperatorBase(parameters),
     _substeps(getParam<unsigned int>("substeps")),
-    _order(getParam<std::size_t>("order") - 1),
+    _predictor_order(getParam<std::size_t>("predictor_order") - 1),
+    _corrector_order(getParam<std::size_t>("corrector_order") - 1),
+    _corrector_steps(getParam<std::size_t>("corrector_steps")),
     _sub_dt(_tensor_problem.subDt()),
     _sub_time(_tensor_problem.subTime())
 {
@@ -72,27 +84,60 @@ SemiImplicitSolver::computeBuffer()
     // re-evaluate the solve compute
     _compute->computeBuffer();
 
-    // integrate all variables
+    // Adams-Bashforth predictor on all variables
     for (auto & [u,
                  reciprocal_buffer,
                  linear_reciprocal,
                  nonlinear_reciprocal,
-                 old_reciprocal_buffer,
-                 old_non_linear_reciprocal] : _variables)
+                 old_nonlinear_reciprocal] : _variables)
     {
-      const auto n_old = std::min(old_reciprocal_buffer.size(), old_non_linear_reciprocal.size());
+      const auto n_old = old_nonlinear_reciprocal.size();
 
       // Order is what the uder requested, or what the available history allows for.
       // If dt changes between steps, we start at first order again
-      const auto order = std::min(substep < _order && dt_changed ? 0 : n_old, _order);
+      const auto order =
+          std::min(substep < _predictor_order && dt_changed ? 0 : n_old, _predictor_order);
 
       // Adams-Bashforth
       ubar = reciprocal_buffer + (_sub_dt * beta[order][0]) * nonlinear_reciprocal;
       for (const auto i : make_range(order))
-        ubar += (_sub_dt * beta[order][i + 1]) * old_non_linear_reciprocal[i];
+        ubar += (_sub_dt * beta[order][i + 1]) * old_nonlinear_reciprocal[i];
       ubar /= (1.0 - _sub_dt * linear_reciprocal);
 
       u = _domain.ifft(ubar);
+    }
+
+    // Adams-Moulton corrector
+    if (_corrector_steps)
+    {
+      // we need to keep the previous time step reciprocal_buffer if we run the AM corrector
+      std::vector<torch::Tensor> ubar_n(_variables.size());
+      for (const auto k : index_range(_variables))
+        ubar_n[k] = _variables[k]._reciprocal_buffer;
+
+      for (std::size_t j = 0; j < _corrector_steps; ++j)
+      {
+        // re-evaluate the solve compute with the predicted variable values
+        _compute->computeBuffer();
+
+        for (const auto k : index_range(_variables))
+        {
+          auto & u = _variables[k]._buffer;
+          const auto & linear_reciprocal = _variables[k]._linear_reciprocal;
+          const auto & nonlinear_reciprocal_pred = _variables[k]._nonlinear_reciprocal;
+          const auto & old_nonlinear_reciprocal = _variables[k]._old_nonlinear_reciprocal;
+
+          const auto n_old = old_nonlinear_reciprocal.size();
+          const auto order =
+              std::min(substep < _corrector_order && dt_changed ? 0 : n_old, _corrector_order);
+
+          ubar = ubar_n[k] + (_sub_dt * alpha[order][0]) * nonlinear_reciprocal_pred;
+          for (const auto i : make_range(order))
+            ubar += (_sub_dt * alpha[order][i + 1]) * old_nonlinear_reciprocal[i];
+          ubar /= (1.0 - _sub_dt * linear_reciprocal);
+          u = _domain.ifft(ubar);
+        }
+      }
     }
 
     if (substep < _substeps - 1)
