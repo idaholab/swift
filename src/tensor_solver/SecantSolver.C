@@ -39,6 +39,9 @@ SecantSolver::SecantSolver(const InputParameters & parameters)
     _verbose(getParam<bool>("verbose")),
     _damping(getParam<Real>("damping"))
 {
+  // no history required
+  getVariables(0);
+
   const auto n = _variables.size();
   if (n > 1)
     paramWarning("buffer",

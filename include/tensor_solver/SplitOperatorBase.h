@@ -21,7 +21,8 @@ public:
   SplitOperatorBase(const InputParameters & parameters);
 
 protected:
-  const unsigned int _history_size;
+  /// couple the variables (call from derived class)
+  void getVariables(unsigned int history_size);
 
   struct Variable
   {

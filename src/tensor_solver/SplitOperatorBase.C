@@ -25,13 +25,15 @@ SplitOperatorBase::validParams()
       "linear_reciprocal", "Buffer with the reciprocal of the linear prefactor (e.g. kappa*k^2)");
   params.addRequiredParam<std::vector<TensorInputBufferName>>(
       "nonlinear_reciprocal", "Buffer with the reciprocal of the non-linear contribution");
-  params.addParam<unsigned int>(
-      "history_size", 1, "How many old states to use (determines time integration order).");
   return params;
 }
 
-SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters)
-  : TensorSolver(parameters), _history_size(getParam<unsigned int>("history_size"))
+SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters) : TensorSolver(parameters)
+{
+}
+
+void
+SplitOperatorBase::getVariables(unsigned int history_size)
 {
   auto buffers = getParam<std::vector<TensorOutputBufferName>>("buffer");
   auto reciprocal_buffers = getParam<std::vector<TensorInputBufferName>>("reciprocal_buffer");
@@ -50,5 +52,5 @@ SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters)
                                   getInputBufferByName(reciprocal_buffers[i]),
                                   getInputBufferByName(linear_reciprocals[i]),
                                   getInputBufferByName(nonlinear_reciprocals[i]),
-                                  getBufferOldByName(nonlinear_reciprocals[i], _history_size)});
+                                  getBufferOldByName(nonlinear_reciprocals[i], history_size)});
 }

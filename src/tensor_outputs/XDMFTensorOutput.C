@@ -42,7 +42,6 @@ XDMFTensorOutput::validParams()
 XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   : TensorOutput(parameters),
     _dim(_domain.getDim()),
-    _file_base(_app.getOutputFileBase(true)),
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
     ,

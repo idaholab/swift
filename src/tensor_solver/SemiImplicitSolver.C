@@ -16,8 +16,8 @@ registerMooseObject("SwiftApp", SemiImplicitSolver);
 
 namespace
 {
-// Max order supported (up to ABM4)
-constexpr std::size_t max_order = 4;
+// Max order supported (up to ABM5)
+constexpr std::size_t max_order = 5;
 }
 
 InputParameters
@@ -52,6 +52,7 @@ SemiImplicitSolver::SemiImplicitSolver(const InputParameters & parameters)
     _sub_dt(_tensor_problem.subDt()),
     _sub_time(_tensor_problem.subTime())
 {
+  getVariables(_predictor_order);
 }
 
 void
@@ -59,18 +60,20 @@ SemiImplicitSolver::computeBuffer()
 {
   // Adams–Bashforth coefficients (zero-padded)
   constexpr std::array<std::array<double, max_order>, max_order> beta = {{
-      {1.0, 0.0, 0.0, 0.0},                                  // AB1
-      {3.0 / 2.0, -1.0 / 2.0, 0.0, 0.0},                     // AB2
-      {23.0 / 12.0, -16.0 / 12.0, 5.0 / 12.0, 0.0},          // AB3
-      {55.0 / 24.0, -59.0 / 24.0, 37.0 / 24.0, -9.0 / 24.0}, // AB4
+      {1.0, 0.0, 0.0, 0.0, 0.0},                                                        // AB1
+      {3.0 / 2.0, -1.0 / 2.0, 0.0, 0.0, 0.0},                                           // AB2
+      {23.0 / 12.0, -16.0 / 12.0, 5.0 / 12.0, 0.0, 0.0},                                // AB3
+      {55.0 / 24.0, -59.0 / 24.0, 37.0 / 24.0, -9.0 / 24.0, 0.0},                       // AB4
+      {190.0 / 720.0, -2774.0 / 720.0, 2616.0 / 720.0, -1274.0 / 720.0, 251.0 / 720.0}, // AB5
   }};
 
   // Adams–Moulton coefficients (zero-padded)
-  constexpr std::array<std::array<double, max_order + 1>, max_order> alpha = {{
-      {0.5, 0.5, 0.0, 0.0, 0.0},                                                    // AM1
-      {5.0 / 12.0, 8.0 / 12.0, -1.0 / 12.0, 0.0, 0.0},                              // AM2
-      {9.0 / 24.0, 19.0 / 24.0, -5.0 / 24.0, 1.0 / 24.0, 0.0},                      // AM3
-      {251.0 / 720.0, 646.0 / 720.0, -264.0 / 720.0, 106.0 / 720.0, -19.0 / 720.0}, // AM4
+  constexpr std::array<std::array<double, max_order>, max_order> alpha = {{
+      {1.0, 0.0, 0.0, 0.0, 0.0},                                                    // AM1
+      {0.5, 0.5, 0.0, 0.0, 0.0},                                                    // AM2
+      {5.0 / 12.0, 8.0 / 12.0, -1.0 / 12.0, 0.0, 0.0},                              // AM3
+      {9.0 / 24.0, 19.0 / 24.0, -5.0 / 24.0, 1.0 / 24.0, 0.0},                      // AM4
+      {251.0 / 720.0, 646.0 / 720.0, -264.0 / 720.0, 106.0 / 720.0, -19.0 / 720.0}, // AM5
   }};
 
   const bool dt_changed = (_dt != _dt_old);
@@ -93,7 +96,7 @@ SemiImplicitSolver::computeBuffer()
     {
       const auto n_old = old_nonlinear_reciprocal.size();
 
-      // Order is what the uder requested, or what the available history allows for.
+      // Order is what the user requested, or what the available history allows for.
       // If dt changes between steps, we start at first order again
       const auto order =
           std::min(substep < _predictor_order && dt_changed ? 0 : n_old, _predictor_order);
@@ -107,6 +110,12 @@ SemiImplicitSolver::computeBuffer()
       u = _domain.ifft(ubar);
     }
 
+    // AB: y[n+1] = y[n] + dt * f(y[n])
+    // AM: y[n+1] = y[n] + dt * f(y[n+1])
+
+    // increment substep time
+    _sub_time += _sub_dt;
+
     // Adams-Moulton corrector
     if (_corrector_steps)
     {
@@ -115,6 +124,18 @@ SemiImplicitSolver::computeBuffer()
       for (const auto k : index_range(_variables))
         ubar_n[k] = _variables[k]._reciprocal_buffer;
 
+      // if the corrector order is AM2 or higher we also need the f calculated by AB prior to the
+      // update to the current step values
+      std::vector<torch::Tensor> N_n;
+      if (_corrector_order > 0)
+      {
+        N_n.resize(_variables.size());
+        for (const auto k : index_range(_variables))
+          N_n[k] = _variables[k]._nonlinear_reciprocal;
+      }
+
+      // apply multiple corrector steps, going forward we probably want to allow users to fixpoint
+      // iterate until a given convergence criterion is fulfilled.
       for (std::size_t j = 0; j < _corrector_steps; ++j)
       {
         // re-evaluate the solve compute with the predicted variable values
@@ -129,21 +150,27 @@ SemiImplicitSolver::computeBuffer()
 
           const auto n_old = old_nonlinear_reciprocal.size();
           const auto order =
-              std::min(substep < _corrector_order && dt_changed ? 0 : n_old, _corrector_order);
+              std::min(substep < _corrector_order && dt_changed ? 1 : n_old + 1, _corrector_order);
+          if (order == 0)
+            continue;
 
           ubar = ubar_n[k] + (_sub_dt * alpha[order][0]) * nonlinear_reciprocal_pred;
-          for (const auto i : make_range(order))
-            ubar += (_sub_dt * alpha[order][i + 1]) * old_nonlinear_reciprocal[i];
+
+          if (order > 0)
+          {
+            ubar += (_sub_dt * alpha[order][1]) * N_n[k];
+            for (const auto i : make_range(order - 1))
+              ubar += (_sub_dt * alpha[order][i + 2]) * old_nonlinear_reciprocal[i];
+          }
+
           ubar /= (1.0 - _sub_dt * linear_reciprocal);
           u = _domain.ifft(ubar);
         }
       }
     }
 
+    // we skip the advanceState on the last substep because MOOSE will call that automatically
     if (substep < _substeps - 1)
       _tensor_problem.advanceState();
-
-    // increment substep time
-    _sub_time += _sub_dt;
   }
 }

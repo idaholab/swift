@@ -48,8 +48,6 @@ protected:
   /// data dimensions (depends on choice of Cell or Node output)
   std::array<std::vector<std::size_t>, 2> _ndata;
   std::array<std::string, 2> _data_grid;
-  /// file name base
-  std::string _file_base;
 
   /// outputted frame
   std::size_t _frame;
