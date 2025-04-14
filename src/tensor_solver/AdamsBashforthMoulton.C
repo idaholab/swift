@@ -6,13 +6,17 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "SemiImplicitSolver.h"
+#include "AdamsBashforthMoulton.h"
 #include "TensorProblem.h"
 #include "Conversion.h"
 #include "DomainAction.h"
 #include <array>
 
-registerMooseObject("SwiftApp", SemiImplicitSolver);
+registerMooseObject("SwiftApp", AdamsBashforthMoulton);
+registerMooseObjectRenamed("SwiftApp",
+                           SemiImplicitSolver,
+                           "10/01/2025 00:01",
+                           AdamsBashforthMoulton);
 
 namespace
 {
@@ -21,10 +25,11 @@ constexpr std::size_t max_order = 5;
 }
 
 InputParameters
-SemiImplicitSolver::validParams()
+AdamsBashforthMoulton::validParams()
 {
   InputParameters params = SplitOperatorBase::validParams();
-  params.addClassDescription("Adams-Bashforth-Moulton semi-implicit time integration solver.");
+  params.addClassDescription("Adams-Bashforth-Moulton semi-implicit/explicit time integration "
+                             "solver with optional implicit corrector.");
   params.addParam<unsigned int>("substeps", 1, "semi-implicit substeps per time step.");
   params.addRangeCheckedParam<std::size_t>("predictor_order",
                                            2,
@@ -43,7 +48,7 @@ SemiImplicitSolver::validParams()
   return params;
 }
 
-SemiImplicitSolver::SemiImplicitSolver(const InputParameters & parameters)
+AdamsBashforthMoulton::AdamsBashforthMoulton(const InputParameters & parameters)
   : SplitOperatorBase(parameters),
     _substeps(getParam<unsigned int>("substeps")),
     _predictor_order(getParam<std::size_t>("predictor_order") - 1),
@@ -56,7 +61,7 @@ SemiImplicitSolver::SemiImplicitSolver(const InputParameters & parameters)
 }
 
 void
-SemiImplicitSolver::computeBuffer()
+AdamsBashforthMoulton::computeBuffer()
 {
   // Adams–Bashforth coefficients (zero-padded)
   constexpr std::array<std::array<double, max_order>, max_order> beta = {{
@@ -105,7 +110,9 @@ SemiImplicitSolver::computeBuffer()
       ubar = reciprocal_buffer + (_sub_dt * beta[order][0]) * nonlinear_reciprocal;
       for (const auto i : make_range(order))
         ubar += (_sub_dt * beta[order][i + 1]) * old_nonlinear_reciprocal[i];
-      ubar /= (1.0 - _sub_dt * linear_reciprocal);
+
+      if (linear_reciprocal)
+        ubar /= (1.0 - _sub_dt * *linear_reciprocal);
 
       u = _domain.ifft(ubar);
     }
@@ -144,7 +151,7 @@ SemiImplicitSolver::computeBuffer()
         for (const auto k : index_range(_variables))
         {
           auto & u = _variables[k]._buffer;
-          const auto & linear_reciprocal = _variables[k]._linear_reciprocal;
+          const auto * linear_reciprocal = _variables[k]._linear_reciprocal;
           const auto & nonlinear_reciprocal_pred = _variables[k]._nonlinear_reciprocal;
           const auto & old_nonlinear_reciprocal = _variables[k]._old_nonlinear_reciprocal;
 
@@ -163,7 +170,9 @@ SemiImplicitSolver::computeBuffer()
               ubar += (_sub_dt * alpha[order][i + 2]) * old_nonlinear_reciprocal[i];
           }
 
-          ubar /= (1.0 - _sub_dt * linear_reciprocal);
+          if (linear_reciprocal)
+            ubar /= (1.0 - _sub_dt * *linear_reciprocal);
+
           u = _domain.ifft(ubar);
         }
       }

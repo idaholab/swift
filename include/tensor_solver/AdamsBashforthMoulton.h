@@ -11,14 +11,14 @@
 #include "SplitOperatorBase.h"
 
 /**
- * SemiImplicitSolver object
+ * Adams-Bashforth-Moulton semi-implicit/explicit solver
  */
-class SemiImplicitSolver : public SplitOperatorBase
+class AdamsBashforthMoulton : public SplitOperatorBase
 {
 public:
   static InputParameters validParams();
 
-  SemiImplicitSolver(const InputParameters & parameters);
+  AdamsBashforthMoulton(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 

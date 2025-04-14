@@ -28,7 +28,7 @@ protected:
   {
     torch::Tensor & _buffer;
     const torch::Tensor & _reciprocal_buffer;
-    const torch::Tensor & _linear_reciprocal;
+    const torch::Tensor * _linear_reciprocal;
     const torch::Tensor & _nonlinear_reciprocal;
     const std::vector<torch::Tensor> & _old_nonlinear_reciprocal;
   };
