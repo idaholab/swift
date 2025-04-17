@@ -64,7 +64,6 @@
       enable_jit = true
       expression = 'Mbar*mubar'
       inputs = 'Mbar mubar'
-      real_space = false
     []
     [cbar]
       type = ForwardFFT

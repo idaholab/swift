@@ -42,7 +42,8 @@ ParsedCompute::validParams()
       "constant_expressions",
       std::vector<std::string>(),
       "Vector of values for the constants in constant_names (can be an FParser expression)");
-  params.addParam<bool>("real_space", true, "Is the tensor being computed a real space tensor?");
+  MooseEnum expandEnum("REAL RECIPROCAL NONE", "NONE");
+  params.addParam<MooseEnum>("expand", expandEnum, "Expand the tensor to full size.");
   return params;
 }
 
@@ -50,7 +51,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
   : TensorOperator<>(parameters),
     _use_jit(getParam<bool>("enable_jit")),
     _extra_symbols(getParam<bool>("extra_symbols")),
-    _real_space(getParam<bool>("real_space"))
+    _expand(getParam<MooseEnum>("expand").getEnum<ExpandEnum>())
 {
   const auto & expression = getParam<std::string>("expression");
   const auto & names = getParam<std::vector<TensorInputBufferName>>("inputs");
@@ -191,8 +192,22 @@ ParsedCompute::computeBuffer()
 
   // use local shape if we add parallel support, and add option for reciprocal shape
   if (_use_jit)
-    _u = _jit.Eval(_params).expand(_real_space ? _domain.getShape() : _domain.getReciprocalShape());
+    _u = _jit.Eval(_params);
   else
-    _u = _no_jit.Eval(_params).expand(_real_space ? _domain.getShape()
-                                                  : _domain.getReciprocalShape());
+    _u = _no_jit.Eval(_params);
+
+  // optionally expand the tensor
+  switch (_expand)
+  {
+    case ExpandEnum::REAL:
+      _u = _u.expand(_domain.getShape());
+      break;
+
+    case ExpandEnum::RECIPROCAL:
+      _u = _u.expand(_domain.getReciprocalShape());
+      break;
+
+    case ExpandEnum::NONE:
+      break;
+  }
 }

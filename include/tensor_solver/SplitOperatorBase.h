@@ -21,15 +21,15 @@ public:
   SplitOperatorBase(const InputParameters & parameters);
 
 protected:
-  const unsigned int _history_size;
+  /// couple the variables (call from derived class)
+  void getVariables(unsigned int history_size);
 
   struct Variable
   {
     torch::Tensor & _buffer;
     const torch::Tensor & _reciprocal_buffer;
-    const torch::Tensor & _linear_reciprocal;
+    const torch::Tensor * _linear_reciprocal;
     const torch::Tensor & _nonlinear_reciprocal;
-    const std::vector<torch::Tensor> & _old_reciprocal_buffer;
     const std::vector<torch::Tensor> & _old_nonlinear_reciprocal;
   };
 

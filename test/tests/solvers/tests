@@ -1,0 +1,60 @@
+[Tests]
+  [adams_bashforth]
+    requirement = 'The system shall provide an Adams-Bashforth semi-implicit time integrator'
+    issues = '#32'
+    detail = 'SemiImplicitSolver.md'
+    [order_1]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_0_1.csv
+      cli_args = 'ss=10 cs=0 order=1'
+      requirement = 'of first order'
+    []
+    [order_2]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_0_2.csv
+      cli_args = 'ss=10 cs=0 order=2'
+      requirement = 'of second order'
+    []
+    [order_3]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_0_3.csv
+      cli_args = 'ss=10 cs=0 order=3'
+      requirement = 'of third order'
+    []
+    [order_4]
+      # higher order integrators have smaller stability regions, hence the increased number of substeps
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_20_0_4.csv
+      cli_args = 'ss=20 cs=0 order=4'
+      requirement = 'of fourth order'
+    []
+  []
+  [adams_bashforth_moulton]
+    requirement = 'The system shall provide an Adams-Bashforth-Moulton semi-implicit time integrator with an implcit corrector'
+    [corrector_steps_1_order_1]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_1_1.csv
+      cli_args = 'ss=10 cs=1 order=1'
+      requirement = 'with one corrector step of first order'
+    []
+    [corrector_steps_2_order_1]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_2_1.csv
+      cli_args = 'ss=10 cs=2 order=1'
+      requirement = 'with two corrector steps of first order'
+    []
+    [corrector_steps_2_order_2]
+      type = CSVDiff
+      input = coupled.i
+      csvdiff = coupled_10_2_2.csv
+      cli_args = 'ss=10 cs=2 order=2'
+      requirement = 'with two corrector steps of second order'
+    []
+  []
+[]

@@ -32,4 +32,6 @@ protected:
 
   /// imaginary unit i
   const torch::Tensor _i;
+
+  const Real _gradient_threshold;
 };
