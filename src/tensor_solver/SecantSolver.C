@@ -39,6 +39,9 @@ SecantSolver::SecantSolver(const InputParameters & parameters)
     _verbose(getParam<bool>("verbose")),
     _damping(getParam<Real>("damping"))
 {
+  // no history required
+  getVariables(0);
+
   const auto n = _variables.size();
   if (n > 1)
     paramWarning("buffer",
@@ -73,9 +76,12 @@ SecantSolver::secantSolve()
     auto & u_out = _variables[i]._buffer;
     const auto & u = _variables[i]._reciprocal_buffer;
     const auto & N = _variables[i]._nonlinear_reciprocal;
-    const auto & L = _variables[i]._linear_reciprocal;
+    const auto * L = _variables[i]._linear_reciprocal;
 
-    Rprev[i] = (N + L * u) * dt; // u = u_old at this point!
+    if (L)
+      Rprev[i] = (N + *L * u) * dt; // u = u_old at this point!
+    else
+      Rprev[i] = N * dt; // u = u_old at this point!
     uprev[i] = u;
 
     R0norm[i] = torch::norm(Rprev[i]).item<double>();
@@ -88,7 +94,10 @@ SecantSolver::secantSolve()
 
     // now modify u_out
     const auto dt_epsilon = getParam<Real>("dt_epsilon");
-    u_out = _domain.ifft((u + dt_epsilon * N) / (1.0 - dt_epsilon * L));
+    if (L)
+      u_out = _domain.ifft((u + dt_epsilon * N) / (1.0 - dt_epsilon * *L));
+    else
+      u_out = _domain.ifft(u + dt_epsilon * N);
 
     if (_verbose)
       _console << "|R0|=" << R0norm[i] << std::endl;
@@ -117,10 +126,13 @@ SecantSolver::secantSolve()
       auto & u_out = _variables[i]._buffer;
       const auto & u = _variables[i]._reciprocal_buffer;
       const auto & N = _variables[i]._nonlinear_reciprocal;
-      const auto & L = _variables[i]._linear_reciprocal;
+      const auto * L = _variables[i]._linear_reciprocal;
 
       // residual in reciprocal space
-      R = (N + L * u) * dt + u_old[i] - u;
+      if (L)
+        R = (N + *L * u) * dt + u_old[i] - u;
+      else
+        R = N * dt + u_old[i] - u;
 
       // avoid NaN
       const auto dx = u - uprev[i];

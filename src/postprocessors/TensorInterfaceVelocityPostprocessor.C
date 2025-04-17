@@ -17,6 +17,9 @@ TensorInterfaceVelocityPostprocessor::validParams()
 {
   InputParameters params = TensorPostprocessor::validParams();
   params.addClassDescription("Compute the integral over a buffer");
+  params.addParam<Real>("gradient_threshold",
+                        1e-3,
+                        "Ignore cells with a gradient component magnitude below this threshold.");
   return params;
 }
 
@@ -25,7 +28,8 @@ TensorInterfaceVelocityPostprocessor::TensorInterfaceVelocityPostprocessor(
   : TensorPostprocessor(parameters),
     _u_old(_tensor_problem.getBufferOld(getParam<TensorInputBufferName>("buffer"), 1)),
     _dim(_domain.getDim()),
-    _i(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()))
+    _i(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions())),
+    _gradient_threshold(getParam<Real>("gradient_threshold"))
 {
 }
 

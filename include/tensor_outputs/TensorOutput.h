@@ -40,6 +40,9 @@ protected:
   /// simulation time of the step that is being output
   const Real & _time;
 
+  /// output file name prefix
+  const std::string _file_base;
+
   std::thread _output_thread;
 
   /// The buffer this output object is outputting

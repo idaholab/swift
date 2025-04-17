@@ -44,6 +44,9 @@ BroydenSolver::BroydenSolver(const InputParameters & parameters)
     _dim(_domain.getDim()),
     _options(MooseTensor::complexFloatTensorOptions())
 {
+  // no history required
+  getVariables(0);
+
   // Jacobian dimensions
   const auto n = _variables.size();
   const auto & s = _domain.getReciprocalShape();
@@ -92,7 +95,8 @@ BroydenSolver::broydenSolve()
     {
       u[i] = _variables[i]._reciprocal_buffer;
       N[i] = _variables[i]._nonlinear_reciprocal;
-      L[i] = _variables[i]._linear_reciprocal;
+      L[i] =
+          _variables[i]._linear_reciprocal ? *(_variables[i]._linear_reciprocal) : torch::tensor(0);
     }
     return std::make_tuple(torch::stack(u, -1), torch::stack(N, -1), torch::stack(L, -1));
   };
