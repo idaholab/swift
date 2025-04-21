@@ -528,3 +528,23 @@ DomainAction::align(torch::Tensor t, unsigned int dim) const
       mooseError("Unsupported mesh dimension");
   }
 }
+
+torch::Tensor
+DomainAction::emptyReal(std::initializer_list<int64_t> extra_dims) const
+{
+  std::vector<int64_t> dims(_dim);
+  for (const auto i : make_range(_dim))
+    dims[i] = _n_local[i];
+  dims.insert(dims.end(), extra_dims.begin(), extra_dims.end());
+  return torch::zeros(dims, MooseTensor::floatTensorOptions());
+}
+
+torch::Tensor
+DomainAction::emptyReciprocal(std::initializer_list<int64_t> extra_dims) const
+{
+  std::vector<int64_t> dims(_dim);
+  for (const auto i : make_range(_dim))
+    dims[i] = _n_reciprocal_local[i];
+  dims.insert(dims.end(), extra_dims.begin(), extra_dims.end());
+  return torch::zeros(dims, MooseTensor::complexFloatTensorOptions());
+}

@@ -9,9 +9,11 @@
 #pragma once
 
 #include "Action.h"
+#include "SwiftUtils.h"
 #include <vector>
 #include <string>
 #include <array>
+#include <initializer_list>
 
 #include <torch/torch.h>
 
@@ -51,6 +53,9 @@ public:
 
   torch::Tensor fft(const torch::Tensor & t) const;
   torch::Tensor ifft(const torch::Tensor & t) const;
+
+  torch::Tensor emptyReal(std::initializer_list<int64_t> extra_dims) const;
+  torch::Tensor emptyReciprocal(std::initializer_list<int64_t> extra_dims) const;
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;

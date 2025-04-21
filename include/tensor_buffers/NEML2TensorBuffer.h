@@ -13,6 +13,7 @@
 #include "TensorBuffer.h"
 #include "neml2/tensors/Vec.h"
 #include "neml2/tensors/SR2.h"
+#include "neml2/tensors/SSR4.h"
 
 /**
  * Tensor wrapper arbitrary tensor value dimensions
@@ -33,5 +34,8 @@ registerTensorType(VectorTensor, neml2::Vec);
 
 using SR2Tensor = NEML2TensorBuffer<neml2::SR2>;
 registerTensorType(SR2Tensor, neml2::SR2);
+
+using SSR4Tensor = NEML2TensorBuffer<neml2::SSR4>;
+registerTensorType(SSR4Tensor, neml2::SSR4);
 
 #endif

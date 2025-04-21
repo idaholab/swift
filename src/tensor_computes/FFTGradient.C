@@ -27,8 +27,7 @@ FFTGradient::FFTGradient(const InputParameters & parameters)
   : TensorOperator<>(parameters),
     _input(getInputBuffer("input")),
     _input_is_reciprocal(getParam<bool>("input_is_reciprocal")),
-    _direction(getParam<MooseEnum>("direction")),
-    _i(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()))
+    _direction(getParam<MooseEnum>("direction"))
 {
 }
 
@@ -36,5 +35,5 @@ void
 FFTGradient::computeBuffer()
 {
   _u = _domain.ifft((_input_is_reciprocal ? _input : _domain.fft(_input)) *
-                    _domain.getReciprocalAxis(_direction) * _i);
+                    _domain.getReciprocalAxis(_direction) * _imaginary);
 }

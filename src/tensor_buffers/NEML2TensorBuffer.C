@@ -12,6 +12,7 @@
 
 registerMooseObject("SwiftApp", VectorTensor);
 registerMooseObject("SwiftApp", SR2Tensor);
+registerMooseObject("SwiftApp", SSR4Tensor);
 
 template <typename T>
 InputParameters
@@ -37,5 +38,6 @@ NEML2TensorBuffer<T>::init()
 
 template class NEML2TensorBuffer<neml2::Vec>;
 template class NEML2TensorBuffer<neml2::SR2>;
+template class NEML2TensorBuffer<neml2::SSR4>;
 
 #endif
