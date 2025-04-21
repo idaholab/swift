@@ -110,10 +110,14 @@ framework/contrib/libtorch
 # Tensor output
 *.xmf
 *.h5
+*.bin
 
 # Allow certain files in gold directories
 !**/gold/*.e
 !**/gold/*.e-s*
+!**/gold/*.h5
+!**/gold/*.xmf
+!**/gold/*.bin
 !**/gold/*.csv
 !**/gold/*.csv.*
 !**/gold/*.vtk
