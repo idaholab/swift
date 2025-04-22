@@ -19,7 +19,7 @@ InputParameters
 MoulinecSouquet::validParams()
 {
   InputParameters params = TensorOperator<neml2::SR2>::validParams();
-  params.addClassDescription("MoulinecSouquet mechanics solve.");
+  params.addClassDescription("Moulinec-Souquet mechanics solve.");
   params.addParam<TensorInputBufferName>("C0", "Stiffness tensor estimate");
   return params;
 }
@@ -71,6 +71,25 @@ MoulinecSouquet::updateGamma()
       "...iM,MN,...Nl->...il",
       std::vector<at::Tensor>{v, _C0.to(MooseTensor::complexFloatTensorOptions()), w});
 
+  const Real E = 100.0, nu = 0.3;
+  const auto lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
+  const auto mu = E / (2 * (1 + nu));
+  auto k2 = _i * _i + _j * _j + _k * _k;
+  auto k4 = k2 * k2;
+
+  // analytic N for comparison:
+  for (int i = 0; i < 3; ++i)
+    for (int l = 0; l < 3; ++l)
+    {
+      auto N_analytic = torch::where(k2 > 0,
+                                     (lambda + 2 * mu) * (*_kvec[i]) * (*_kvec[l]) +
+                                         mu * k2 * (i == l ? 1.0 : 0.0),
+                                     0.0);
+      auto diff = (Nmat.index({Ellipsis, i, l}) - N_analytic).abs().max();
+      std::cout << "max|N(" << i << "," << l << ") – analytic| = " << diff.cpu().item<double>()
+                << "\n";
+    }
+
   // invert projected stiffness
   auto Mmat = torch::linalg::pinv(Nmat);
 
@@ -97,26 +116,20 @@ MoulinecSouquet::updateGamma()
     }
   }
 
-  std::cout << Mmat << '\n';
-
-  auto k2 = _i * _i + _j * _j + _k * _k;
-  auto k4 = k2 * k2;
-
-  const Real E = 100.0, nu = 0.3;
-  const auto lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
-  const auto mu = E / (2 * (1 + nu));
+  // std::cout << Mmat << '\n';
 
   Mmat = _domain.emptyReciprocal({3, 3});
   for (const auto i : make_range(3))
     for (const auto j : make_range(3))
     {
-      Mmat.index_put_({Ellipsis, i, j},
-                      torch::where(k2 > 0,
-                                   1.0 / (mu * k2) = (lambda + mu) / (mu * (lambda + 2 * mu) * k4) *
-                                                     *_kvec[i] * *_kvec[j],
-                                   0.0));
+      Mmat.index_put_(
+          {Ellipsis, i, j},
+          torch::where(k2 > 0,
+                       (i == j ? 1.0 / (mu * k2) : torch::zeros_like(k2)) -
+                           (lambda + mu) / (mu * (lambda + 2 * mu) * k4) * *_kvec[i] * *_kvec[j],
+                       0.0));
     }
-  std::cout << Mmat << '\n';
+  // std::cout << Mmat << '\n';
 }
 
 #endif
