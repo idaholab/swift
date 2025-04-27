@@ -47,23 +47,29 @@ MoulinecSouquet::updateGamma()
 {
   using namespace torch::indexing;
 
-  // v has shape [..., 3, 6]
-  auto v = _domain.emptyReciprocal({3, 6});
+  // 1) stack your 3 components of k together: [...,3]
+  auto kstack = torch::stack({_i.expand(_domain.getReciprocalShape()), _j.expand(_domain.getReciprocalShape()), _k.expand(_domain.getReciprocalShape())}, /*dim=*/-1); // shape [...,3]
+
+  // 2) build P and Q
+  auto P = torch::zeros({3, 6}, MooseTensor::complexFloatTensorOptions());
+  auto Q = torch::zeros({6, 3}, MooseTensor::complexFloatTensorOptions());
   for (int M = 0; M < 6; ++M)
   {
-    const auto [i, j] = _map[M];
-    // v[...,i,M] = k[...,j] * inv_f[M]
-    v.index_put_({Ellipsis, i, M}, *_kvec[j] * _inv_f[M]);
+    int j = _map[M].second;
+    P.index_put_({j, M}, _inv_f[M]);
   }
-
-  // w has shape [..., 6, 3]
-  auto w = _domain.emptyReciprocal({6, 3});
   for (int N = 0; N < 6; ++N)
   {
-    const auto [l, m] = _map[N];
-    // w[...,N,l] = k[...,m] * inv_f[N]
-    w.index_put_({Ellipsis, N, l}, *_kvec[m] * _inv_f[N]);
+    int L = _map[N].first;
+    Q.index_put_({N, L}, _inv_f[N]);
   }
+
+  // 3) now
+  auto v = torch::einsum("...j,jM->...iM", std::vector<at::Tensor>{kstack, P});
+  //    → v[...,i,M] = sum_j k[...,j]*P[j,M] = k[...,j(M)]/f[M]
+
+  auto w = torch::einsum("...j,Nj->...Nl", std::vector<at::Tensor>{kstack, Q});
+  //    → w[...,N,L] = sum_j k[...,j]*Q[N,j] = k[...,m(N)]/f[N]
 
   // "...iM,MN,...Nl->...il" sums over M and N, produces [...,3,3]
   torch::Tensor Nmat;
