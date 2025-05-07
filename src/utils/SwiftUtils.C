@@ -66,7 +66,7 @@ printTensorInfo(const torch::Tensor & x)
 }
 
 void
-printTensorInfo(const std::string & name,const torch::Tensor & x)
+printTensorInfo(const std::string & name, const torch::Tensor & x)
 {
   Moose::out << "============== " << name << " ==============\n";
   printTensorInfo(x);
@@ -129,6 +129,57 @@ intTensorOptions()
       .pinned_memory(false)
       .device(ts._device)
       .requires_grad(false);
+}
+
+torch::Tensor
+unsqueeze0(const torch::Tensor & t, unsigned int ndim)
+{
+  torch::Tensor u = t;
+  for (unsigned int i = 0; i < ndim; ++i)
+    u = u.unsqueeze(0);
+  return u;
+}
+
+torch::Tensor
+trans2(const torch::Tensor & A2)
+{
+  return torch::einsum("...ij          ->...ji  ", {A2});
+}
+
+torch::Tensor
+ddot42(const torch::Tensor & A4, const torch::Tensor & B2)
+{
+  return torch::einsum("...ijkl,...lk  ->...ij  ", {A4, B2});
+}
+
+torch::Tensor
+ddot44(const torch::Tensor & A4, const torch::Tensor & B4)
+{
+  return torch::einsum("...ijkl,...lkmn->...ijmn", {A4, B4});
+}
+
+torch::Tensor
+dot22(const torch::Tensor & A2, const torch::Tensor & B2)
+{
+  return torch::einsum("...ij  ,...jk  ->...ik  ", {A2, B2});
+}
+
+torch::Tensor
+dot24(const torch::Tensor & A2, const torch::Tensor & B4)
+{
+  return torch::einsum("...ij  ,...jkmn->...ikmn", {A2, B4});
+}
+
+torch::Tensor
+dot42(const torch::Tensor & A4, const torch::Tensor & B2)
+{
+  return torch::einsum("...ijkl,...lm  ->...ijkm", {A4, B2});
+}
+
+torch::Tensor
+dyad22(const torch::Tensor & A2, const torch::Tensor & B2)
+{
+  return torch::einsum("...ij  ,...kl  ->...ijkl", {A2, B2});
 }
 
 } // namespace MooseTensor
