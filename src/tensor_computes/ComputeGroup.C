@@ -7,8 +7,10 @@
 /**********************************************************************/
 
 #include "ComputeGroup.h"
+#include "MooseError.h"
 #include "TensorProblem.h"
 #include "SwiftUtils.h"
+#include <utility>
 
 registerMooseObject("SwiftApp", ComputeGroup);
 
@@ -41,7 +43,23 @@ ComputeGroup::init()
 void
 ComputeGroup::computeBuffer()
 {
-  for (const auto & cmp : _computes)
+  mooseInfoRepeated("ComputeGroup::computeBuffer");
+
+  for (const auto i : index_range(_computes))
+  {
+    if (_domain.debug())
+    {
+      mooseInfoRepeated("check tensors");
+      for (const auto & [tensor, buffer_name, compute_name] : _checked_tensors[i])
+        if (!tensor->defined())
+          mooseError("The tensor '",
+                     buffer_name,
+                     "' requested by '",
+                     compute_name,
+                     "' is not defined yet. Initialize it first.");
+    }
+
+    const auto & cmp = _computes[i];
     try
     {
       cmp->computeBuffer();
@@ -50,6 +68,7 @@ ComputeGroup::computeBuffer()
     {
       cmp->mooseError("Exception: ", e.what());
     }
+  }
 }
 
 void
@@ -76,7 +95,15 @@ ComputeGroup::updateDependencies()
     const auto & cout = cmp->getSuppliedItems();
     in.insert(cin.begin(), cin.end());
     out.insert(cout.begin(), cout.end());
+
+    // assemble list of requested buffers for diagnostic purposes
+    CheckedTensorList cmp_checked_tensors;
+    for (const auto & buffer_name : cin)
+      cmp_checked_tensors.emplace_back(
+          &_tensor_problem.getRawBuffer(buffer_name), buffer_name, cmp->name());
+    _checked_tensors.push_back(cmp_checked_tensors);
   }
+
   std::set_difference(in.begin(),
                       in.end(),
                       out.begin(),
