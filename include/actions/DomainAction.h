@@ -35,12 +35,21 @@ public:
   const std::array<int64_t, 3> & getLocalGridSize() const { return _n_local; }
   const std::array<int64_t, 3> & getLocalReciprocalGridSize() const { return _n_reciprocal_local; }
   const Real & getVolume() const { return _volume_global; }
+  const torch::IntArrayRef & getDimIndices() const { return _domain_dimensions; }
   const RealVectorValue & getDomainMin() const { return _min_global; }
   const RealVectorValue & getDomainMax() const { return _max_global; }
   const RealVectorValue & getGridSpacing() const { return _grid_spacing; }
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
-  const torch::Tensor & getKSquare() const { return _k2; }
+
+  /// return X-vector (coordinate) tensor for the local real space domain
+  const torch::Tensor & getXGrid() const;
+
+  /// return k-vector tensor for the local reciprocal domain
+  const torch::Tensor & getKGrid() const;
+
+  /// return k-square tensor for the local reciprocal domain
+  const torch::Tensor & getKSquare() const;
 
   /// get the maximum spatial frequency
   const RealVectorValue & getMaxK() const { return _max_k; }
@@ -49,8 +58,16 @@ public:
   const torch::IntArrayRef & getShape() const { return _shape; }
   const torch::IntArrayRef & getReciprocalShape() const { return _reciprocal_shape; }
 
+  std::vector<int64_t> getValueShape(std::initializer_list<int64_t> extra_dims) const;
+  std::vector<int64_t> getReciprocalValueShape(std::initializer_list<int64_t> extra_dims) const;
+
   torch::Tensor fft(const torch::Tensor & t) const;
   torch::Tensor ifft(const torch::Tensor & t) const;
+
+  /// compute the sum of a tensor, reduced over the spatial dimensions
+  torch::Tensor sum(const torch::Tensor & t) const;
+  /// compute the average of a tensor, reduced over the spatial dimensions
+  torch::Tensor average(const torch::Tensor & t) const;
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
@@ -71,6 +88,10 @@ protected:
 
   template <typename T>
   std::vector<int64_t> partitionHepler(int64_t total, const std::vector<T> & weights);
+
+  void updateXGrid() const;
+  void updateKGrid() const;
+  void updateKSquare() const;
 
   /// device names to be used on the nodes
   const std::vector<std::string> _device_names;
@@ -126,8 +147,14 @@ protected:
   std::array<torch::Tensor, 3> _global_reciprocal_axis;
   std::array<torch::Tensor, 3> _local_reciprocal_axis;
 
-  /// k-square
-  torch::Tensor _k2;
+  /// X-grid (cordinate vectors - built only if requested)
+  mutable torch::Tensor _x_grid;
+
+  /// k-grid (built only if requested)
+  mutable torch::Tensor _k_grid;
+
+  /// k-square (built only if requested)
+  mutable torch::Tensor _k_square;
 
   /// largest frequency along each axis
   RealVectorValue _max_k;
@@ -135,6 +162,10 @@ protected:
   /// domain shape
   torch::IntArrayRef _shape;
   torch::IntArrayRef _reciprocal_shape;
+
+  /// domain dimensions ({0},{0,1},or {0,1,2})
+  const std::array<int64_t, 3> _domain_dimensions_buffer;
+  const torch::IntArrayRef _domain_dimensions;
 
   /// MPI rank
   unsigned int _rank;
