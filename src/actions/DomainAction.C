@@ -7,16 +7,21 @@
 /**********************************************************************/
 
 #include "DomainAction.h"
+#include "MooseError.h"
 #include "TensorProblem.h"
 #include "MooseEnum.h"
 #include "SetupMeshAction.h"
 #include "SwiftApp.h"
+#include "CreateProblemAction.h"
+
 
 #include <initializer_list>
+#include <util/Optional.h>
 
 // run this early, before any objects are constructed
 registerMooseAction("SwiftApp", DomainAction, "meta_action");
 registerMooseAction("SwiftApp", DomainAction, "add_mesh_generator");
+registerMooseAction("SwiftApp", DomainAction, "create_problem_custom");
 
 InputParameters
 DomainAction::validParams()
@@ -62,6 +67,10 @@ DomainAction::validParams()
   params.addParam<std::vector<std::string>>("device_names", {}, "Compute devices to run on.");
   params.addParam<std::vector<unsigned int>>(
       "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
+  params.addParam<bool>(
+      "debug",
+      false,
+      "Enable additional debugging and diagnostics, such a checking for initialized tensors.");
   return params;
 }
 
@@ -78,10 +87,13 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _mesh_mode(getParam<MooseEnum>("mesh_mode").getEnum<MeshMode>()),
     _shape(torch::IntArrayRef(_n_local.data(), _dim)),
     _reciprocal_shape(torch::IntArrayRef(_n_reciprocal_local.data(), _dim)),
+    _domain_dimensions_buffer({0, 1, 2}),
+    _domain_dimensions(torch::IntArrayRef(_domain_dimensions_buffer.data(), _dim)),
     _rank(_communicator.rank()),
     _n_rank(_communicator.size()),
     _send_tensor(_n_rank),
-    _recv_tensor(_n_rank)
+    _recv_tensor(_n_rank),
+    _debug(getParam<bool>("debug"))
 {
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
@@ -185,6 +197,11 @@ DomainAction::gridChanged()
       const auto freq = (dim == _dim - 1)
                             ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing(dim), options)
                             : torch::fft::fftfreq(_n_global[dim], _grid_spacing(dim), options);
+
+      // zero out nyquist frequency
+      // if (_n_global[dim] % 2 == 0)
+      //   freq[_n_global[dim] / 2] = 0.0;
+
       _global_reciprocal_axis[dim] = align(freq * 2.0 * libMesh::pi, dim);
     }
     else
@@ -216,10 +233,13 @@ DomainAction::gridChanged()
   for (const auto dim : {0, 1, 2})
     _n_reciprocal_local[dim] = _local_reciprocal_axis[dim].sizes()[dim];
 
-  // k-square buffer
-  _k2 = _local_reciprocal_axis[0] * _local_reciprocal_axis[0] +
-        _local_reciprocal_axis[1] * _local_reciprocal_axis[1] +
-        _local_reciprocal_axis[2] * _local_reciprocal_axis[2];
+  // update on-demand grids
+  if (_x_grid.defined())
+    updateXGrid();
+  if (_k_grid.defined())
+    updateKGrid();
+  if (_k_square.defined())
+    updateKSquare();
 }
 
 void
@@ -365,6 +385,25 @@ DomainAction::act()
       mooseError("Internal error");
 
     _app.addMeshGenerator("DomainMeshGenerator", name, params);
+  }
+
+  if (_current_task == "create_problem_custom")
+  {
+    if (!_problem)
+    {
+      const std::string type = "TensorProblem";
+      auto params = _factory.getValidParams(type);
+
+      // apply common parameters of the object held by CreateProblemAction to honor user inputs in
+      // [Problem]
+      auto p = _awh.getActionByTask<CreateProblemAction>("create_problem");
+      if (p)
+        params.applyParameters(p->getObjectParams());
+
+      // params.set<MooseMesh *>("mesh") = _mesh.get();
+      _problem = _factory.create<FEProblemBase>(type, "MOOSE Problem", params);
+    }
+
   }
 }
 
@@ -527,4 +566,135 @@ DomainAction::align(torch::Tensor t, unsigned int dim) const
     default:
       mooseError("Unsupported mesh dimension");
   }
+}
+
+std::vector<int64_t>
+DomainAction::getValueShape(std::vector<int64_t> extra_dims) const
+{
+  std::vector<int64_t> dims(_dim);
+  for (const auto i : make_range(_dim))
+    dims[i] = _n_local[i];
+  dims.insert(dims.end(), extra_dims.begin(), extra_dims.end());
+  return dims;
+}
+
+std::vector<int64_t>
+DomainAction::getReciprocalValueShape(std::initializer_list<int64_t> extra_dims) const
+{
+  std::vector<int64_t> dims(_dim);
+  for (const auto i : make_range(_dim))
+    dims[i] = _n_reciprocal_local[i];
+  dims.insert(dims.end(), extra_dims.begin(), extra_dims.end());
+  return dims;
+}
+
+void
+DomainAction::updateXGrid() const
+{
+  // TODO: add mutex to avoid thread race
+  switch (_dim)
+  {
+    case 1:
+      _x_grid = _local_axis[0];
+      break;
+    case 2:
+      _x_grid = torch::stack({_local_axis[0].expand(_shape), _local_axis[1].expand(_shape)}, -1);
+      break;
+    case 3:
+      _x_grid = torch::stack({_local_axis[0].expand(_shape),
+                              _local_axis[1].expand(_shape),
+                              _local_axis[2].expand(_shape)},
+                             -1);
+      break;
+    default:
+      mooseError("Unsupported problem dimension ", _dim);
+  }
+}
+
+void
+DomainAction::updateKGrid() const
+{
+  switch (_dim)
+  {
+    case 1:
+      _k_grid = _local_reciprocal_axis[0];
+      break;
+    case 2:
+      _k_grid = torch::stack({_local_reciprocal_axis[0].expand(_reciprocal_shape),
+                              _local_reciprocal_axis[1].expand(_reciprocal_shape)},
+                             -1);
+      break;
+    case 3:
+      _k_grid = torch::stack({_local_reciprocal_axis[0].expand(_reciprocal_shape),
+                              _local_reciprocal_axis[1].expand(_reciprocal_shape),
+                              _local_reciprocal_axis[2].expand(_reciprocal_shape)},
+                             -1);
+      break;
+    default:
+      mooseError("Unsupported problem dimension ", _dim);
+  }
+}
+
+void
+DomainAction::updateKSquare() const
+{
+  _k_square = _local_reciprocal_axis[0] * _local_reciprocal_axis[0] +
+              _local_reciprocal_axis[1] * _local_reciprocal_axis[1] +
+              _local_reciprocal_axis[2] * _local_reciprocal_axis[2];
+}
+
+const torch::Tensor &
+DomainAction::getXGrid() const
+{
+
+  // build on demand
+  if (!_x_grid.defined())
+    updateXGrid();
+
+  return _x_grid;
+}
+
+const torch::Tensor &
+DomainAction::getKGrid() const
+{
+
+  // build on demand
+  if (!_k_grid.defined())
+    updateKGrid();
+
+  return _k_grid;
+}
+
+const torch::Tensor &
+DomainAction::getKSquare() const
+{
+  // build on demand
+  if (!_k_square.defined())
+    updateKSquare();
+
+  return _k_square;
+}
+
+torch::Tensor
+DomainAction::sum(const torch::Tensor & t) const
+{
+  torch::Tensor local_sum = t.sum(_domain_dimensions, false, c10::nullopt);
+
+  // TODO: parallel implementation
+  if (comm().size() == 1)
+    return local_sum;
+  else
+    mooseError("Sum is not implemented in parallel, yet.");
+}
+
+torch::Tensor
+DomainAction::average(const torch::Tensor & t) const
+{
+  return sum(t) / Real(_n_global[0] * _n_global[1] * _n_global[2]);
+}
+
+int64_t
+DomainAction::getNumberOfCells() const
+{
+  return _n_global[0] * _n_global[1] * _n_global[2];
 }

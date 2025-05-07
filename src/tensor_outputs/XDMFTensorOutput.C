@@ -10,7 +10,9 @@
 #include "TensorProblem.h"
 #include "Conversion.h"
 
+#include <ATen/core/TensorBody.h>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 
 #ifdef LIBMESH_HAVE_HDF5
@@ -34,28 +36,42 @@ XDMFTensorOutput::validParams()
 #ifdef LIBMESH_HAVE_HDF5
   params.addParam<bool>("enable_hdf5", false, "Use HDF5 for binary data storage.");
 #endif
-  MultiMooseEnum outputMode("CELL NODE");
+  MultiMooseEnum outputMode("CELL NODE OVERSIZED_NODAL");
+  outputMode.addDocumentation("CELL", "Output as discontinuous elemental fields.");
+  outputMode.addDocumentation(
+      "NODE",
+      "Output as nodal fields, increasing each box dimension by one and duplicating values from "
+      "opposing surfaces to create a periodic continuation.");
+  outputMode.addDocumentation("OVERSIZED_NODAL",
+                              "Output oversized tensors as nodal fields without forcing "
+                              "periodicity (suitable for displacement variables).");
+
   params.addParam<MultiMooseEnum>("output_mode", outputMode, "Output as cell or node data");
+  params.addParam<bool>("transpose",
+                        true,
+                        "The Paraview XDMF reader swaps x-y (x-z in 3d), so we transpose the "
+                        "tensors before we output to make the data look right in Paraview.");
   return params;
 }
 
 XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   : TensorOutput(parameters),
     _dim(_domain.getDim()),
-    _frame(0)
+    _frame(0),
+    _transpose(getParam<bool>("transpose"))
 #ifdef LIBMESH_HAVE_HDF5
     ,
     _enable_hdf5(getParam<bool>("enable_hdf5")),
     _hdf5_name(_file_base + ".h5")
 #endif
 {
-  const auto & output_mode = getParam<MultiMooseEnum>("output_mode");
+  const auto output_mode = getParam<MultiMooseEnum>("output_mode").getSetValueIDs<OutputMode>();
   const auto nbuffers = _out_buffers.size();
 
   if (output_mode.size() == 0)
     // default all to Cell
     for (const auto & pair : _out_buffers)
-      _is_cell_data[pair.first] = true;
+      _output_mode[pair.first] = OutputMode::CELL;
   else if (output_mode.size() != nbuffers)
     paramError(
         "output_mode", "Specify one output mode per buffer.", output_mode.size(), " != ", nbuffers);
@@ -63,7 +79,7 @@ XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   {
     const auto & buffer_name = getParam<std::vector<TensorInputBufferName>>("buffer");
     for (const auto i : make_range(nbuffers))
-      _is_cell_data[buffer_name[i]] = (output_mode[i] == "CELL");
+      _output_mode[buffer_name[i]] = output_mode[i];
   }
 
 #ifdef LIBMESH_HAVE_HDF5
@@ -99,11 +115,14 @@ XDMFTensorOutput::init()
   std::vector<Real> dgrid;
   for (const auto i : make_range(_dim))
   {
-    _ndata[0].push_back(_domain.getGridSize()[i]);
-    _ndata[1].push_back(_domain.getGridSize()[i] + 1);
-    _nnode.push_back(_domain.getGridSize()[i] + 1);
-    dgrid.push_back(_domain.getGridSpacing()(i));
-    origin.push_back(_domain.getDomainMin()(i));
+    // we need to transpose the tensor because of
+    // https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4
+    const auto j = _transpose ? _dim - i - 1 : i;
+    _ndata[0].push_back(_domain.getGridSize()[j]);
+    _ndata[1].push_back(_domain.getGridSize()[j] + 1);
+    _nnode.push_back(_domain.getGridSize()[j] + 1);
+    dgrid.push_back(_domain.getGridSpacing()(j));
+    origin.push_back(_domain.getDomainMin()(j));
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");
   _data_grid[1] = Moose::stringify(_ndata[1], " ");
@@ -177,7 +196,6 @@ XDMFTensorOutput::init()
 void
 XDMFTensorOutput::output()
 {
-  mooseInfoRepeated("Writing XDMF file '", _file_base, ".xmf' for output.");
   // add grid for new timestep
   auto grid = _tgrid.append_child("Grid");
   grid.append_attribute("Name") = ("T" + Moose::stringify(_frame)).c_str();
@@ -198,8 +216,51 @@ XDMFTensorOutput::output()
     if (!original_buffer->defined())
       continue;
 
-    const auto is_cell = _is_cell_data[buffer_name];
-    auto buffer = is_cell ? *original_buffer : extendTensor(*original_buffer);
+    const auto output_mode = _output_mode[buffer_name];
+    torch::Tensor buffer;
+
+    // we need to transpose the tensor because of
+    // https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4
+    switch (output_mode)
+    {
+      case OutputMode::NODE:
+        if (_transpose)
+        {
+          if (_dim == 2)
+          {
+            buffer = buffer = torch::transpose(extendTensor(*original_buffer), 0, 1).contiguous();
+            break;
+          }
+          else if (_dim == 3)
+          {
+            buffer = buffer = torch::transpose(extendTensor(*original_buffer), 0, 2).contiguous();
+            break;
+          }
+        }
+        buffer = extendTensor(*original_buffer);
+        break;
+
+      case OutputMode::CELL:
+      case OutputMode::OVERSIZED_NODAL:
+        if (_transpose)
+        {
+          if (_dim == 2)
+          {
+            buffer = torch::transpose(*original_buffer, 0, 1).contiguous();
+            break;
+          }
+          else if (_dim == 3)
+          {
+            buffer = torch::transpose(*original_buffer, 0, 2).contiguous();
+          }
+          break;
+        }
+
+        buffer = *original_buffer;
+        break;
+    }
+
+    const auto is_cell = output_mode == OutputMode::CELL;
 
     const auto sizes = buffer.sizes();
     const auto total_dims = sizes.size();
@@ -219,15 +280,19 @@ XDMFTensorOutput::output()
     const auto reshaped = buffer.reshape(reshape_sizes);
 
     // now loop over scalar components
+    const std::array<std::string, 3> xyz = {"x", "y", "z"};
     for (const auto index : make_range(num_scalar_fields))
     {
-      auto name = buffer_name + (num_scalar_fields > 1 ? "_" + Moose::stringify(index) : "");
+      auto name =
+          buffer_name + (num_scalar_fields > 1
+                             ? "_" + (num_scalar_fields <= 3 ? xyz[index] : Moose::stringify(index))
+                             : "");
 
       buffer = reshaped.select(1, index).contiguous();
 
       auto attr = grid.append_child("Attribute");
       attr.append_attribute("Name") = name.c_str();
-      attr.append_attribute("Center") = is_cell ? "Cell" : "Node";
+      attr.append_attribute("Center") = output_mode == OutputMode::CELL ? "Cell" : "Node";
       auto data = attr.append_child("DataItem");
       data.append_attribute("DataType") = "Float";
 
@@ -324,6 +389,21 @@ XDMFTensorOutput::extendTensor(torch::Tensor tensor)
     mooseError("Unsupported tensor dimension");
 
   return tensor.contiguous();
+}
+
+torch::Tensor
+XDMFTensorOutput::upsampleTensor(torch::Tensor tensor)
+{
+  // For nodal nonperiodic data we transform into reciprocal space, add one additional K-vector on
+  // each dimension, and transform back. This should amount to interpolating the spectral "shape
+  // functions" at the nodes, rather than at the cell centers.
+  std::vector<int64_t> shape(tensor.sizes().begin(), tensor.sizes().end());
+  for (const auto i : make_range(_dim))
+    shape[i]++;
+
+  // return back transform with frequency padding
+  return torch::fft::irfftn(
+      _domain.fft(tensor), torch::IntArrayRef(shape.data(), _dim), _domain.getDimIndices());
 }
 
 #ifdef LIBMESH_HAVE_HDF5

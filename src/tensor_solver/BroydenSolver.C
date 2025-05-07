@@ -103,6 +103,8 @@ BroydenSolver::broydenSolve()
 
   // initial residual
   _compute->computeBuffer();
+  forwardBuffers();
+
   const auto [u0, N, L] = stackVariables();
   torch::Tensor u = u0;
   torch::Tensor R = (N + L * u) * dt;
@@ -148,6 +150,8 @@ BroydenSolver::broydenSolve()
 
     // update residual
     _compute->computeBuffer();
+    forwardBuffers();
+
     const auto [u0, N, L] = stackVariables();
     u = u0;
     const auto Rnew = (N + L * u) * dt + u_old - u;

@@ -8,31 +8,36 @@
 
 #pragma once
 
-#include "TensorOperatorBase.h"
+#ifdef NEML2_ENABLED
+
+#include "TensorOperator.h"
+#include "neml2/tensors/Vec.h"
 
 /**
- * Compute group with internal dependency resolution
+ * Gradient of a tensor field
  */
-class ComputeGroup : public TensorOperatorBase
+class HyperElasticIsotropic : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
 
-  ComputeGroup(const InputParameters & parameters);
-
-  virtual void init() override;
+  HyperElasticIsotropic(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
-  virtual void updateDependencies() override;
-
 protected:
-  /// nested tensor computes
-  std::vector<std::shared_ptr<TensorOperatorBase>> _computes;
+  /// R2 identity tensor
+  const torch::Tensor _ti;
+  const torch::Tensor _tI;
+  const torch::Tensor _tI4;
+  const torch::Tensor _tI4rt;
+  const torch::Tensor _tI4s;
+  const torch::Tensor _tII;
 
-  /// for diagnostic purposes we can make sure that every requested buffer is defined
-  typedef std::vector<std::tuple<const torch::Tensor *, std::string, std::string>> CheckedTensorList;
-  std::vector<CheckedTensorList> _checked_tensors;
-
-  bool _visited;
+  const torch::Tensor & _tF;
+  const torch::Tensor & _tmu;
+  const torch::Tensor & _tK;
+  torch::Tensor & _tK4;
 };
+
+#endif

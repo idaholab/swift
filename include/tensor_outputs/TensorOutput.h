@@ -28,6 +28,8 @@ public:
 
   virtual void init() {}
 
+  virtual bool shouldRun(const ExecFlagType & execute_flag) const;
+
   void startOutput();
   void waitForCompletion();
 
@@ -47,4 +49,6 @@ protected:
 
   /// The buffer this output object is outputting
   std::map<std::string, const torch::Tensor *> _out_buffers;
+
+  const ExecFlagEnum _execute_on;
 };
