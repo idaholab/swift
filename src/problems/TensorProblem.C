@@ -141,6 +141,11 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     _sub_time = FEProblem::time();
 
     executeTensorInitialConditions();
+
+    // run postprocessing before output
+    for (auto & pp : _pps)
+      pp->computeBuffer();
+
     executeTensorOutputs(EXEC_INITIAL);
   }
 

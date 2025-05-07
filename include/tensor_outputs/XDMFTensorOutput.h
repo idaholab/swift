@@ -33,6 +33,7 @@ protected:
   virtual void output() override;
 
   torch::Tensor extendTensor(torch::Tensor tensor);
+  torch::Tensor upsampleTensor(torch::Tensor tensor);
 
   /// mesh dimension
   const unsigned int _dim;
@@ -52,8 +53,15 @@ protected:
   /// outputted frame
   std::size_t _frame;
 
+  enum class OutputMode
+  {
+    CELL,
+    NODE,
+    OVERSIZED_NODAL
+  };
+
   /// whether the tensor uses Cell or Node output
-  std::map<std::string, bool> _is_cell_data;
+  std::map<std::string, OutputMode> _output_mode;
 
 #ifdef LIBMESH_HAVE_HDF5
   const bool _enable_hdf5;
