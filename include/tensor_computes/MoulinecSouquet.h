@@ -29,6 +29,9 @@ public:
 protected:
   void updateGamma();
 
+  // stiffness
+  neml2::SSR4 _C;
+
   /// stiffness estimate
   neml2::SSR4 _C0;
 
@@ -40,6 +43,8 @@ protected:
   const std::array<std::pair<int, int>, 6> _map;
   const std::vector<Real> _f;
   const std::vector<Real> _inv_f;
+
+  using TensorOperatorBase::_domain;
 };
 
 #endif

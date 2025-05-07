@@ -20,13 +20,14 @@ MoulinecSouquet::validParams()
 {
   InputParameters params = TensorOperator<neml2::SR2>::validParams();
   params.addClassDescription("Moulinec-Souquet mechanics solve.");
-  params.addParam<TensorInputBufferName>("C0", "Stiffness tensor estimate");
+  // params.addParam<TensorInputBufferName>("C0", "Stiffness tensor estimate");
+  params.addParam<TensorInputBufferName>("C", "Stiffness tensor");
   return params;
 }
 
 MoulinecSouquet::MoulinecSouquet(const InputParameters & parameters)
   : TensorOperator<neml2::SR2>(parameters),
-    // _C0(getInputBuffer<neml2::SSR4>("C0"))
+    _C(this->template getInputBuffer<neml2::SSR4>("C")),
     _C0(neml2::SSR4::isotropic_E_nu(100, 0.3, MooseTensor::floatTensorOptions())),
     _kvec({&_i, &_j, &_k}),
     _map({{{0, 0}, {1, 1}, {2, 2}, {1, 2}, {0, 2}, {0, 1}}}),
@@ -40,6 +41,16 @@ MoulinecSouquet::MoulinecSouquet(const InputParameters & parameters)
 void
 MoulinecSouquet::computeBuffer()
 {
+
+  for (int n = 0; n < 10; ++n)
+  {
+    // linear elasticity for now
+    auto sigma = _C * _u;
+    auto sigma_hat = _domain.ifft(sigma);
+
+    auto du = 0;
+    _u = _u;
+  }
 }
 
 void
@@ -48,34 +59,9 @@ MoulinecSouquet::updateGamma()
   using namespace torch::indexing;
 
   // 1) stack your 3 components of k together: [...,3]
-  auto kstack = torch::stack({_i.expand(_domain.getReciprocalShape()), _j.expand(_domain.getReciprocalShape()), _k.expand(_domain.getReciprocalShape())}, /*dim=*/-1); // shape [...,3]
-
-  // 2) build P and Q
-  auto P = torch::zeros({3, 6}, MooseTensor::complexFloatTensorOptions());
-  auto Q = torch::zeros({6, 3}, MooseTensor::complexFloatTensorOptions());
-  for (int M = 0; M < 6; ++M)
-  {
-    int j = _map[M].second;
-    P.index_put_({j, M}, _inv_f[M]);
-  }
-  for (int N = 0; N < 6; ++N)
-  {
-    int L = _map[N].first;
-    Q.index_put_({N, L}, _inv_f[N]);
-  }
-
-  // 3) now
-  auto v = torch::einsum("...j,jM->...iM", std::vector<at::Tensor>{kstack, P});
-  //    → v[...,i,M] = sum_j k[...,j]*P[j,M] = k[...,j(M)]/f[M]
-
-  auto w = torch::einsum("...j,Nj->...Nl", std::vector<at::Tensor>{kstack, Q});
-  //    → w[...,N,L] = sum_j k[...,j]*Q[N,j] = k[...,m(N)]/f[N]
-
-  // "...iM,MN,...Nl->...il" sums over M and N, produces [...,3,3]
-  torch::Tensor Nmat;
-  Nmat = torch::einsum(
-      "...iM,MN,...Nl->...il",
-      std::vector<at::Tensor>{v, _C0.to(MooseTensor::complexFloatTensorOptions()), w});
+  // auto kstack = torch::stack({_i.expand(_domain.getReciprocalShape()),
+  // _j.expand(_domain.getReciprocalShape()), _k.expand(_domain.getReciprocalShape())}, /*dim=*/-1);
+  // // shape [...,3]
 
   const Real E = 100.0, nu = 0.3;
   const auto lambda = (E * nu) / ((1 + nu) * (1 - 2 * nu));
@@ -83,21 +69,17 @@ MoulinecSouquet::updateGamma()
   auto k2 = _i * _i + _j * _j + _k * _k;
   auto k4 = k2 * k2;
 
-  // analytic N for comparison:
-  for (int i = 0; i < 3; ++i)
-    for (int l = 0; l < 3; ++l)
+  auto Mmat = _domain.emptyReciprocal({3, 3});
+  for (const auto i : make_range(3))
+    for (const auto j : make_range(3))
     {
-      auto N_analytic = torch::where(k2 > 0,
-                                     (lambda + 2 * mu) * (*_kvec[i]) * (*_kvec[l]) +
-                                         mu * k2 * (i == l ? 1.0 : 0.0),
-                                     0.0);
-      auto diff = (Nmat.index({Ellipsis, i, l}) - N_analytic).abs().max();
-      std::cout << "max|N(" << i << "," << l << ") – analytic| = " << diff.cpu().item<double>()
-                << "\n";
+      Mmat.index_put_(
+          {Ellipsis, i, j},
+          torch::where(k2 > 0,
+                       (i == j ? 1.0 / (mu * k2) : torch::zeros_like(k2)) -
+                           (lambda + mu) / (mu * (lambda + 2 * mu) * k4) * *_kvec[i] * *_kvec[j],
+                       0.0));
     }
-
-  // invert projected stiffness
-  auto Mmat = torch::linalg::pinv(Nmat);
 
   // allocate Gamma operator
   _gamma = _domain.emptyReciprocal({6, 6});
@@ -121,21 +103,6 @@ MoulinecSouquet::updateGamma()
       _gamma.index_put_({Ellipsis, M, N}, _f[M] * _f[N] * Gmn);
     }
   }
-
-  // std::cout << Mmat << '\n';
-
-  Mmat = _domain.emptyReciprocal({3, 3});
-  for (const auto i : make_range(3))
-    for (const auto j : make_range(3))
-    {
-      Mmat.index_put_(
-          {Ellipsis, i, j},
-          torch::where(k2 > 0,
-                       (i == j ? 1.0 / (mu * k2) : torch::zeros_like(k2)) -
-                           (lambda + mu) / (mu * (lambda + 2 * mu) * k4) * *_kvec[i] * *_kvec[j],
-                       0.0));
-    }
-  // std::cout << Mmat << '\n';
 }
 
 #endif
