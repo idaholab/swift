@@ -14,7 +14,7 @@
  * ReciprocalMatDiffusion (\nabla M \nabla \mu) object
  */
 
-class ReciprocalMatDiffusion : public TensorOperator
+class ReciprocalMatDiffusion : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
@@ -29,7 +29,6 @@ protected:
   /// imaginary unit i
   const torch::Tensor _imag;
   const torch::Tensor & _psi;
-  const Real _epsilon;
 
   bool _update_psi;
   const bool _always_update_psi;

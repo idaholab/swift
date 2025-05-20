@@ -22,8 +22,7 @@ ReciprocalMatDiffusion::validParams()
   params.addRequiredParam<TensorInputBufferName>("chemical_potential",
                                                  "Chemical potential buffer name");
   params.addRequiredParam<TensorInputBufferName>("mobility", "Mobility buffer name");
-  params.addRequiredParam<TensorInputBufferName>("psi", "Variable to impose Neuamnn BC.");
-  params.addParam<Real>("epsilon", 1e-8, "Epsilon to avoid divide by zero errors.");
+  params.addParam<TensorInputBufferName>("psi", "Variable to impose Neuamnn BC.");
   params.addParam<bool>("always_update_psi", false, "Set to true if the BC changes .");
   return params;
 }
@@ -34,7 +33,6 @@ ReciprocalMatDiffusion::ReciprocalMatDiffusion(const InputParameters & parameter
     _M(getInputBuffer("mobility")),
     _imag(torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions())),
     _psi(getInputBuffer("psi")),
-    _epsilon(getParam<Real>("epsilon")),
     _update_psi(true),
     _always_update_psi(getParam<bool>("always_update_psi"))
 {

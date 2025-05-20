@@ -13,7 +13,7 @@
 /**
  * ReciprocalAllenCahn (\nabla M \nabla \mu) object
  */
-class ReciprocalAllenCahn : public TensorOperator
+class ReciprocalAllenCahn : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
