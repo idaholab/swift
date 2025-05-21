@@ -4,13 +4,10 @@
   ny = 200
   xmax = 200
   ymax = 200
-
-  device_names = 'cuda:7'
-
   mesh_mode = DOMAIN
 []
 
-fchem='fa:=rho^2*(c-ca)^2;
+fchem = 'fa:=rho^2*(c-ca)^2;
 fb:=rho^2*(cb-c)^2;
 h:=n1^3*(6*n1^2-15*n1+10) +
    n2^3*(6*n2^2-15*n2+10) +
@@ -33,12 +30,12 @@ nic = 'epsilon*(cos((0.01*idx)*x-4)*cos((0.007+0.01*idx)*y)
        *cos((0.031+0.001*idx)*x-(0.004+0.001*idx)*y))^2)^2'
 
 cnames = 'rho     ca  cb  alpha w L M'
-cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
+cvalues = 'sqrt(2) 0.3 0.7 5     1 5 5'
 
 [TensorBuffers]
   # variables
   [c]
-    map_to_aux_variable = c
+    # map_to_aux_variable = c
   []
   [n1]
   []
@@ -108,7 +105,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   [Fgrad_n4]
   []
   [bnds]
-    map_to_aux_variable = bnds
+    #map_to_aux_variable = bnds
   []
 []
 
@@ -142,7 +139,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = n1
       expression = ${nic}
       extra_symbols = true
-      constant_names       = 'idx epsilon psi'
+      constant_names = 'idx epsilon psi'
       constant_expressions = '  1     0.1 1.5'
     []
     [n2]
@@ -150,7 +147,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = n2
       expression = ${nic}
       extra_symbols = true
-      constant_names       = 'idx epsilon psi'
+      constant_names = 'idx epsilon psi'
       constant_expressions = '  2    0.1 1.5'
     []
     [n3]
@@ -158,7 +155,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = n3
       expression = ${nic}
       extra_symbols = true
-      constant_names       = 'idx epsilon psi'
+      constant_names = 'idx epsilon psi'
       constant_expressions = '  3     0.1 1.5'
     []
     [n4]
@@ -166,7 +163,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = n4
       expression = ${nic}
       extra_symbols = true
-      constant_names       = 'idx epsilon psi'
+      constant_names = 'idx epsilon psi'
       constant_expressions = '  4     0.1 1.5'
     []
   []
@@ -321,7 +318,7 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
       buffer = F
       enable_jit = true
       expression = '${fchem} + Fgrad_c + Fgrad_n1 + Fgrad_n2 + Fgrad_n3 + Fgrad_n4'
-      constant_names =  ${cnames}
+      constant_names = ${cnames}
       constant_expressions = ${cvalues}
       inputs = 'c n1 n2 n3 n4 Fgrad_c Fgrad_n1 Fgrad_n2 Fgrad_n3 Fgrad_n4'
     []
@@ -335,43 +332,16 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
   []
 []
 
-[TensorTimeIntegrators]
-  # the linear operator in this problem is diagonal, which simplifies time integration considerably!
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = c_bar
-    linear_reciprocal = MkappaL2bar
-    nonlinear_reciprocal = Mbar_mu_c_bar
-  []
-  [n1]
-    type = FFTSemiImplicit
-    buffer = n1
-    reciprocal_buffer = n1_bar
-    linear_reciprocal = kappaLbar
-    nonlinear_reciprocal = mu_n1_bar
-  []
-  [n2]
-    type = FFTSemiImplicit
-    buffer = n2
-    reciprocal_buffer = n2_bar
-    linear_reciprocal = kappaLbar
-    nonlinear_reciprocal = mu_n2_bar
-  []
-  [n3]
-    type = FFTSemiImplicit
-    buffer = n3
-    reciprocal_buffer = n3_bar
-    linear_reciprocal = kappaLbar
-    nonlinear_reciprocal = mu_n3_bar
-  []
-  [n4]
-    type = FFTSemiImplicit
-    buffer = n4
-    reciprocal_buffer = n4_bar
-    linear_reciprocal = kappaLbar
-    nonlinear_reciprocal = mu_n4_bar
-  []
+[TensorSolver]
+  type = SemiImplicitSolver
+  buffer = 'c n1 n2 n3 n4'
+  reciprocal_buffer = 'c_bar n1_bar n2_bar n3_bar n4_bar'
+  linear_reciprocal = 'MkappaL2bar kappaLbar kappaLbar kappaLbar kappaLbar'
+  nonlinear_reciprocal = 'Mbar_mu_c_bar mu_n1_bar mu_n2_bar mu_n3_bar mu_n4_bar'
+  substeps = 2000
+  predictor_order = 2
+  corrector_order = 2
+  corrector_steps = 0
 []
 
 [AuxVariables]
@@ -406,7 +376,6 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 
 [Problem]
   type = TensorProblem
-  spectral_solve_substeps = 2000
 []
 
 [Executioner]
@@ -421,8 +390,15 @@ cvalues= 'sqrt(2) 0.3 0.7 5     1 5 5'
 []
 
 [Outputs]
-  exodus = true
   csv = true
   perf_graph = true
   execute_on = 'TIMESTEP_END'
+[]
+
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'c bnds'
+    output_mode = 'CELL CELL'
+  []
 []

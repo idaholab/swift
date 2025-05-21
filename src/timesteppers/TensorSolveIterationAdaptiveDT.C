@@ -10,6 +10,7 @@
 #include "TensorSolveIterationAdaptiveDT.h"
 #include "TensorProblem.h"
 #include "IterativeTensorSolverInterface.h"
+#include "TensorSolver.h"
 
 #include <limits>
 

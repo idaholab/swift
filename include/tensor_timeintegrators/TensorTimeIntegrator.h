@@ -13,7 +13,8 @@
 /**
  * TensorTimeIntegrator object (this is mostly a compute object)
  */
-class TensorTimeIntegrator : public TensorOperator
+template <typename T>
+class TensorTimeIntegrator : public TensorOperator<T>
 {
 public:
   static InputParameters validParams();
@@ -21,10 +22,9 @@ public:
   TensorTimeIntegrator(const InputParameters & parameters);
 
 protected:
-  const std::vector<torch::Tensor> & getBufferOld(const std::string & param,
-                                                  unsigned int max_states);
-  const std::vector<torch::Tensor> & getBufferOldByName(const TensorInputBufferName & buffer_name,
-                                                        unsigned int max_states);
+  const std::vector<T> & getBufferOld(const std::string & param, unsigned int max_states);
+  const std::vector<T> & getBufferOldByName(const TensorInputBufferName & buffer_name,
+                                            unsigned int max_states);
 
   const Real & _sub_dt;
 };

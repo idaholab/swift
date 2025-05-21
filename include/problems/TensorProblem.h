@@ -12,14 +12,18 @@
 #include "DomainInterface.h"
 #include "SwiftTypes.h"
 #include "SwiftUtils.h"
+#include "TensorBuffer.h"
 
 #include "AuxiliarySystem.h"
 #include "libmesh/petsc_vector.h"
+#include "libmesh/print_trace.h"
 
+#include <memory>
 #include <torch/torch.h>
 
 class UniformTensorMesh;
 class TensorOperatorBase;
+template <typename T = torch::Tensor>
 class TensorTimeIntegrator;
 class TensorOutput;
 class TensorSolver;
@@ -48,7 +52,12 @@ public:
   // recompute quantities on grid size change
   virtual void gridChanged();
 
-  virtual void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters);
+  virtual void addTensorBuffer(const std::string & buffer_type,
+                               const std::string & buffer_name,
+                               InputParameters & parameters);
+
+  template <typename T>
+  std::shared_ptr<TensorBuffer<T>> addTensorBuffer(const std::string & buffer_name);
 
   virtual void addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
@@ -63,8 +72,8 @@ public:
                                            const std::string & name,
                                            InputParameters & parameters);
   virtual void addTensorComputeOnDemand(const std::string & compute_name,
-                                           const std::string & name,
-                                           InputParameters & parameters);
+                                        const std::string & name,
+                                        InputParameters & parameters);
 
   virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
                                        const std::string & name,
@@ -73,12 +82,19 @@ public:
                                const std::string & name,
                                InputParameters & parameters);
 
-  torch::Tensor & getBuffer(const std::string & buffer_name);
-  const std::vector<torch::Tensor> & getBufferOld(const std::string & buffer_name,
-                                                  unsigned int max_states);
+  /// returns the current state of the tensor
+  template <typename T = torch::Tensor>
+  T & getBuffer(const std::string & buffer_name);
+
+  /// requests a tensor regardless of type
+  TensorBufferBase & getBufferBase(const std::string & buffer_name);
+
+  /// return the old states of the tensor
+  template <typename T = torch::Tensor>
+  const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
-  const torch::Tensor & getCPUBuffer(const std::string & buffer_name);
+  const torch::Tensor & getRawCPUBuffer(const std::string & buffer_name);
 
   TensorOperatorBase & getOnDemandCompute(const std::string & name);
 
@@ -112,6 +128,9 @@ protected:
   template <typename FLOAT_TYPE>
   void mapBuffersToAux();
 
+  template <typename FLOAT_TYPE>
+  void mapAuxToBuffers();
+
   virtual void addTensorCompute(const std::string & compute_name,
                                 const std::string & name,
                                 InputParameters & parameters,
@@ -122,6 +141,10 @@ protected:
 
   /// perform output tasks
   void executeTensorOutputs(const ExecFlagType & exec_type);
+
+  /// helper to get the TensorBuffer wrapper object that holds the actual tensor data
+  template <typename T = torch::Tensor>
+  TensorBuffer<T> & getBufferHelper(const std::string & buffer_name);
 
   /// tensor options
   const torch::TensorOptions _options;
@@ -140,13 +163,7 @@ protected:
   Real _output_time;
 
   /// list of TensorBuffers (i.e. tensors)
-  std::map<std::string, torch::Tensor> _tensor_buffer;
-
-  /// list of read-only CPU TensorBuffers (for MOOSE objects and outputs)
-  std::map<std::string, torch::Tensor> _tensor_cpu_buffer;
-
-  /// old buffers (stores max number of states, requested, and states)
-  std::map<std::string, std::pair<unsigned int, std::vector<torch::Tensor>>> _old_tensor_buffer;
+  std::map<std::string, std::shared_ptr<TensorBufferBase>> _tensor_buffer;
 
   /// old timesteps
   std::vector<Real> _old_dt;
@@ -154,7 +171,7 @@ protected:
   const unsigned int & _dim;
 
   /// grid spacing
-  const std::array<Real, 3> & _grid_spacing;
+  const RealVectorValue & _grid_spacing;
 
   /// global grid size
   const std::array<int64_t, 3> & _n;
@@ -178,7 +195,7 @@ protected:
   TensorComputeList _on_demand;
 
   ///  time integrator objects
-  std::vector<std::shared_ptr<TensorTimeIntegrator>> _time_integrators;
+  std::vector<std::shared_ptr<TensorTimeIntegrator<>>> _time_integrators;
 
   std::vector<std::shared_ptr<TensorOutput>> _outputs;
 
@@ -188,12 +205,12 @@ protected:
   /// buffers to solution vector indices
   std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
       _buffer_to_var;
+  std::map<std::string, std::tuple<const MooseVariableFieldBase *, std::vector<std::size_t>, bool>>
+      _var_to_buffer;
 
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
 };
-
-#include "TensorSolver.h"
 
 template <typename T>
 T &
@@ -201,10 +218,76 @@ TensorProblem::getSolver() const
 {
   if (_solver)
   {
-    const auto specialized_solver = dynamic_cast<T*>(_solver.get());
+    const auto specialized_solver = dynamic_cast<T *>(_solver.get());
     if (specialized_solver)
       return *specialized_solver;
-    mooseError("No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
+    mooseError(
+        "No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
   }
   mooseError("No TensorSolver has been set up.");
+}
+
+template <typename T>
+TensorBuffer<T> &
+TensorProblem::getBufferHelper(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+
+  if (it == _tensor_buffer.end())
+    return *addTensorBuffer<T>(buffer_name);
+  else
+  {
+    auto tensor_buffer = dynamic_cast<TensorBuffer<T> *>(it->second.get());
+    if (!tensor_buffer)
+      mooseError("TensorBuffer '",
+                 buffer_name,
+                 "' of the requested type '",
+                 libMesh::demangle(typeid(T).name()),
+                 "' was previously declared as '",
+                 it->second->type(),
+                 "'.");
+    return *tensor_buffer;
+  }
+}
+
+template <typename T>
+T &
+TensorProblem::getBuffer(const std::string & buffer_name)
+{
+  return getBufferHelper<T>(buffer_name).getTensor();
+}
+
+template <typename T>
+const std::vector<T> &
+TensorProblem::getBufferOld(const std::string & buffer_name, unsigned int max_states)
+{
+  return getBufferHelper<T>(buffer_name).getOldTensor(max_states);
+}
+
+template <typename T>
+std::shared_ptr<TensorBuffer<T>>
+TensorProblem::addTensorBuffer(const std::string & buffer_name)
+{
+  if (_debug)
+    mooseInfoRepeated("Automatically adding tensor '",
+                      buffer_name,
+                      "' of type '",
+                      libMesh::demangle(typeid(T).name()),
+                      "'");
+  auto params = TensorBuffer<T>::validParams();
+  params.template set<std::string>("_object_name") = buffer_name;
+  params.template set<FEProblem *>("_fe_problem") = this;
+  params.template set<FEProblemBase *>("_fe_problem_base") = this;
+  params.template set<THREAD_ID>("_tid") = 0;
+  params.template set<std::string>("_type") = "TensorBufferBase";
+  params.template set<MooseApp *>("_moose_app") = &getMooseApp();
+  params.finalize(buffer_name);
+
+  // params.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  // params.addPrivateParam<const DomainAction *>("_domain", &_domain);
+
+  auto tensor_buffer = std::make_shared<typename TensorBufferSpecialization<T>::type>(params);
+
+  _tensor_buffer.try_emplace(buffer_name, tensor_buffer);
+  return tensor_buffer;
 }

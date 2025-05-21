@@ -13,6 +13,7 @@
 /**
  * TensorOperator object with a single output
  */
+template <typename T = torch::Tensor>
 class TensorOperator : public TensorOperatorBase
 {
 public:
@@ -22,5 +23,22 @@ public:
 
 protected:
   /// output buffer
-  torch::Tensor & _u;
+  T & _u;
 };
+
+template <typename T>
+InputParameters
+TensorOperator<T>::validParams()
+{
+  InputParameters params = TensorOperatorBase::validParams();
+  params.addRequiredParam<TensorOutputBufferName>("buffer",
+                                                  "The buffer this compute is writing to");
+  params.addClassDescription("TensorOperator object.");
+  return params;
+}
+
+template <typename T>
+TensorOperator<T>::TensorOperator(const InputParameters & parameters)
+  : TensorOperatorBase(parameters), _u(getOutputBuffer<T>("buffer"))
+{
+}

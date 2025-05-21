@@ -56,4 +56,15 @@
     design = 'XDMFTensorOutput.md'
     # this should have a corresponding capability check '!hdf5_thread_safe'
   []
+
+  # Explicit solve tests
+  [explicit_euler_exodiff]
+    type = Exodiff
+    input = cahnhilliard_explicit.i
+    cli_args = 'TensorBuffers/c/map_to_aux_variable=c TensorBuffers/mu/map_to_aux_variable=mu'
+    exodiff = cahnhilliard_explicit_out.e
+    issues = '#29'
+    requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation, and map a tensor directly to an aux variable solution vector in 2d for verification of the solve.'
+    design = 'ForwardEulerSolver.md'
+  []
 []

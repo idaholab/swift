@@ -38,10 +38,14 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
        class that might be updated while the output is running, which would lead to race conditions
        resulting in unreproducible outputs. Time is such a quantity, which is why we provide a
        dedicated output time that is not changed while the asynchronous output is running.*/
-    _time(_tensor_problem.outputTime())
+    _time(_tensor_problem.outputTime()),
+    _file_base(isParamValid("file_base") ? getParam<std::string>("file_base")
+                                         : _app.getOutputFileBase(true))
 {
+  const TensorBufferBase & getBufferBase(const std::string & buffer_name);
+
   for (const auto & name : getParam<std::vector<TensorInputBufferName>>("buffer"))
-    _out_buffers[name] = &_tensor_problem.getCPUBuffer(name);
+    _out_buffers[name] = &_tensor_problem.getBufferBase(name).getRawCPUTensor();
 }
 
 void

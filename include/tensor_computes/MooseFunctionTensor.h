@@ -16,7 +16,7 @@ class Function;
 /**
  * Constant Tensor
  */
-class MooseFunctionTensor : public TensorOperator, public FunctionInterface
+class MooseFunctionTensor : public TensorOperator<>, public FunctionInterface
 {
 public:
   static InputParameters validParams();

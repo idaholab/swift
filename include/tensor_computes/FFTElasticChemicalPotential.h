@@ -13,7 +13,7 @@
 /**
  * Chemical potential for small strain elasticity volumetric Eigenstrain solute
  */
-class FFTElasticChemicalPotential : public TensorOperator
+class FFTElasticChemicalPotential : public TensorOperator<>
 {
 public:
   static InputParameters validParams();

@@ -15,7 +15,7 @@
 /**
  * ParsedCompute object
  */
-class ParsedCompute : public TensorOperator
+class ParsedCompute : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
@@ -34,5 +34,10 @@ protected:
 
   torch::Tensor _time_tensor;
   std::vector<const torch::Tensor *> _params;
-  const bool _real_space;
+  enum class ExpandEnum
+  {
+    REAL,
+    RECIPROCAL,
+    NONE
+  } _expand;
 };

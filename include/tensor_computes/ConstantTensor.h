@@ -14,7 +14,7 @@
  * Constant Tensor
  */
 template <bool reciprocal>
-class ConstantTensorTempl : public TensorOperator
+class ConstantTensorTempl : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
@@ -26,8 +26,8 @@ public:
   /// mesh dimension
   const unsigned int & _dim;
 
-  using TensorOperator::_domain;
-  using TensorOperator::_u;
+  using TensorOperator<>::_domain;
+  using TensorOperator<>::_u;
 };
 
 typedef ConstantTensorTempl<false> ConstantTensor;

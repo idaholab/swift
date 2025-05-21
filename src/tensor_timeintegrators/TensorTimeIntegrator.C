@@ -9,29 +9,35 @@
 #include "TensorTimeIntegrator.h"
 #include "TensorProblem.h"
 
+template <typename T>
 InputParameters
-TensorTimeIntegrator::validParams()
+TensorTimeIntegrator<T>::validParams()
 {
-  InputParameters params = TensorOperator::validParams();
+  InputParameters params = TensorOperator<T>::validParams();
   params.registerBase("TensorTimeIntegrator");
   params.addClassDescription("TensorTimeIntegrator object.");
   return params;
 }
 
-TensorTimeIntegrator::TensorTimeIntegrator(const InputParameters & parameters)
-  : TensorOperator(parameters), _sub_dt(_tensor_problem.subDt())
+template <typename T>
+TensorTimeIntegrator<T>::TensorTimeIntegrator(const InputParameters & parameters)
+  : TensorOperator<T>(parameters), _sub_dt(this->_tensor_problem.subDt())
 {
 }
 
-const std::vector<torch::Tensor> &
-TensorTimeIntegrator::getBufferOld(const std::string & param, unsigned int max_states)
+template <typename T>
+const std::vector<T> &
+TensorTimeIntegrator<T>::getBufferOld(const std::string & param, unsigned int max_states)
 {
-  return getBufferOldByName(getParam<TensorInputBufferName>(param), max_states);
+  return getBufferOldByName(this->template getParam<TensorInputBufferName>(param), max_states);
 }
 
-const std::vector<torch::Tensor> &
-TensorTimeIntegrator::getBufferOldByName(const TensorInputBufferName & buffer_name,
-                                      unsigned int max_states)
+template <typename T>
+const std::vector<T> &
+TensorTimeIntegrator<T>::getBufferOldByName(const TensorInputBufferName & buffer_name,
+                                            unsigned int max_states)
 {
-  return _tensor_problem.getBufferOld(buffer_name, max_states);
+  return this->_tensor_problem.template getBufferOld<T>(buffer_name, max_states);
 }
+
+template class TensorTimeIntegrator<torch::Tensor>;

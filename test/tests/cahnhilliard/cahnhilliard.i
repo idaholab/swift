@@ -14,23 +14,7 @@
   device_names = cpu
 []
 
-[TensorBuffers]
-  [c]
-  []
-  [cbar]
-  []
-  [mu]
-  []
-  [mubar]
-  []
-  [Mbarmubar]
-  []
-  # constant tensors
-  [Mbar]
-  []
-  [kappabarbar]
-  []
-[]
+# In this input we fully trely on implicit TensorBuffer declaration
 
 [TensorComputes]
   [Initialize]
@@ -80,7 +64,6 @@
       enable_jit = true
       expression = 'Mbar*mubar'
       inputs = 'Mbar mubar'
-      real_space = false
     []
     [cbar]
       type = ForwardFFT

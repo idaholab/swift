@@ -8,8 +8,6 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "TensorProblem.h"
 
 class LatticeBoltzmannStencilBase;
@@ -109,5 +107,3 @@ public:
   const Real _cs4 = _cs2 * _cs2;
 
 };
-
-#endif

@@ -10,6 +10,7 @@
 #include "TensorProblem.h"
 #include "Conversion.h"
 
+#include <cstddef>
 #include <filesystem>
 
 #ifdef LIBMESH_HAVE_HDF5
@@ -31,7 +32,7 @@ XDMFTensorOutput::validParams()
   auto params = TensorOutput::validParams();
   params.addClassDescription("Output a tensor in XDMF format.");
 #ifdef LIBMESH_HAVE_HDF5
-  params.addParam<bool>("enable_hdf5", "Use HDF5 for binary data storage.");
+  params.addParam<bool>("enable_hdf5", false, "Use HDF5 for binary data storage.");
 #endif
   MultiMooseEnum outputMode("CELL NODE");
   params.addParam<MultiMooseEnum>("output_mode", outputMode, "Output as cell or node data");
@@ -41,7 +42,6 @@ XDMFTensorOutput::validParams()
 XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   : TensorOutput(parameters),
     _dim(_domain.getDim()),
-    _file_base(_app.getOutputFileBase(true)),
     _frame(0)
 #ifdef LIBMESH_HAVE_HDF5
     ,
@@ -102,8 +102,8 @@ XDMFTensorOutput::init()
     _ndata[0].push_back(_domain.getGridSize()[i]);
     _ndata[1].push_back(_domain.getGridSize()[i] + 1);
     _nnode.push_back(_domain.getGridSize()[i] + 1);
-    dgrid.push_back(_domain.getGridSpacing()[i]);
-    origin.push_back(_domain.getDomainMin()[i]);
+    dgrid.push_back(_domain.getGridSpacing()(i));
+    origin.push_back(_domain.getDomainMin()(i));
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");
   _data_grid[1] = Moose::stringify(_ndata[1], " ");
@@ -192,60 +192,94 @@ XDMFTensorOutput::output()
   grid.append_child("xi:include").append_attribute("xpointer") = "xpointer(//Xdmf/Domain/Geometry)";
 
   // loop over buffers
-  for (const auto & [name, original_buffer] : _out_buffers)
+  for (const auto & [buffer_name, original_buffer] : _out_buffers)
   {
-    const auto is_cell = _is_cell_data[name];
-    auto attr = grid.append_child("Attribute");
-    attr.append_attribute("Name") = name.c_str();
-    attr.append_attribute("Center") = is_cell ? "Cell" : "Node";
-    auto data = attr.append_child("DataItem");
-    data.append_attribute("DataType") = "Float";
-    data.append_attribute("Dimensions") = _data_grid[is_cell ? 0 : 1].c_str();
+    // skip empty tensors (no device)
+    if (!original_buffer->defined())
+      continue;
 
+    const auto is_cell = _is_cell_data[buffer_name];
     auto buffer = is_cell ? *original_buffer : extendTensor(*original_buffer);
-    // save file
-    const auto setname = name + "." + Moose::stringify(_frame);
-    char * raw_ptr = static_cast<char *>(buffer.data_ptr());
-    std::size_t raw_size = buffer.numel();
+
+    const auto sizes = buffer.sizes();
+    const auto total_dims = sizes.size();
+
+    if (total_dims < _dim)
+      mooseError("Tensor has fewer dimensions than specified spatial dimension.");
+
+    int64_t num_grid_fields = 1;
+    for (const auto i : make_range(_dim))
+      num_grid_fields *= sizes[i];
+
+    int64_t num_scalar_fields = 1;
+    for (std::size_t i = _dim; i < total_dims; ++i)
+      num_scalar_fields *= sizes[i];
+
+    std::vector<int64_t> reshape_sizes = {num_grid_fields, num_scalar_fields};
+    const auto reshaped = buffer.reshape(reshape_sizes);
+
+    // now loop over scalar components
+    for (const auto index : make_range(num_scalar_fields))
+    {
+      auto name = buffer_name + (num_scalar_fields > 1 ? "_" + Moose::stringify(index) : "");
+
+      buffer = reshaped.select(1, index).contiguous();
+
+      auto attr = grid.append_child("Attribute");
+      attr.append_attribute("Name") = name.c_str();
+      attr.append_attribute("Center") = is_cell ? "Cell" : "Node";
+      auto data = attr.append_child("DataItem");
+      data.append_attribute("DataType") = "Float";
+
+      // TODO: recompute data grid from sizes[0:_dim]
+      data.append_attribute("Dimensions") = _data_grid[is_cell ? 0 : 1].c_str();
+
+      // save file
+      const auto setname = name + "." + Moose::stringify(_frame);
+
+      char * raw_ptr = static_cast<char *>(buffer.data_ptr());
+      std::size_t raw_size = buffer.numel();
 
 #ifdef LIBMESH_HAVE_HDF5
-    if (_enable_hdf5)
-    {
-      if (buffer.dtype() == torch::kFloat32)
-        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
-      else if (buffer.dtype() == torch::kFloat64)
-        addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
-      else
-        mooseError("Unsupported output type");
+      if (_enable_hdf5)
+      {
+        if (buffer.dtype() == torch::kFloat32)
+          addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_FLOAT);
+        else if (buffer.dtype() == torch::kFloat64)
+          addDataToHDF5(
+              _hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
+        else
+          mooseError("Unsupported output type");
 
-      data.append_attribute("Format") = "HDF";
-      const auto h5path = _hdf5_name + ":/" + setname;
-      data.append_child(pugi::node_pcdata).set_value(h5path.c_str());
-    }
-    else
+        data.append_attribute("Format") = "HDF";
+        const auto h5path = _hdf5_name + ":/" + setname;
+        data.append_child(pugi::node_pcdata).set_value(h5path.c_str());
+      }
+      else
 #endif
-    {
-      if (buffer.dtype() == torch::kFloat32)
       {
-        data.append_attribute("Precision") = "4";
-        raw_size *= 4;
-      }
-      else if (buffer.dtype() == torch::kFloat64)
-      {
-        data.append_attribute("Precision") = "8";
-        raw_size *= 8;
-      }
-      else
-        mooseError("Unsupported output type");
+        if (buffer.dtype() == torch::kFloat32)
+        {
+          data.append_attribute("Precision") = "4";
+          raw_size *= 4;
+        }
+        else if (buffer.dtype() == torch::kFloat64)
+        {
+          data.append_attribute("Precision") = "8";
+          raw_size *= 8;
+        }
+        else
+          mooseError("Unsupported output type");
 
-      const auto fname = _file_base + "." + setname + ".bin";
-      auto file = std::fstream(fname.c_str(), std::ios::out | std::ios::binary);
-      file.write(raw_ptr, raw_size);
-      file.close();
+        const auto fname = _file_base + "." + setname + ".bin";
+        auto file = std::fstream(fname.c_str(), std::ios::out | std::ios::binary);
+        file.write(raw_ptr, raw_size);
+        file.close();
 
-      data.append_attribute("Format") = "Binary";
-      data.append_attribute("Endian") = "Little";
-      data.append_child(pugi::node_pcdata).set_value(fname.c_str());
+        data.append_attribute("Format") = "Binary";
+        data.append_attribute("Endian") = "Little";
+        data.append_child(pugi::node_pcdata).set_value(fname.c_str());
+      }
     }
   }
 
