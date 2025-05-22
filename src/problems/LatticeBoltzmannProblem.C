@@ -124,6 +124,63 @@ LatticeBoltzmannProblem::init()
 }
 
 void
+LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
+{
+  if (_convergence_residual < _tolerance)
+    return;
+
+  if (exec_type == EXEC_INITIAL)
+  {
+    // update time
+    _sub_time = FEProblem::time();
+
+    executeTensorInitialConditions();
+    executeTensorOutputs(EXEC_INITIAL);
+  }
+  
+  if (exec_type == EXEC_TIMESTEP_BEGIN)
+  {
+    if (dt() != dtOld())
+      for (auto & pair : _tensor_buffer)
+        pair.second->clearStates();
+
+    // update substepping dt
+    _sub_dt = dt() / _lbm_substeps;
+
+    for (unsigned substep = 0; substep < _lbm_substeps; ++substep)
+    {
+      // create old state buffers
+      advanceState();
+
+      // run timeintegrators
+      for (auto & ti : _time_integrators)
+        ti->computeBuffer();
+
+      // run bcs
+      for (auto & bc : _bcs)
+        bc->computeBuffer();
+
+      // run computes
+      for (auto & cmp : _computes)
+        cmp->computeBuffer();
+      _console << COLOR_WHITE << "Lattice Boltzmann Substep "<< substep<<", Residual "<<_convergence_residual << COLOR_DEFAULT << std::endl;
+
+      _t_total ++;
+    }
+
+    // run postprocessing before output
+    for (auto & pp : _pps)
+      pp->computeBuffer();
+    
+    // run outputs
+    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
+
+    // mapBuffersToAux();
+  }
+  FEProblem::execute(exec_type);
+}
+
+void
 LatticeBoltzmannProblem::addTensorBoundaryCondition(const std::string & compute_type,
                                       const std::string & name,
                                       InputParameters & parameters)

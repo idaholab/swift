@@ -28,7 +28,10 @@ public:
                                   InputParameters & parameters);
   
   // setup stuff
-  void init() override;           
+  void init() override;
+
+  // main loop
+  void execute(const ExecFlagType & exec_type) override;
 
   void addStencil(const std::string & stencil_name,
                   const std::string & name,
