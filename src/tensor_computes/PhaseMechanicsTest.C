@@ -9,6 +9,7 @@
 #include "PhaseMechanicsTest.h"
 #include "SwiftUtils.h"
 #include "TensorProblem.h"
+#include <ATen/ops/zeros.h>
 
 registerMooseObject("SwiftApp", PhaseMechanicsTest);
 
@@ -41,6 +42,6 @@ PhaseMechanicsTest::computeBuffer()
     _u.index_put_({slice1, slice2, slice3}, 1.0);
   else if (_dim == 2)
     _u.index_put_({slice1, slice2}, 1.0);
-  else 
+  else
     mooseError("Unsupported problem dimension");
 }

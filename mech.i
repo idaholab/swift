@@ -1,8 +1,8 @@
 [Domain]
   dim = 3
-  nx = 31
-  ny = 31
-  nz = 31
+  nx = 30
+  ny = 32
+  nz = 34
   xmax = ${fparse 2*pi}
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
@@ -61,6 +61,7 @@
     type = XDMFTensorOutput
     buffer = 'disp sV F'
     output_mode = 'OVERSIZED_NODAL CELL CELL'
+    enable_hdf5 = true
   []
 []
 
