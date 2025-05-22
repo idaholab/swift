@@ -16,7 +16,7 @@ class LatticeBoltzmannStencilBase;
 /**
  * TimeIntegrator object for LB computes to handle streaming operation
  */
-class LatticeBoltzmannTimeIntegrator : public TensorTimeIntegrator
+class LatticeBoltzmannTimeIntegrator : public TensorTimeIntegrator<>
 {
 public:
   static InputParameters validParams();

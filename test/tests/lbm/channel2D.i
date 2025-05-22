@@ -28,20 +28,16 @@
     map_to_aux_variable = density
   []
   [u]
-    vector_size = 2
     map_to_aux_variable = velocity
   []
   [u_magnitude]
     map_to_aux_variable = speed
   []
   [f]
-    vector_size = 9
   []
   [f_post_collision]
-    vector_size = 9
   []
   [feq]
-    vector_size = 9
   []
 []
 
@@ -106,7 +102,7 @@
       rho = rho 
       # body_force = 0.000001
     []
-    [Spped]
+    [Speed]
       type = LBMComputeVelocityMagnitude
       buffer = u_magnitude
       velocity = u

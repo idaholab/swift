@@ -17,7 +17,7 @@ class LatticeBoltzmannMesh;
 /**
  * LatticeBoltzmannOperator object
  */
-class LatticeBoltzmannOperator : public TensorOperator
+class LatticeBoltzmannOperator : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
