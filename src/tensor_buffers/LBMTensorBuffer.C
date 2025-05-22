@@ -31,6 +31,8 @@ void
 LBMTensorBuffer::init()
 {
   std::vector<int64_t> shape(_domain.getShape().begin(), _domain.getShape().end());
+  if (_domain.getDim() < 3)
+    shape.push_back(1);
   if (_dimension > 0)
     shape.push_back(static_cast<int64_t>(_dimension));
   _u = torch::zeros(shape);
