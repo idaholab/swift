@@ -10,6 +10,7 @@
 #include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
+#include "TensorSolver.h"
 #include "TensorOperatorBase.h"
 #include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
@@ -49,194 +50,85 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
 void
 LatticeBoltzmannProblem::init()
 {
-  // initialize base class method
-  TensorProblem::init();
-
-  // initialize buffers with extra dimensions
-  for (auto & pair : _tensor_buffer)
+  unsigned int n_threads = libMesh::n_threads();
+  if (n_threads != 1)
   {
-    auto extra_dim = _buffer_extra_dimension.find(pair.first);
-
-    if (extra_dim->second > 1)
-    {
-      // buffers with extra dimension
-      unsigned int dim = 4;
-      std::array<int64_t, 4> n;
-      std::fill(n.begin(), n.end(), 1);
-      std::copy(_n.begin(), _n.end(), n.begin());
-      n[dim - 1] = static_cast<int64_t>(extra_dim->second);
-      torch::IntArrayRef shape = torch::IntArrayRef(n.data(), dim);
-      pair.second = torch::zeros(shape, _options);
-    }
-    else
-    {
-      torch::IntArrayRef shape = torch::IntArrayRef(_n.data(), 3);
-      pair.second = torch::zeros(shape, _options);
-    }
+    mooseInfo("Setting libTorch to use ", n_threads, " threads on the CPU.");
+    torch::set_num_threads(n_threads);
   }
 
-  // set up parameters for slip flow
-  if (_enable_slip)
-    enableSlipModel();
-  
-  _convergence_residual = 1.0;
-}
+  // initialize tensors (assuming all scalar for now, but in the future well have an
+  // TensorBufferBase pointer as well)
+  for (auto pair : _tensor_buffer)
+    pair.second->init();
 
-void
-LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
-{ 
-  /**
-   * This is primarily a copy of base class execute function with a 
-   * different order of operations in the main loop.
-   */
+  // compute grid dependent quantities
+  gridChanged();
 
-  // convergence check
-  if (_convergence_residual < _tolerance)
-    return;
-  
-  if (exec_type == EXEC_INITIAL)
+  // init computes (must happen before dependency update)
+  for (auto & cmp : _computes)
+    cmp->init();
+
+  // update dependencies
+  if (_solver)
+    _solver->updateDependencies();
+
+  // update dependencies for on demand objects
+  for (auto & od : _on_demand)
+    od->updateDependencies();
+
+  // dependency resolution of TensorICs
+  DependencyResolverInterface::sort(_ics);
+
+  // dependency resolution of TensorComputes
+  DependencyResolverInterface::sort(_computes);
+
+  // dependency resolution of boundary conditions
+  DependencyResolverInterface::sort(_bcs);
+
+  // dependency resolution of Tensor Postprocessors
+  DependencyResolverInterface::sort(_pps);
+
+  // show computes
+  if (_debug)
   {
-    // run ICs
-    for (auto & ic : _ics)
-      ic->computeBuffer();
-
-    // compile ist of compute output tensors
-    std::set<std::string> _is_output;
+    _console << COLOR_CYAN << "Compute object execution order:\n" << COLOR_DEFAULT;
     for (auto & cmp : _computes)
-      _is_output.insert(cmp->getSuppliedItems().begin(), cmp->getSuppliedItems().end());
-
-    // check for uninitialized tensors
-    for (auto & [name, t] : _tensor_buffer)
-      if (!t.defined() && _is_output.count(name) == 0)
-        mooseWarning(name, " is not initialized and not an output of any [Solve] compute.");
+    {
+      _console << "  " << cmp->name() << '\n' << COLOR_YELLOW;
+      for (const auto & ri : cmp->getRequestedItems())
+        _console << "    <- " << ri << '\n';
+      _console << COLOR_GREEN;
+      for (const auto & si : cmp->getSuppliedItems())
+        _console << "    -> " << si << '\n';
+      _console << COLOR_DEFAULT;
+    }
   }
 
-  if (exec_type == EXEC_TIMESTEP_BEGIN)
-  {
-    if (dt() != dtOld())
-      for (auto & [name, max_states] : _old_tensor_buffer)
-        max_states.second.clear();
+  // call base class init
+  FEProblem::init();
 
-    // update substepping dt
-    _sub_dt = dt() / _lbm_substeps;
+  // init outputs
+  for (auto & output : _outputs)
+    output->init();
 
-    for (unsigned substep = 0; substep < _lbm_substeps; ++substep)
-    {
-      // create old state buffers
-      advanceState();
+  // commenting this temporarily skips "Unsupported variable type for mapping" error
+  // updateDOFMap();
 
-      // run timeintegrators
-      for (auto & ti : _time_integrators)
-        ti->computeBuffer();
-
-      // run bcs
-      for (auto & bc : _bcs)
-        bc->computeBuffer();
-
-      // run computes
-      for (auto & cmp : _computes)
-        cmp->computeBuffer();
-      _console << COLOR_WHITE << "Lattice Boltzmann Substep "<< substep<<", Residual "<<_convergence_residual << COLOR_DEFAULT << std::endl;
-
-      _t_total ++;
-    }
-
-    // run postprocessing before output
-    for (auto & pp : _pps)
-      pp->computeBuffer();
-
-    // wait for prior asynchronous activity on CPU buffers to complete
-    // (this is a synchronization barrier for the threaded CPU activity)
-    for (auto & output : _outputs)
-      output->waitForCompletion();
-
-    // prepare CPU buffers (this is a synchronization barrier for the GPU)
-    for (auto & [name, cpu_buffer] : _tensor_cpu_buffer)
-    {
-      // get main buffer (GPU or CPU) - we already verified that it must exist
-      const auto & buffer = _tensor_buffer[name];
-      if (buffer.is_cpu())
-        cpu_buffer = buffer.clone().contiguous().squeeze(); // squeeze out extra dimensions of size 1
-      else
-        cpu_buffer = buffer.cpu().contiguous().squeeze(); // squeeze out extra dimensions of size 1
-    }
-
-    // run direct buffer outputs (asynchronous in threads)
-    for (auto & output : _outputs)
-      output->startOutput();
-
-    // mapBuffersToAux();
-  }
-  FEProblem::execute(exec_type);
+  // debug output
+  std::string variable_mapping;
+  for (const auto & [buffer_name, tuple] : _buffer_to_var)
+    variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
+  if (!variable_mapping.empty())
+    mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
 }
 
 void
-LatticeBoltzmannProblem::advanceState()
+LatticeBoltzmannProblem::addTensorBoundaryCondition(const std::string & compute_type,
+                                      const std::string & name,
+                                      InputParameters & parameters)
 {
-  FEProblem::advanceState();
-  /**
-   * This is simply copy of the same function in the parent class
-   * The only differeence is here: timeStep() < 1
-   * Without this, streaming will be ignored in the first time step
-   * Which will lead to incrorrect results
-   */ 
-  if (timeStep() < 1)
-    return;
-
-  // move buffers in time
-  std::size_t total_max = 0;
-  for (auto & [name, max_states] : _old_tensor_buffer)
-  {
-    auto & [max, states] = max_states;
-    if (max > total_max)
-      total_max = max;
-
-    if (states.size() < max)
-      states.push_back(torch::tensor({}, _options));
-    if (!states.empty())
-    {
-      for (std::size_t i = states.size() - 1; i > 0; --i)
-        states[i] = states[i - 1];
-      states[0] = _tensor_buffer[name];
-    }
-  }
-
-  // move dt in time (UGH, we need the _substep_dt!!!!)
-  if (_old_dt.size() < total_max)
-    _old_dt.push_back(0.0);
-  if (!_old_dt.empty())
-  {
-    for (std::size_t i = _old_dt.size() - 1; i > 0; --i)
-      _old_dt[i] = _old_dt[i - 1];
-    _old_dt[0] = _dt;
-  }
-}
-
-void
-LatticeBoltzmannProblem::updateDOFMap()
-{ 
-  /**
-   * This function temporarily bypasses 'Unsupported variable type for mapping' error in TensorProblem
-   */
-}
-
-// void
-// LatticeBoltzmannProblem::mapBuffersToAux()
-// {
-//   /**
-//    * 
-//    */
-// }
-
-void
-LatticeBoltzmannProblem::addTensorBuffer(const std::string & buffer_name, InputParameters & parameters)
-{
-  // run base class method
-  TensorProblem::addTensorBuffer(buffer_name, parameters);
-
-  // add extra dimension if necessary
-  if(parameters.isParamValid("vector_size"))
-    _buffer_extra_dimension[buffer_name] = parameters.get<unsigned int>("vector_size");
+  addTensorCompute(compute_type, name, parameters, _bcs);
 }
 
 void
@@ -285,19 +177,13 @@ LatticeBoltzmannProblem::enableSlipModel()
           Real tau_s = 0.5 + sqrt(6.0 / M_PI) * pore_size_scalar * kn_scalar / (1 + 2 * kn_scalar);
           Real tau_d = 0.5 + (3.0 / 2.0) * sqrt(3.0) * 1.0 / pow((1.0 /
                       sqrt((_mfp / _dx * 1.0 / (1.0 + 2.0 * kn_scalar))) * 2.0), 2.0);
-          Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A) / (8.0 * (2.0 * tau_s - 1.0));
+          Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A_1) / (8.0 * (2.0 * tau_s - 1.0));
           torch::Tensor  relaxation_matrix = torch::diag(torch::tensor({1.0 / 1.0, 1.0 / 1.1, 1.0 / 1.2, 1.0 / tau_d, 1.0 / tau_q,
                           1.0 / tau_d, 1.0 / tau_q,  1.0 / tau_s,  1.0 / tau_s}, _options));
 
           _slip_relaxation_matrix.index_put_({i, j, k}, relaxation_matrix);
         }
   }
-}
-
-void
-LatticeBoltzmannProblem::setSolverResidual(const Real & residual)
-{
-  _convergence_residual = residual;
 }
 
 void

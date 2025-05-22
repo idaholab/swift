@@ -62,9 +62,6 @@ public:
   virtual void addTensorComputeInitialize(const std::string & compute_name,
                                           const std::string & name,
                                           InputParameters & parameters);
-  void addTensorBoundaryCondition(const std::string & compute_name,
-                                          const std::string & name,
-                                          InputParameters & parameters);
   virtual void addTensorComputeSolve(const std::string & compute_name,
                                      const std::string & name,
                                      InputParameters & parameters);
@@ -123,7 +120,7 @@ public:
   T & getSolver() const;
 
 protected:
-  virtual void updateDOFMap();
+  void updateDOFMap();
 
   template <typename FLOAT_TYPE>
   void mapBuffersToAux();
@@ -187,9 +184,6 @@ protected:
 
   /// postprocessing objects
   TensorComputeList _pps;
-
-  /// bc objects
-  TensorComputeList _bcs;
 
   /// on demand objects that are explicitly triggered by other objects
   TensorComputeList _on_demand;

@@ -23,17 +23,16 @@ public:
 
   LatticeBoltzmannProblem(const InputParameters & parameters);
 
-  void init() override;
-
-  void execute(const ExecFlagType & exec_type) override;
+  void addTensorBoundaryCondition(const std::string & compute_name,
+                                  const std::string & name,
+                                  InputParameters & parameters);
   
-  void advanceState() override;
-  
-  void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters) override;
+  // setup stuff
+  void init() override;           
 
   void addStencil(const std::string & stencil_name,
-                              const std::string & name,
-                              InputParameters & parameters);
+                  const std::string & name,
+                  InputParameters & parameters);
 
   const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
 
@@ -42,14 +41,14 @@ public:
   const torch::Tensor & getSlipRelaxationMatrix() const {return _slip_relaxation_matrix;}
 
   const int & getTotalSteps() const {return _t_total;}
-
-  const std::array<int64_t, 3> & getGridSize() const {return _n;}
   
+  const std::array<int64_t, 3> & getGridSize() const {return _n;}
+
   /// sets up slip model
   void enableSlipModel();
 
   /// sets convergence residual
-  void setSolverResidual(const Real & residual);
+  void setSolverResidual(const Real & residual) {_convergence_residual = residual;};
 
   /// sets tensor to a value (normally zeros) at solid nodes
   void maskedFillSolids(torch::Tensor & t, const Real & value);
@@ -58,18 +57,15 @@ public:
   void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
 
 protected:
-  void updateDOFMap() override;
-  // void mapBuffersToAux() override;
-
   /// LBM Mesh object
   LatticeBoltzmannMesh * _lbm_mesh;
 
-  /// LBM stencils
+  /// LBM stencils object
   std::shared_ptr<LatticeBoltzmannStencilBase> _stencil;
 
-  /// buffers with extra dimension
-  std::map<std::string, unsigned int> _buffer_extra_dimension;
-
+  /// bc objects
+  TensorComputeList _bcs;
+  
   /// enables slip models
   bool _enable_slip;
 
@@ -79,13 +75,14 @@ protected:
   /// resolution
   Real _dx;
 
-  // slip coefficient
-  const Real _A = 0.6;
+  /// slip coefficient
+  const Real _A_1 = 0.6;
+  const Real _A_2 = 0.9;
 
   /// relaxation matrix as a funcion of Kn and local pore size in slip model
   torch::Tensor _slip_relaxation_matrix;
 
-  /// used to restricts construction of more than one stencil object
+  /// used to restrict construction of lbm stencils to only one
   unsigned int _stencil_counter = 0;
 
   /// convergence residual
@@ -105,5 +102,4 @@ public:
   const Real _cs = 1.0 / sqrt(3.0);
   const Real _cs2 = _cs * _cs;
   const Real _cs4 = _cs2 * _cs2;
-
 };

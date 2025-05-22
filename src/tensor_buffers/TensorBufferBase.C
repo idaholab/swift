@@ -15,10 +15,12 @@ TensorBufferBase::validParams()
   InputParameters params = MooseObject::validParams();
   params.addClassDescription("Generic TensorBuffer object.");
   params.registerBase("TensorBuffer");
-  params.registerSystemAttributeName("TensorBuffer"); //?
-  params.addParam<AuxVariableName>("map_to_aux_variable",
-                                   "Sync the given AuxVariable to the buffer contents");
-  params.addParam<unsigned int>("vector_size", 0, "Add extra dimension to tensors.");
+  params.registerSystemAttributeName("TensorBuffer");
+  params.addParam<bool>("reciprocal", false, "Is this a reciprocal space tensor?");
+  params.addParam<std::vector<AuxVariableName>>(
+      "map_to_aux_variable", {}, "Sync the given AuxVariable to the buffer contents");
+  params.addParam<std::vector<AuxVariableName>>(
+      "map_from_aux_variable", {}, "Sync the given AuxVariable to the buffer contents");
   return params;
 }
 

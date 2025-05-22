@@ -516,7 +516,7 @@ TensorProblem::addTensorComputeSolve(const std::string & compute_type,
                                      const std::string & compute_name,
                                      InputParameters & parameters)
 { 
-  addTensorCompute(compute_name, name, parameters, _computes);
+  addTensorCompute(compute_type, compute_name, parameters, _computes);
 }
 
 void
@@ -524,15 +524,7 @@ TensorProblem::addTensorComputeInitialize(const std::string & compute_type,
                                           const std::string & compute_name,
                                           InputParameters & parameters)
 { 
-  addTensorCompute(compute_name, name, parameters, _ics);
-}
-
-void
-TensorProblem::addTensorBoundaryCondition(const std::string & compute_name,
-                                      const std::string & name,
-                                      InputParameters & parameters)
-{
-  addTensorCompute(compute_name, name, parameters, _bcs);
+  addTensorCompute(compute_type, compute_name, parameters, _ics);
 }
 
 void
