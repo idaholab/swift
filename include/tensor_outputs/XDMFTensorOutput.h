@@ -53,6 +53,9 @@ protected:
   /// outputted frame
   std::size_t _frame;
 
+  /// transpose tensors before outputting to counter a Paraview XDMF reader ideosyncracy
+  const bool _transpose;
+
   enum class OutputMode
   {
     CELL,

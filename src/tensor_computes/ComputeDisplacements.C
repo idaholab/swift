@@ -53,7 +53,6 @@ void
 ComputeDisplacements::computeBuffer()
 {
   const auto & F = _deformation_gradient_tensor;
-  saveDebug(F);
 
   // compute strain gradient tensor H
   mooseAssert(
@@ -82,19 +81,17 @@ ComputeDisplacements::computeBuffer()
   u_aff = torch::einsum("ij,...j->...i", {Fbox - I3, X});
   u_periodic = _domain.ifft(u_periodic_bar);
 
-  // saveDebug(u_aff + u_periodic + X);
-
   std::vector<int64_t> shape(_domain.getShape().begin(), _domain.getShape().end());
   for (auto & n : shape)
     n++;
 
   namespace tf = torch::nn::functional;
-  auto interpolate = [&](auto mode) {
-    _u = tf::interpolate(
-           (u_aff + u_periodic).movedim(-1, 0).unsqueeze(1),
-           tf::InterpolateFuncOptions().size(shape).mode(mode).align_corners(true))
-           .squeeze(1)
-           .movedim(0, -1);
+  auto interpolate = [&](auto mode)
+  {
+    _u = tf::interpolate((u_aff + u_periodic).movedim(-1, 0).unsqueeze(1),
+                         tf::InterpolateFuncOptions().size(shape).mode(mode).align_corners(true))
+             .squeeze(1)
+             .movedim(0, -1);
   };
 
   if (_dim == 3)
@@ -105,5 +102,4 @@ ComputeDisplacements::computeBuffer()
     interpolate(torch::kLinear);
   else
     mooseError("Unsupported problem dimension");
-
 }

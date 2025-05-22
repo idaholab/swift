@@ -42,18 +42,23 @@ XDMFTensorOutput::validParams()
       "NODE",
       "Output as nodal fields, increasing each box dimension by one and duplicating values from "
       "opposing surfaces to create a periodic continuation.");
-  outputMode.addDocumentation(
-      "OVERSIZED_NODAL",
-      "Output oversized tensors as nodal fields without forcing periodicity (suitable for displacement variables).");
+  outputMode.addDocumentation("OVERSIZED_NODAL",
+                              "Output oversized tensors as nodal fields without forcing "
+                              "periodicity (suitable for displacement variables).");
 
   params.addParam<MultiMooseEnum>("output_mode", outputMode, "Output as cell or node data");
+  params.addParam<bool>("transpose",
+                        true,
+                        "The Paraview XDMF reader swaps x-y (x-z in 3d), so we transpose the "
+                        "tensors before we output to make the data look right in Paraview.");
   return params;
 }
 
 XDMFTensorOutput::XDMFTensorOutput(const InputParameters & parameters)
   : TensorOutput(parameters),
     _dim(_domain.getDim()),
-    _frame(0)
+    _frame(0),
+    _transpose(getParam<bool>("transpose"))
 #ifdef LIBMESH_HAVE_HDF5
     ,
     _enable_hdf5(getParam<bool>("enable_hdf5")),
@@ -110,11 +115,14 @@ XDMFTensorOutput::init()
   std::vector<Real> dgrid;
   for (const auto i : make_range(_dim))
   {
-    _ndata[0].push_back(_domain.getGridSize()[i]);
-    _ndata[1].push_back(_domain.getGridSize()[i] + 1);
-    _nnode.push_back(_domain.getGridSize()[i] + 1);
-    dgrid.push_back(_domain.getGridSpacing()(i));
-    origin.push_back(_domain.getDomainMin()(i));
+    // we need to transpose the tensor because of
+    // https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4
+    const auto j = _transpose ? _dim - i - 1 : i;
+    _ndata[0].push_back(_domain.getGridSize()[j]);
+    _ndata[1].push_back(_domain.getGridSize()[j] + 1);
+    _nnode.push_back(_domain.getGridSize()[j] + 1);
+    dgrid.push_back(_domain.getGridSpacing()(j));
+    origin.push_back(_domain.getDomainMin()(j));
   }
   _data_grid[0] = Moose::stringify(_ndata[0], " ");
   _data_grid[1] = Moose::stringify(_ndata[1], " ");
@@ -211,14 +219,44 @@ XDMFTensorOutput::output()
 
     const auto output_mode = _output_mode[buffer_name];
     torch::Tensor buffer;
+
+    // we need to transpose the tensor because of
+    // https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4
     switch (output_mode)
     {
       case OutputMode::NODE:
+        if (_transpose)
+        {
+          if (_dim == 2)
+          {
+            buffer = buffer = torch::transpose(extendTensor(*original_buffer), 0, 1).contiguous();
+            break;
+          }
+          else if (_dim == 3)
+          {
+            buffer = buffer = torch::transpose(extendTensor(*original_buffer), 0, 2).contiguous();
+            break;
+          }
+        }
         buffer = extendTensor(*original_buffer);
         break;
 
       case OutputMode::CELL:
       case OutputMode::OVERSIZED_NODAL:
+        if (_transpose)
+        {
+          if (_dim == 2)
+          {
+            buffer = torch::transpose(*original_buffer, 0, 1).contiguous();
+            break;
+          }
+          else if (_dim == 3)
+          {
+            buffer = torch::transpose(*original_buffer, 0, 2).contiguous();
+          }
+          break;
+        }
+
         buffer = *original_buffer;
         break;
     }

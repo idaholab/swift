@@ -189,6 +189,11 @@ DomainAction::gridChanged()
       const auto freq = (dim == _dim - 1)
                             ? torch::fft::rfftfreq(_n_global[dim], _grid_spacing(dim), options)
                             : torch::fft::fftfreq(_n_global[dim], _grid_spacing(dim), options);
+
+      // zero out nyquist frequency
+      // if (_n_global[dim] % 2 == 0)
+      //   freq[_n_global[dim] / 2] = 0.0;
+
       _global_reciprocal_axis[dim] = align(freq * 2.0 * libMesh::pi, dim);
     }
     else
