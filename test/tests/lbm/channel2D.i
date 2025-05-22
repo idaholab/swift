@@ -25,19 +25,29 @@
 
 [TensorBuffers]
   [rho]
+    type=LBMTensorBuffer
     map_to_aux_variable = density
   []
   [u]
+    type=LBMTensorBuffer
+    dimension=2
     map_to_aux_variable = velocity
   []
   [u_magnitude]
+    type = LBMTensorBuffer
     map_to_aux_variable = speed
   []
   [f]
+    type=LBMTensorBuffer
+    dimension=9
   []
   [f_post_collision]
+    type=LBMTensorBuffer
+    dimension=9
   []
   [feq]
+    type=LBMTensorBuffer
+    dimension=9
   []
 []
 
