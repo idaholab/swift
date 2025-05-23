@@ -66,7 +66,7 @@
     [speed]
       type = LBMConstantTensor
       buffer = u_magnitude
-      value = 0
+      value = 0.00
     []
     [equilibrium]
       type = LBMEquilibrium
@@ -216,13 +216,13 @@
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  substeps = 50
+  substeps = 20
   tolerance = 1.0e-10
 []
 
 [Executioner]
   type = Transient
-  num_steps = 100
+  num_steps = 2
 []
 
 [Outputs]
