@@ -26,16 +26,13 @@
 [TensorBuffers]
   [rho]
     type=LBMTensorBuffer
-    map_to_aux_variable = density
   []
   [u]
     type=LBMTensorBuffer
     dimension=2
-    map_to_aux_variable = velocity
   []
   [u_magnitude]
     type = LBMTensorBuffer
-    map_to_aux_variable = speed
   []
   [f]
     type=LBMTensorBuffer
@@ -110,7 +107,7 @@
       buffer = u
       f = f
       rho = rho 
-      # body_force = 0.000001
+      body_force = 0.000001
     []
     [Speed]
       type = LBMComputeVelocityMagnitude
@@ -126,20 +123,20 @@
   []
   # Any boundary that is not specified will be periodic
   [Boundary]
-    [left]
-      type = LBMFixedVelocityBC2D
-      buffer = f
-      f = f
-      velocity = 0.1
-      boundary = left
-    []
-    [right]
-      type = LBMFixedVelocityBC2D
-      buffer = f
-      f = f
-      velocity = 0.09999
-      boundary = right
-    []
+    # [left]
+    #   type = LBMFixedVelocityBC2D
+    #   buffer = f
+    #   f = f
+    #   velocity = 0.1
+    #   boundary = left
+    # []
+    # [right]
+    #   type = LBMFixedVelocityBC2D
+    #   buffer = f
+    #   f = f
+    #   velocity = 0.09999
+    #   boundary = right
+    # []
     [front]
       type = LBMBounceBack
       buffer = f
@@ -176,55 +173,31 @@
   []
 []
 
-[AuxVariables]
-  [density]
-    family = MONOMIAL
-    order = CONSTANT
-  []
-  [speed]
-    family = MONOMIAL
-    order = CONSTANT
-  []
-  [velocity]
-    family = MONOMIAL
-    order = CONSTANT
-    components = 2
-  []
-[]
-
-[AuxKernels]
-  [density]
-    type = ProjectTensorAux
-    buffer = rho
-    variable = density
-    execute_on = timestep_end
-  []
-  [speed]
-    type = ProjectTensorAux
-    buffer = u_magnitude
-    variable = speed
-    execute_on = timestep_end
-  []
-  [velocity]
-    type = ProjectVectorTensorAux
-    buffer = u
-    variable = velocity
-    execute_on = timestep_end
-  []
-[]
-
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  substeps = 20
+  substeps = 3
   tolerance = 1.0e-10
 []
 
 [Executioner]
   type = Transient
-  num_steps = 2
+  num_steps = 5000
 []
 
-[Outputs]
-  exodus = true
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'rho'
+    output_mode = 'Cell'
+    enable_hdf5 = true
+  []
+ 
+  [xdmf2]
+    # second output to trigger the hdf5 thread safety error
+    type = XDMFTensorOutput
+    buffer = 'u_magnitude'
+    output_mode = 'Cell'
+    enable_hdf5 = true
+  []
 []
