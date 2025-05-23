@@ -16,9 +16,7 @@
 #include <torch/torch.h>
 
 /**
- * This class adds an TensorBuffer object.
- * The TensorBuffer is a structured grid object using a libtorch tensor to store data
- * in real space. A reciprocal space representation is automatically created on demand.
+ * The DomainAction manages the [Domain] syntax and simulation domain parameters.
  */
 class DomainAction : public Action
 {
@@ -58,7 +56,7 @@ public:
   const torch::IntArrayRef & getShape() const { return _shape; }
   const torch::IntArrayRef & getReciprocalShape() const { return _reciprocal_shape; }
 
-  std::vector<int64_t> getValueShape(std::initializer_list<int64_t> extra_dims) const;
+  std::vector<int64_t> getValueShape(std::vector<int64_t> extra_dims) const;
   std::vector<int64_t> getReciprocalValueShape(std::initializer_list<int64_t> extra_dims) const;
 
   torch::Tensor fft(const torch::Tensor & t) const;
@@ -71,6 +69,9 @@ public:
 
   /// align a 1d tensor in a specific dimension
   torch::Tensor align(torch::Tensor t, unsigned int dim) const;
+
+  /// check if debugging is enabled
+  bool debug() const { return _debug; }
 
 protected:
   void gridChanged();
@@ -179,6 +180,9 @@ protected:
   mutable std::vector<std::vector<double>> _recv_data;
   /// receive tensors
   mutable std::vector<torch::Tensor> _recv_tensor;
+
+  /// enable debugging
+  const bool _debug;
 };
 
 template <typename T>
@@ -240,3 +244,4 @@ DomainAction::cosineTransform(const torch::Tensor & t, int64_t axis) const
   mooseError("Not implemented!");
   // return t_bar;
 }
+

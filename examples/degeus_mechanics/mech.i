@@ -1,8 +1,8 @@
 [Domain]
   dim = 3
-  nx = 30
+  nx = 32
   ny = 32
-  nz = 34
+  nz = 32
   xmax = ${fparse 2*pi}
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
@@ -35,12 +35,17 @@
       constant_names = 'mua mub'
       constant_expressions = '0.386 3.86'
     []
-
+  []
+  [Solve]
     [mech]
       type = FFTMechanics
       buffer = F
       K = K
       mu = mu
+      l_max_its = 400
+      l_tol = 1e-2
+      nl_rel_tol = 2e-2
+      nl_abs_tol = 2e-1
     []
   []
   [Postprocess]
@@ -67,5 +72,6 @@
 
 [Executioner]
   type = Transient
-  num_steps = 1
+  num_steps = 100
+  dt = 0.01
 []

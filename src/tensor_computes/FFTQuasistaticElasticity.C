@@ -92,7 +92,7 @@ FFTQuasistaticElasticity::computeBuffer()
       {stack({Axx, Axy, Axz}, -1), stack({Axy, Ayy, Ayz}, -1), stack({Axz, Ayz, Azz}, -1)}, -1);
 
   // solve
-  const auto x = torch::linalg::solve(A, b, true);
+  const auto x = at::linalg_solve(A, b, true);
 
   // inverse transform the solution
   using torch::indexing::Slice;

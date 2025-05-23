@@ -24,10 +24,9 @@ With $\vec u_{per} = {\mathcal F}^{-1}(\mathbf{\hat{\vec u_{per}}})$ the displac
 
 ## Visualizing displaced domains in Paraview
 
-1. Ensure the [!param](/TensorCompute/Postprocess/ComputeDisplacements/transpose) parameter is set to `true` (default). This counters the Paraview XDMF reader [issue described here](https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4).
-2. Add a `Calculator` filter with
-```
-iHat * disp_x + jHat * disp_y + kHat * disp_z
-```
+1. When using [XDMF output](XDMFTensorOutput.md), ensure that the [!param](/TensorOutputs/XDMFTensorOutput/transpose) parameter is set to `true` (default). This counters the Paraview XDMF reader [issue described here](https://discourse.paraview.org/t/axis-swapped-with-xdmf-topologytype-3dcorectmesh/3059/4).
+
+2. Add a `Calculator` filter with `iHat * disp_x + jHat * disp_y + kHat * disp_z`
+
 3. Add a `Warp By Vector` filter to apply the result vector from the calculator as displacements
 

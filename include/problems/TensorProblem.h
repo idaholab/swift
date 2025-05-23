@@ -88,6 +88,9 @@ public:
   template <typename T = torch::Tensor>
   const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
 
+    /// returns a reference to a rat torch::Tensor view of buffer_name
+  const torch::Tensor & getRawBuffer(const std::string & buffer_name);
+
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getRawCPUBuffer(const std::string & buffer_name);
 
@@ -267,9 +270,6 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
   params.template set<std::string>("_type") = "TensorBufferBase";
   params.template set<MooseApp *>("_moose_app") = &getMooseApp();
   params.finalize(buffer_name);
-
-  // params.addPrivateParam<TensorProblem *>("_tensor_problem", this);
-  // params.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   auto tensor_buffer = std::make_shared<typename TensorBufferSpecialization<T>::type>(params);
 

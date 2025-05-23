@@ -53,6 +53,8 @@ void
 ComputeDisplacements::computeBuffer()
 {
   const auto & F = _deformation_gradient_tensor;
+  if (!F.defined())
+    return;
 
   // compute strain gradient tensor H
   mooseAssert(

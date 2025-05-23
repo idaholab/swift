@@ -32,6 +32,8 @@ void
 ComputeVonMisesStress::computeBuffer()
 {
   using namespace torch::indexing;
+  if (!_stress.defined())
+    return;
 
   if (_dim == 3)
   {
