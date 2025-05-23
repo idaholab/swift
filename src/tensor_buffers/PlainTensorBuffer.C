@@ -27,3 +27,21 @@ PlainTensorBuffer::init()
 {
   // _u = torch::zeros(_shape, _options);
 }
+
+void
+PlainTensorBuffer::makeCPUCopy()
+{
+  if (_cpu_copy_requested)
+  {
+    try
+    {
+      if (_u.is_cpu())
+        _u_cpu = _u.clone().contiguous();
+      else
+        _u_cpu = _u.cpu().contiguous();
+    }
+    catch (...)
+    {
+    }
+  }
+}
