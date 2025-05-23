@@ -70,8 +70,7 @@ TensorProblem::init()
     torch::set_num_threads(n_threads);
   }
 
-  // initialize tensors (assuming all scalar for now, but in the future well have an
-  // TensorBufferBase pointer as well)
+  // initialize tensors
   for (auto pair : _tensor_buffer)
     pair.second->init();
 
@@ -648,6 +647,12 @@ TensorProblem::getBufferBase(const std::string & buffer_name)
   if (it == _tensor_buffer.end())
     mooseError("TensorBuffer '", buffer_name, " does not exist in the system.");
   return *it->second.get();
+}
+
+const torch::Tensor &
+TensorProblem::getRawBuffer(const std::string & buffer_name)
+{
+  return getBufferBase(buffer_name).getRawTensor();
 }
 
 const torch::Tensor &

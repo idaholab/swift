@@ -30,6 +30,12 @@ FFTMechanics::validParams()
   // params.addParam<TensorInputBufferName>("C", "Stiffness tensor");
   params.addRequiredParam<TensorInputBufferName>("K", "Bulk modulus");
   params.addParam<TensorInputBufferName>("mu", "Shear modulus");
+  params.addParam<Real>("l_tol", 1e-2, "Linear congugate gradient solve tolerance");
+  params.addParam<unsigned int>(
+      "l_max_its", 100, "Maximum number of congugate gradient solve iterations");
+  params.addParam<Real>("nl_rel_tol", 1e-5, "Nonlinear solve absolute tolerance");
+  params.addParam<Real>("nl_abs_tol", 1e-8, "Nonlinear solve relative tolerance");
+  params.addParam<unsigned int>("nl_max_its", 100, "Maximum number of nonlinear solve iterations");
   params.addParam<TensorOutputBufferName>("stress", "stress", "Computed stress");
   return params;
 }
@@ -45,7 +51,12 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _tK(getInputBuffer("K")),
     _tmu(getInputBuffer("mu")),
     _r2_shape(_domain.getValueShape({_dim, _dim})),
-    _tP(getOutputBuffer("stress"))
+    _tP(getOutputBuffer("stress")),
+    _l_tol(getParam<Real>("l_tol")),
+    _l_max_its(getParam<unsigned int>("l_max_its")),
+    _nl_rel_tol(getParam<Real>("nl_rel_tol")),
+    _nl_abs_tol(getParam<Real>("nl_abs_tol")),
+    _nl_max_its(getParam<unsigned int>("nl_max_its"))
 {
   // Build projection tensor once
   const auto & q = _domain.getKGrid();
@@ -99,7 +110,7 @@ FFTMechanics::computeBuffer()
   auto DbarF = torch::zeros_like(_tI);
   // DbarF[..., 0, 1] += 1.0;
   DbarF.index_put_({torch::indexing::Ellipsis, 0, 1},
-                   DbarF.index({torch::indexing::Ellipsis, 0, 1}) + 1.0);
+                   DbarF.index({torch::indexing::Ellipsis, 0, 1}) + _time);
 
   DbarF = DbarF.expand(_r2_shape);
 
@@ -108,14 +119,17 @@ FFTMechanics::computeBuffer()
   // _u += DbarF;
   _u = _u + DbarF;
 
-  const auto Fn = torch::linalg::norm(_u, c10::nullopt, c10::nullopt, false, c10::nullopt);
+  const auto Fn =
+      at::linalg_norm(_u, c10::nullopt, c10::nullopt, false, c10::nullopt).cpu().item<double>();
+
   unsigned int iiter = 0;
   auto dFm = torch::zeros_like(b);
 
   // iterate as long as the iterative update does not vanish
   while (true)
   {
-    const auto [dFm_new, iterations, lnorm] = conjugateGradientSolve(G_K_dF, b, dFm, 1e-2);
+    const auto [dFm_new, iterations, lnorm] =
+        conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
     dFm = dFm_new;
 
     // update DOFs (array -> tens.grid)
@@ -130,17 +144,21 @@ FFTMechanics::computeBuffer()
     // convert res.stress to residual
     b = -G(_tP);
 
-    const double nnorm =
-        (torch::linalg::norm(dFm, c10::nullopt, c10::nullopt, false, c10::nullopt) / Fn)
-            .cpu()
-            .item<double>();
-    std::cout << nnorm << '\n'; // print residual to the screen
+    const auto anorm =
+        at::linalg_norm(dFm, c10::nullopt, c10::nullopt, false, c10::nullopt).cpu().item<double>();
+    const auto rnorm = anorm / Fn;
+
+    std::cout << anorm << ' ' << rnorm << '\n'; // print residual to the screen
 
     // check convergence
-    if (nnorm < 1.e-5 && iiter > 0)
+    if ((rnorm < _nl_rel_tol || anorm < _nl_abs_tol) && iiter > 0)
       break;
 
     iiter++;
+
+    if (iiter > _nl_max_its)
+      paramError("nl_max_its",
+                 "Exceeded the maximum number of nonlinear iterations without converging.");
   }
 }
 

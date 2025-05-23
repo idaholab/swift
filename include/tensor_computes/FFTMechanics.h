@@ -51,6 +51,12 @@ protected:
   /// stress
   torch::Tensor & _tP;
 
+  Real _l_tol;
+  unsigned int _l_max_its;
+  Real _nl_rel_tol;
+  Real _nl_abs_tol;
+  unsigned int _nl_max_its;
+
   using TensorOperatorBase::_dim;
   using TensorOperatorBase::_domain;
 };

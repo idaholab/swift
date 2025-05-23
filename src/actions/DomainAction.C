@@ -12,6 +12,8 @@
 #include "MooseEnum.h"
 #include "SetupMeshAction.h"
 #include "SwiftApp.h"
+#include "CreateProblemAction.h"
+
 
 #include <initializer_list>
 #include <util/Optional.h>
@@ -19,6 +21,7 @@
 // run this early, before any objects are constructed
 registerMooseAction("SwiftApp", DomainAction, "meta_action");
 registerMooseAction("SwiftApp", DomainAction, "add_mesh_generator");
+registerMooseAction("SwiftApp", DomainAction, "create_problem_custom");
 
 InputParameters
 DomainAction::validParams()
@@ -64,6 +67,10 @@ DomainAction::validParams()
   params.addParam<std::vector<std::string>>("device_names", {}, "Compute devices to run on.");
   params.addParam<std::vector<unsigned int>>(
       "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
+  params.addParam<bool>(
+      "debug",
+      false,
+      "Enable additional debugging and diagnostics, such a checking for initialized tensors.");
   return params;
 }
 
@@ -85,7 +92,8 @@ DomainAction::DomainAction(const InputParameters & parameters)
     _rank(_communicator.rank()),
     _n_rank(_communicator.size()),
     _send_tensor(_n_rank),
-    _recv_tensor(_n_rank)
+    _recv_tensor(_n_rank),
+    _debug(getParam<bool>("debug"))
 {
   if (_parallel_mode == ParallelMode::NONE && comm().size() > 1)
     paramError("parallel_mode", "NONE requires the application to run in serial.");
@@ -378,6 +386,25 @@ DomainAction::act()
 
     _app.addMeshGenerator("DomainMeshGenerator", name, params);
   }
+
+  if (_current_task == "create_problem_custom")
+  {
+    if (!_problem)
+    {
+      const std::string type = "TensorProblem";
+      auto params = _factory.getValidParams(type);
+
+      // apply common parameters of the object held by CreateProblemAction to honor user inputs in
+      // [Problem]
+      auto p = _awh.getActionByTask<CreateProblemAction>("create_problem");
+      if (p)
+        params.applyParameters(p->getObjectParams());
+
+      // params.set<MooseMesh *>("mesh") = _mesh.get();
+      _problem = _factory.create<FEProblemBase>(type, "MOOSE Problem", params);
+    }
+
+  }
 }
 
 const torch::Tensor &
@@ -542,7 +569,7 @@ DomainAction::align(torch::Tensor t, unsigned int dim) const
 }
 
 std::vector<int64_t>
-DomainAction::getValueShape(std::initializer_list<int64_t> extra_dims) const
+DomainAction::getValueShape(std::vector<int64_t> extra_dims) const
 {
   std::vector<int64_t> dims(_dim);
   for (const auto i : make_range(_dim))

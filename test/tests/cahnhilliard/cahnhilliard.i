@@ -144,6 +144,9 @@
     buffer = 'c mu'
     output_mode = 'Node Cell'
     enable_hdf5 = true
+    # Do not transpose output to avoid regolding the test. In practice the default
+    # of transpose = true should always be used
+    transpose = false
   []
 
   [xdmf2]
@@ -152,6 +155,9 @@
     buffer = 'c'
     output_mode = 'Cell'
     enable_hdf5 = true
+    # Do not transpose output to avoid regolding the test. In practice the default
+    # of transpose = true should always be used
+    transpose = false
   []
 []
 
