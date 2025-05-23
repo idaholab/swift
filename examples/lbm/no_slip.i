@@ -15,8 +15,8 @@
   ny = 32
   xmax = 32
   ymax = 32
-  load_mesh_from_dat=true
-  mesh_file="examples/lbm/data/pore.dat"
+  load_mesh_from_vtk=true
+  mesh_file="examples/lbm/data/porous_media.vts"
 []
 
 [Stencil]
@@ -27,23 +27,26 @@
 
 [TensorBuffers]
   [rho]
-    map_to_aux_variable = density
+    type=LBMTensorBuffer
   []
   [u]
-    vector_size = 2
-    map_to_aux_variable = velocity
+    type=LBMTensorBuffer
+    dimension=2
   []
   [u_magnitude]
-    map_to_aux_variable = speed
+    type = LBMTensorBuffer
   []
   [f]
-    vector_size = 9
+    type=LBMTensorBuffer
+    dimension=9
   []
   [f_post_collision]
-    vector_size = 9
+    type=LBMTensorBuffer
+    dimension=9
   []
   [feq]
-    vector_size = 9
+    type=LBMTensorBuffer
+    dimension=9
   []
 []
 
@@ -122,19 +125,19 @@
   []
   # Any boundary that is not specified will be periodic
   [Boundary]
-    [left]
+    [front]
     type = LBMFixedPressureBC2D
       buffer = f
       f = f
       density = 1.0
-      boundary = left
+      boundary = top
     []
-    [right]
+    [back]
       type = LBMFixedPressureBC2D
       buffer = f
       f = f
       density = 0.9999
-      boundary = right
+      boundary = bottom
     []
     [wall]
       type = LBMBounceBack
@@ -182,39 +185,31 @@
   []
 []
 
-[AuxKernels]
-  [density]
-    type = ProjectTensorAux
-    buffer = rho
-    variable = density
-    execute_on = timestep_end
-  []
-  [speed]
-    type = ProjectTensorAux
-    buffer = u_magnitude
-    variable = speed
-    execute_on = timestep_end
-  []
-  [velocity]
-    type = ProjectVectorTensorAux
-    buffer = u
-    variable = velocity
-    execute_on = timestep_end
-  []
-[]
-
 [Problem]
   type = LatticeBoltzmannProblem
   print_debug_output = true
-  substeps = 1000
+  substeps = 1
   tolerance = 1.0e-10
 []
 
 [Executioner]
   type = Transient
-  num_steps = 1
+  num_steps = 2
 []
 
-[Outputs]
-  exodus = true
+[TensorOutputs]
+  [xdmf]
+    type = XDMFTensorOutput
+    buffer = 'rho'
+    output_mode = 'Cell'
+    enable_hdf5 = true
+  []
+ 
+  [xdmf2]
+    # second output to trigger the hdf5 thread safety error
+    type = XDMFTensorOutput
+    buffer = 'u_magnitude'
+    output_mode = 'Cell'
+    enable_hdf5 = true
+  []
 []
