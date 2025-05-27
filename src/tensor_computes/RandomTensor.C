@@ -9,6 +9,7 @@
 #include "RandomTensor.h"
 #include "SwiftUtils.h"
 #include "TensorProblem.h"
+#include <core/DeviceType.h>
 
 registerMooseObject("SwiftApp", RandomTensor);
 
@@ -20,10 +21,17 @@ RandomTensor::validParams()
   params.addRequiredParam<Real>("min", "Minimum value.");
   params.addRequiredParam<Real>("max", "Maximum value.");
   params.addParam<int>("seed", "Random number seed.");
+  params.addParam<bool>("generate_on_cpu",
+                        true,
+                        "To ensure reproducibility across devices it is recommended to generate "
+                        "random tensors on the CPU.");
   return params;
 }
 
-RandomTensor::RandomTensor(const InputParameters & parameters) : TensorOperator<>(parameters) {}
+RandomTensor::RandomTensor(const InputParameters & parameters)
+  : TensorOperator<>(parameters), _generate_on_cpu(getParam<bool>("generate_on_cpu"))
+{
+}
 
 void
 RandomTensor::computeBuffer()
@@ -32,6 +40,16 @@ RandomTensor::computeBuffer()
   const auto max = getParam<Real>("max");
   if (isParamValid("seed"))
     torch::manual_seed(getParam<int>("seed"));
-  _u = torch::rand(_tensor_problem.getShape(), MooseTensor::floatTensorOptions()) * (max - min) +
-       min;
+
+  if (_generate_on_cpu)
+  {
+    _u = torch::rand(_tensor_problem.getShape(),
+                     MooseTensor::floatTensorOptions().device(torch::kCPU))
+                 .to(MooseTensor::floatTensorOptions()) *
+             (max - min) +
+         min;
+  }
+  else
+    _u = torch::rand(_tensor_problem.getShape(), MooseTensor::floatTensorOptions()) * (max - min) +
+         min;
 }

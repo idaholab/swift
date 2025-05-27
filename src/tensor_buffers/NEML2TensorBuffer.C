@@ -41,16 +41,10 @@ NEML2TensorBuffer<T>::makeCPUCopy()
 {
   if (_cpu_copy_requested)
   {
-    try
-    {
-      if (_u.is_cpu())
-        _u_cpu = T(_u.clone().contiguous(), _u.batch_dim());
-      else
-        _u_cpu = T(_u.cpu().contiguous(), _u.batch_dim());
-    }
-    catch (...)
-    {
-    }
+    if (_u.is_cpu())
+      _u_cpu = T(_u.clone().contiguous(), _u.batch_dim());
+    else
+      _u_cpu = T(_u.cpu().contiguous(), _u.batch_dim());
   }
 }
 

@@ -6,6 +6,7 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
+#include "MooseError.h"
 #include "PlainTensorBuffer.h"
 
 registerMooseObject("SwiftApp", PlainTensorBuffer);
@@ -33,15 +34,9 @@ PlainTensorBuffer::makeCPUCopy()
 {
   if (_cpu_copy_requested)
   {
-    try
-    {
-      if (_u.is_cpu())
-        _u_cpu = _u.clone().contiguous();
-      else
-        _u_cpu = _u.cpu().contiguous();
-    }
-    catch (...)
-    {
-    }
+    if (_u.is_cpu())
+      _u_cpu = _u.clone().contiguous();
+    else
+      _u_cpu = _u.cpu().contiguous();
   }
 }
