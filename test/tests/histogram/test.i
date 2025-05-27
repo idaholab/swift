@@ -4,7 +4,6 @@
   ny = 10
   nz = 10
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [TensorBuffers]

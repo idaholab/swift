@@ -6,9 +6,6 @@
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
   zmax = ${fparse pi*4}
-
-  device_names = 'cuda:3'
-
   mesh_mode = DUMMY
 []
 

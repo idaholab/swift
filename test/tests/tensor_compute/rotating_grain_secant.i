@@ -6,7 +6,6 @@ w=6
   ny = 40
   xmax = ${fparse w*pi*2}
   ymax = ${fparse w*pi*2/sin(pi/3)}
-  device_names = 'cpu'
   mesh_mode = DOMAIN
 []
 
