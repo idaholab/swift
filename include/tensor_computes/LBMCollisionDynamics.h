@@ -11,19 +11,30 @@
 #include "LatticeBoltzmannOperator.h"
 
 /**
- * Single relaxation time BGK collision for Lattice Boltzmann Method
- */
-class LBMBGKCollision : public LatticeBoltzmannOperator
+  * Template object for LBM collision dynamics
+  */
+
+template<int coll_dyn>
+class LBMCollisionDynamicsTempl: public LatticeBoltzmannOperator
 {
-public:
+public: 
   static InputParameters validParams();
 
-  LBMBGKCollision(const InputParameters & parameters);
+  LBMCollisionDynamicsTempl(const InputParameters & parameters);
+
+  void BGKDynamics();
+  void MRTDynamics();
 
   void computeBuffer() override;
 
 protected:
-  Real _tau_bgk;
-  const torch::Tensor & _feq;
-  const torch::Tensor & _f;
+const torch::Tensor & _f;
+const torch::Tensor & _feq;
+  const std::array<int64_t, 3> _shape;
+
+  Real _tau_0;
+  const bool _projection;
 };
+
+typedef LBMCollisionDynamicsTempl<0> LBMBGKCollision;
+typedef LBMCollisionDynamicsTempl<1> LBMMRTCollision;
