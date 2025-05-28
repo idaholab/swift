@@ -10,6 +10,7 @@
 
 registerMooseObject("SwiftApp", LBMBGKCollision);
 registerMooseObject("SwiftApp", LBMMRTCollision);
+registerMooseObject("SwiftApp", LBMSmagorinskyCollision);
 
 template<int coll_dyn>
 InputParameters
@@ -22,6 +23,8 @@ LBMCollisionDynamicsTempl<coll_dyn>::validParams()
   params.addRequiredParam<TensorInputBufferName>("feq", "Input buffer equilibrium distribution function");
   
   params.addParam<Real>("tau_0", 1.0, "Relaxation parameter");
+  params.addParam<Real>("C_s", 0.11, "Smagorinsky constant");
+  params.addParam<Real>("mean_density", 1.0, "Mean density ");
   params.addParam<bool>("projection", false, "Whether or not to project non-equilibrium onto Hermite space.");
 
   return params;
@@ -34,6 +37,8 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
   _feq(getInputBuffer("feq")),
   _shape(_lb_problem.getGridSize()),
   _tau_0(getParam<Real>("tau_0")),
+  _C_s(getParam<Real>("C_s")),
+  _mean_density(getParam<Real>("mean_density")),
   _projection(getParam<bool>("projection"))
 {
   // 
@@ -112,6 +117,40 @@ LBMCollisionDynamicsTempl<1>::MRTDynamics()
   _lb_problem.maskedFillSolids(_u, 0);
 }
 
+template<>
+void 
+LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
+{
+  // Step 1: Compute mean momentum flux
+  int64_t nx = _shape[0];
+  int64_t ny = _shape[1];
+  int64_t nz = _shape[2];
+
+  auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q});
+
+  auto ex = _stencil._ex.view({_stencil._q, 1, 1, 1});
+  auto ey = _stencil._ey.view({_stencil._q, 1, 1});
+  auto ez = _stencil._ez.view({_stencil._q, 1});
+
+  // outer product
+  // expected shape: _q, 3, 3, 3
+  auto outer_products = ex * ey.unsqueeze(-1) * ez.unsqueeze(-1).unsqueeze(-1);
+  
+  // momentum flux
+  auto Q = torch::matmul(f_neq_hat, outer_products).view({nx, ny, nz, 3, 3, 3});
+
+  // Frobenius norm
+  auto Q_mean =torch::norm(Q, 2, {3, 4, 5}); 
+
+  torch::Tensor tau_tot = 0.5 * (_tau_0 + 
+    torch::sqrt(Q * 1/(_mean_density * _lb_problem._cs4) * 2 * sqrt(2) * _C_s * _C_s +
+    _tau_0 * _tau_0));
+  
+  // BGK collision
+  _u = _feq + _fneq - 1.0 / tau_tot * _fneq;
+  _lb_problem.maskedFillSolids(_u, 0);
+}
+
 template<int coll_dyn>
 void
 LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
@@ -137,3 +176,4 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
 
 template class LBMCollisionDynamicsTempl<0>;
 template class LBMCollisionDynamicsTempl<1>;
+template class LBMCollisionDynamicsTempl<2>;
