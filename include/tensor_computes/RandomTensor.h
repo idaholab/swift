@@ -21,4 +21,7 @@ public:
   RandomTensor(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
+
+protected:
+  const bool _generate_on_cpu;
 };

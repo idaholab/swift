@@ -6,6 +6,7 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
+#include "MooseError.h"
 #include "TensorProblem.h"
 #include "TensorSolver.h"
 #include "UniformTensorMesh.h"
@@ -224,7 +225,10 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
 
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
   for (const auto & pair : _tensor_buffer)
+  {
+    mooseInfoRepeated("makeCPUCopy for ", pair.first);
     pair.second->makeCPUCopy();
+  }
 
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
@@ -329,7 +333,11 @@ TensorProblem::mapBuffersToAux()
     const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
 
     // TODO: better design that works for NEML2 tensors as well
-    const auto buffer = getBuffer<torch::Tensor>(buffer_name);
+    const auto buffer = getRawCPUBuffer(buffer_name);
+    if (buffer.sizes().size() != _dim)
+      mooseError("Buffer '",
+                 buffer_name,
+                 "' is not a scalar tensor field and is not yet supported for AuxVariable mapping");
     std::size_t idx = 0;
     switch (_dim)
     {

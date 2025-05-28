@@ -35,6 +35,19 @@ NEML2TensorBuffer<T>::init()
   // TODO
 }
 
+template <typename T>
+void
+NEML2TensorBuffer<T>::makeCPUCopy()
+{
+  if (_cpu_copy_requested)
+  {
+    if (_u.is_cpu())
+      _u_cpu = T(_u.clone().contiguous(), _u.batch_dim());
+    else
+      _u_cpu = T(_u.cpu().contiguous(), _u.batch_dim());
+  }
+}
+
 template class NEML2TensorBuffer<neml2::Vec>;
 template class NEML2TensorBuffer<neml2::SR2>;
 

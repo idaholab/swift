@@ -21,6 +21,7 @@ public:
   PlainTensorBuffer(const InputParameters & parameters);
 
   virtual void init();
+  virtual void makeCPUCopy() override;
 };
 
 registerTensorType(PlainTensorBuffer, torch::Tensor);

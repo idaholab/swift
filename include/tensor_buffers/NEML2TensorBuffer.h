@@ -26,6 +26,11 @@ public:
   NEML2TensorBuffer(const InputParameters & parameters);
 
   virtual void init();
+  virtual void makeCPUCopy() override;
+
+  using TensorBuffer<T>::_u;
+  using TensorBuffer<T>::_u_cpu;
+  using TensorBuffer<T>::_cpu_copy_requested;
 };
 
 using VectorTensor = NEML2TensorBuffer<neml2::Vec>;

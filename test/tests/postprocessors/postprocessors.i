@@ -5,7 +5,6 @@
   xmax = 2
   ymax = 3
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [TensorBuffers]
