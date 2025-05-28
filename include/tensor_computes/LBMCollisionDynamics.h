@@ -1,4 +1,4 @@
-/**********************************************************************/
+  /**********************************************************************/
 /*                    DO NOT MODIFY THIS HEADER                       */
 /*             Swift, a Fourier spectral solver for MOOSE             */
 /*                                                                    */
@@ -25,11 +25,14 @@ public:
   void BGKDynamics();
   void MRTDynamics();
 
+  void HermiteRegularization();
+
   void computeBuffer() override;
 
 protected:
-const torch::Tensor & _f;
-const torch::Tensor & _feq;
+  const torch::Tensor & _f;
+  const torch::Tensor & _feq;
+  torch::Tensor _fneq;
   const std::array<int64_t, 3> _shape;
 
   Real _tau_0;

@@ -36,28 +36,91 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
   _tau_0(getParam<Real>("tau_0")),
   _projection(getParam<bool>("projection"))
 {
+  // 
+  _fneq = torch::zeros({_shape[0], _shape[1], _shape[2], _stencil._q}, MooseTensor::floatTensorOptions());
+}
+
+template<int coll_dyn>
+void 
+LBMCollisionDynamicsTempl<coll_dyn>::HermiteRegularization()
+{
+  /**
+   * Regularization procedure projects non-equilibrium (fneq) distribution
+   * onto the second order Hermite space.
+   */
+
+  using torch::indexing::Slice;
+
+  int64_t nx = _shape[0];
+  int64_t ny = _shape[1];
+  int64_t nz = _shape[2];
+
+  auto f_flat = _f.view({nx * ny * nz, _stencil._q});
+  auto feq_flat = _feq.view({nx * ny * nz, _stencil._q});
+  auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q});
+
+  torch::Tensor fneq = f_flat - feq_flat;
+  torch::Tensor fneqtimescc = torch::zeros({nx * ny * nz, 9}, MooseTensor::floatTensorOptions());
+  torch::Tensor e_xyz = torch::stack({_stencil._ex, _stencil._ey, _stencil._ez}, 0);
+
+  for (int ic = 0; ic < _stencil._q; ic++)
+  {
+    auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
+    torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic).flatten();
+    fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, 9}));
+  }
+
+  // Compute Hermite tensor
+  torch::Tensor H2 = torch::zeros({1, 9}, MooseTensor::floatTensorOptions());
+  for (int ic = 0; ic < _stencil._q; ic++)
+  {
+    auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
+    torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic) /
+                      _lb_problem._cs2 - torch::eye(3, MooseTensor::floatTensorOptions());
+    H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, 9});
+
+    // Compute regularized non-equilibrium distribution
+    f_neq_hat.index_put_({Slice(), ic}, (_stencil._weights[ic] * (1.0 / (2.0 * _lb_problem._cs2)) *
+                                 (fneqtimescc * H2).sum(1)));
+  }
+  
+  _fneq = f_neq_hat.view({nx, ny, nz, _stencil._q});
 }
 
 template<>
 void
 LBMCollisionDynamicsTempl<0>::BGKDynamics()
 { 
-  // LBM BGK collision
-  _u = _f - 1.0 / _tau_0 * (_f - _feq);
+  /* LBM BGK collision */
+  _u = _feq + _fneq - 1.0 / _tau_0 * _fneq;
   _lb_problem.maskedFillSolids(_u, 0);
 }
 
 template<>
 void
-LBMCollisionDynamicsTempl<0>::MRTDynamics()
+LBMCollisionDynamicsTempl<1>::MRTDynamics()
 { 
-  // LBM BGK collision
+  /* LBM MRT collision */
+  const auto shape = _u.sizes();
+
+  // f = M^{-1} x S x M x (f - feq)
+  _u = _feq + _fneq - torch::matmul(_stencil._M_inv,
+      torch::matmul(_stencil._S,
+      torch::matmul(_stencil._M,
+      (_fneq).view({-1, _stencil._q}).t()))).t().view({shape});
+
+  _lb_problem.maskedFillSolids(_u, 0);
 }
 
 template<int coll_dyn>
 void
 LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
-{
+{ 
+  if (_projection)
+    HermiteRegularization();
+  else 
+    _fneq = _f - _feq;
+
   switch (coll_dyn)
   {
     case 0:
@@ -69,6 +132,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
     default:
       mooseError("Undefined template value");
   }
+  _lb_problem.maskedFillSolids(_u, 0);
 }
 
 template class LBMCollisionDynamicsTempl<0>;
