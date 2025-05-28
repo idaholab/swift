@@ -7,7 +7,6 @@
   ymax = ${fparse pi*4}
   zmax = ${fparse pi*6}
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [TensorBuffers]

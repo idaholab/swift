@@ -11,7 +11,6 @@
   xmax = 3
   ymax = 3
   mesh_mode = DOMAIN
-  device_names = cpu
 []
 
 # In this input we fully trely on implicit TensorBuffer declaration

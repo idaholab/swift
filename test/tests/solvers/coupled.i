@@ -11,7 +11,6 @@
   xmax = '${fparse pi*2}'
   ymax = '${fparse pi*2}'
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [GlobalParams]

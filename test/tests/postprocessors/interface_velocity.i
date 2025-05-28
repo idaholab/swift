@@ -4,7 +4,6 @@
   ny = 2
   xmax = '${fparse pi*4}'
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [TensorBuffers]
