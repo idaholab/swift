@@ -13,7 +13,6 @@
 /**
   * Template object for LBM collision dynamics
   */
-
 template<int coll_dyn>
 class LBMCollisionDynamicsTempl: public LatticeBoltzmannOperator
 {
@@ -24,6 +23,7 @@ public:
 
   void BGKDynamics();
   void MRTDynamics();
+  void SmagorinskyDynamics();
 
   void HermiteRegularization();
 
@@ -35,9 +35,12 @@ protected:
   torch::Tensor _fneq;
   const std::array<int64_t, 3> _shape;
 
-  Real _tau_0;
+  const Real _tau_0;
+  const Real _C_s; // Smagorinsky constant
+  const Real _mean_density;
   const bool _projection;
 };
 
 typedef LBMCollisionDynamicsTempl<0> LBMBGKCollision;
 typedef LBMCollisionDynamicsTempl<1> LBMMRTCollision;
+typedef LBMCollisionDynamicsTempl<2> LBMSmagorinskyCollision;
