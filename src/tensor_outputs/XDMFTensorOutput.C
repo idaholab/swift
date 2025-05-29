@@ -196,7 +196,6 @@ XDMFTensorOutput::init()
 void
 XDMFTensorOutput::output()
 {
-  mooseInfoRepeated("Writing XDMF file '", _file_base, ".xmf' for output.");
   // add grid for new timestep
   auto grid = _tgrid.append_child("Grid");
   grid.append_attribute("Name") = ("T" + Moose::stringify(_frame)).c_str();

@@ -25,6 +25,7 @@ public:
 
   FFTMechanics(const InputParameters & parameters);
 
+  virtual void check() override;
   virtual void computeBuffer() override;
 
 protected:
@@ -49,13 +50,17 @@ protected:
   torch::Tensor _Ghat4;
 
   /// stress
-  torch::Tensor & _tP;
+  const torch::Tensor & _tP;
+  /// tangent operator
+  const torch::Tensor & _tK4;
 
   Real _l_tol;
   unsigned int _l_max_its;
   Real _nl_rel_tol;
   Real _nl_abs_tol;
   unsigned int _nl_max_its;
+
+  TensorOperatorBase & _constitutive_model;
 
   using TensorOperatorBase::_dim;
   using TensorOperatorBase::_domain;

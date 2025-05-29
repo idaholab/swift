@@ -38,8 +38,11 @@ public:
   /// perform the computation
   virtual void computeBuffer() = 0;
 
-  /// called  after all objects have been constructed
+  /// called  after all objects have been constructed (before dependency resolution)
   virtual void init() {}
+
+    /// called  after all objects have been constructed (after dependency resolution)
+  virtual void check() {}
 
   /// called if the simulation cell dimensions change
   virtual void gridChanged() {}
@@ -56,6 +59,8 @@ protected:
 
   template <typename T = torch::Tensor>
   T & getOutputBufferByName(const TensorOutputBufferName & buffer_name);
+
+  TensorOperatorBase & getCompute(const std::string & param_name);
 
   std::set<std::string> _requested_buffers;
   std::set<std::string> _supplied_buffers;
