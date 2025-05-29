@@ -10,6 +10,7 @@
 
 #include "FEProblem.h"
 #include "DomainInterface.h"
+#include "InputParameters.h"
 #include "SwiftTypes.h"
 #include "SwiftUtils.h"
 #include "TensorBuffer.h"
@@ -22,6 +23,7 @@
 #include "libmesh/petsc_vector.h"
 #include "libmesh/print_trace.h"
 
+#include <list>
 #include <memory>
 #include <torch/torch.h>
 
@@ -114,6 +116,8 @@ public:
 
   typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
   const TensorComputeList & getComputes() const { return _computes; }
+
+  TensorOperatorBase & getCompute(const std::string & param_name) const;
 
   typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
   const TensorOutputList & getOutputs() const { return _outputs; }
@@ -211,6 +215,9 @@ protected:
 
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
+
+private:
+  std::list<InputParameters> _buffer_params;
 };
 
 template <typename T>
@@ -275,7 +282,9 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
                       "' of type '",
                       libMesh::demangle(typeid(T).name()),
                       "'");
-  auto params = TensorBuffer<T>::validParams();
+
+  _buffer_params.push_back(TensorBufferSpecialization<T>::type::validParams());
+  auto & params = _buffer_params.back();
   params.template set<std::string>("_object_name") = buffer_name;
   params.template set<FEProblem *>("_fe_problem") = this;
   params.template set<FEProblemBase *>("_fe_problem_base") = this;
@@ -283,7 +292,6 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
   params.template set<std::string>("_type") = "TensorBufferBase";
   params.template set<MooseApp *>("_moose_app") = &getMooseApp();
   params.finalize(buffer_name);
-
   auto tensor_buffer = std::make_shared<typename TensorBufferSpecialization<T>::type>(params);
 
   _tensor_buffer.try_emplace(buffer_name, tensor_buffer);

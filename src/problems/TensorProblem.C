@@ -6,6 +6,7 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
+#include "Moose.h"
 #include "MooseError.h"
 #include "TensorProblem.h"
 #include "TensorSolver.h"
@@ -81,19 +82,21 @@ TensorProblem::init()
   for (auto & cmp : _computes)
     cmp->init();
 
+  // dependency resolution of TensorICs
+  DependencyResolverInterface::sort(_ics);
+
   // update dependencies
   if (_solver)
     _solver->updateDependencies();
+  else
+  {
+    // dependency resolution of TensorComputes
+    DependencyResolverInterface::sort(_computes);
+  }
 
   // update dependencies for on demand objects
   for (auto & od : _on_demand)
     od->updateDependencies();
-
-  // dependency resolution of TensorICs
-  DependencyResolverInterface::sort(_ics);
-
-  // dependency resolution of TensorComputes
-  DependencyResolverInterface::sort(_computes);
 
   // dependency resolution of Tensor Postprocessors
   DependencyResolverInterface::sort(_pps);
@@ -121,6 +124,10 @@ TensorProblem::init()
   for (auto & output : _outputs)
     output->init();
 
+  // check computes (after dependency update)
+  for (auto & cmp : _computes)
+    cmp->check();
+
   updateDOFMap();
 
   // debug output
@@ -140,10 +147,6 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     _sub_time = FEProblem::time();
 
     executeTensorInitialConditions();
-
-    // run postprocessing before output
-    for (auto & pp : _pps)
-      pp->computeBuffer();
 
     executeTensorOutputs(EXEC_INITIAL);
   }
@@ -185,13 +188,12 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     else
       // new time integrator
       _solver->computeBuffer();
+  }
 
-    // run postprocessing before output
-    for (auto & pp : _pps)
-      pp->computeBuffer();
-
+  if (exec_type == EXEC_TIMESTEP_END)
+  {
     // run outputs
-    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
+    executeTensorOutputs(EXEC_TIMESTEP_END);
   }
 
   FEProblem::execute(exec_type);
@@ -217,9 +219,13 @@ TensorProblem::executeTensorInitialConditions()
 
 /// perform output tasks
 void
-TensorProblem::executeTensorOutputs(const ExecFlagType &)
+TensorProblem::executeTensorOutputs(const ExecFlagType & exec_flag)
 {
-  // wait for prior asynchronous activity on CPU buffers to complete
+  // run postprocessing before output
+  for (auto & pp : _pps)
+    pp->computeBuffer();
+
+    // wait for prior asynchronous activity on CPU buffers to complete
   // (this is a synchronization barrier for the threaded CPU activity)
   for (auto & output : _outputs)
     output->waitForCompletion();
@@ -229,15 +235,12 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
 
   // prepare CPU buffers (this is a synchronization barrier for the GPU)
   for (const auto & pair : _tensor_buffer)
-  {
-    mooseInfoRepeated("makeCPUCopy for ", pair.first);
     pair.second->makeCPUCopy();
-  }
 
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
-    output->startOutput();
-  // output->output();
+    if (output->shouldRun(exec_flag))
+      output->startOutput();
 
   if (_options.dtype() == torch::kFloat64)
     mapBuffersToAux<double>();

@@ -36,7 +36,11 @@ FFTMechanics::validParams()
   params.addParam<Real>("nl_rel_tol", 1e-5, "Nonlinear solve absolute tolerance");
   params.addParam<Real>("nl_abs_tol", 1e-8, "Nonlinear solve relative tolerance");
   params.addParam<unsigned int>("nl_max_its", 100, "Maximum number of nonlinear solve iterations");
-  params.addParam<TensorOutputBufferName>("stress", "stress", "Computed stress");
+  params.addParam<TensorInputBufferName>("stress", "stress", "Computed stress");
+  params.addParam<TensorInputBufferName>("tangent_operator", "dstressdstrain", "Tangent operator");
+  params.addRequiredParam<TensorComputeName>("constitutive_model",
+                                             "Tensor compute for the constitutive model (computes "
+                                             "stress from displacement gradeint tensor)");
   return params;
 }
 
@@ -51,12 +55,14 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _tK(getInputBuffer("K")),
     _tmu(getInputBuffer("mu")),
     _r2_shape(_domain.getValueShape({_dim, _dim})),
-    _tP(getOutputBuffer("stress")),
+    _tP(getInputBuffer("stress")),
+    _tK4(getInputBuffer("tangent_operator")),
     _l_tol(getParam<Real>("l_tol")),
     _l_max_its(getParam<unsigned int>("l_max_its")),
     _nl_rel_tol(getParam<Real>("nl_rel_tol")),
     _nl_abs_tol(getParam<Real>("nl_abs_tol")),
-    _nl_max_its(getParam<unsigned int>("nl_max_its"))
+    _nl_max_its(getParam<unsigned int>("nl_max_its")),
+    _constitutive_model(getCompute("constitutive_model"))
 {
   // Build projection tensor once
   const auto & q = _domain.getKGrid();
@@ -72,10 +78,17 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
 }
 
 void
+FFTMechanics::check()
+{
+  const auto & stress_name = getParam<TensorOutputBufferName>("stress");
+  if (!_constitutive_model.getSuppliedItems().count(stress_name))
+    paramError("constitutive_model", "does not provide stress tensor '", stress_name, "'.");
+}
+
+void
 FFTMechanics::computeBuffer()
 {
   using namespace MooseTensor;
-  torch::Tensor K4;
 
   const auto shape = _domain.getShape();
   std::vector<int64_t> _r2shape(shape.begin(), shape.end());
@@ -85,26 +98,12 @@ FFTMechanics::computeBuffer()
   const auto G = [&](const torch::Tensor & A2)
   { return _domain.ifft(ddot42(_Ghat4, _domain.fft(A2))).reshape(-1); };
   const auto K_dF = [&](const torch::Tensor & dFm)
-  { return trans2(ddot42(K4, trans2(dFm.reshape(_r2shape)))); };
+  { return trans2(ddot42(_tK4, trans2(dFm.reshape(_r2shape)))); };
   const auto G_K_dF = [&](const torch::Tensor & dFm) { return G(K_dF(dFm)); };
-
-  // constitutive model: grid of "F" -> grid of "P", "K4"        [grid of tensors]
-  auto constitutive = [&](const torch::Tensor & F)
-  {
-    const auto C4 =
-        _tK.reshape(_domain.getValueShape({1, 1, 1, 1})) * _tII +
-        2. * _tmu.reshape(_domain.getValueShape({1, 1, 1, 1})) * (_tI4s - 1. / 3. * _tII);
-    const auto S = ddot42(C4, .5 * (dot22(trans2(F), F) - _tI));
-    const auto P = dot22(F, S);
-    const auto K4 = dot24(S, _tI4) + ddot44(ddot44(_tI4rt, dot42(dot24(F, C4), trans2(F))), _tI4rt);
-    return std::make_pair(P, K4);
-  };
 
   // initialize deformation gradient, and stress/stiffness       [grid of tensors]
   _u = _tI.clone();
-  const auto P_K4 = constitutive(_u);
-  _tP = P_K4.first;
-  K4 = P_K4.second;
+  _constitutive_model.computeBuffer();
 
   // set macroscopic loading
   auto DbarF = torch::zeros_like(_tI);
@@ -137,9 +136,7 @@ FFTMechanics::computeBuffer()
     _u = _u + dFm.reshape(_r2_shape);
 
     // new residual stress and tangent
-    const auto P_K4 = constitutive(_u);
-    _tP = P_K4.first;
-    K4 = P_K4.second;
+    _constitutive_model.computeBuffer();
 
     // convert res.stress to residual
     b = -G(_tP);
