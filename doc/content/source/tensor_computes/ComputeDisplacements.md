@@ -2,7 +2,7 @@
 
 !syntax description /TensorComputes/Solve/FFTElasticChemicalPotential
 
-Integrates a displacement gradient tensor $\mathbf{F}$ to build a displacement vector. The compute first calculates the average displacement gradient tensor $\mathbf{F_{box}}$, which encodes the affine diaplacement transformation $\vec u_{aff} = (\mathbf{F_{box}} - \mathbf{I}) \cdot \vec x$.
+Integrates a deformation gradient tensor $\mathbf{F}$ to build a displacement vector. The compute first calculates the average deformation gradient tensor $\mathbf{F_{box}}$, which encodes the affine diaplacement transformation $\vec u_{aff} = (\mathbf{F_{box}} - \mathbf{I}) \cdot \vec x$.
 Then it subtracts the average to obtain the periodic perturtbation $\mathbf{F_{per}} = \mathbf{F}-\mathbf{F_{box}}$, and its Fourier transform $\hat{\mathbf{H}} = \mathcal F(\mathbf{F_{per}})$.
 
 \begin{equation}

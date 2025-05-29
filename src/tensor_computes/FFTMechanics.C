@@ -41,6 +41,9 @@ FFTMechanics::validParams()
   params.addRequiredParam<TensorComputeName>("constitutive_model",
                                              "Tensor compute for the constitutive model (computes "
                                              "stress from displacement gradeint tensor)");
+  params.addParam<TensorInputBufferName>("applied_macroscopic_strain",
+                                         "Applied macroscopic strain");
+  params.addParam<TensorInputBufferName>("F", "F", "Deformation gradient tensor.");
   return params;
 }
 
@@ -55,6 +58,7 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _tK(getInputBuffer("K")),
     _tmu(getInputBuffer("mu")),
     _r2_shape(_domain.getValueShape({_dim, _dim})),
+    _tF(getInputBuffer<>("F")),
     _tP(getInputBuffer("stress")),
     _tK4(getInputBuffer("tangent_operator")),
     _l_tol(getParam<Real>("l_tol")),
@@ -62,7 +66,10 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _nl_rel_tol(getParam<Real>("nl_rel_tol")),
     _nl_abs_tol(getParam<Real>("nl_abs_tol")),
     _nl_max_its(getParam<unsigned int>("nl_max_its")),
-    _constitutive_model(getCompute("constitutive_model"))
+    _constitutive_model(getCompute("constitutive_model")),
+    _applied_macroscopic_strain(isParamValid("applied_macroscopic_strain")
+                                    ? &getInputBuffer("applied_macroscopic_strain")
+                                    : nullptr)
 {
   // Build projection tensor once
   const auto & q = _domain.getKGrid();
@@ -102,21 +109,16 @@ FFTMechanics::computeBuffer()
   const auto G_K_dF = [&](const torch::Tensor & dFm) { return G(K_dF(dFm)); };
 
   // initialize deformation gradient, and stress/stiffness       [grid of tensors]
-  _u = _tI.clone();
+  _u = _tF;
   _constitutive_model.computeBuffer();
 
-  // set macroscopic loading
-  auto DbarF = torch::zeros_like(_tI);
-  // DbarF[..., 0, 1] += 1.0;
-  DbarF.index_put_({torch::indexing::Ellipsis, 0, 1},
-                   DbarF.index({torch::indexing::Ellipsis, 0, 1}) + _time);
-
-  DbarF = DbarF.expand(_r2_shape);
-
   // initial residual: distribute "barF" over grid using "K4"
-  auto b = -G_K_dF(DbarF);
+  auto b = _applied_macroscopic_strain ? -G_K_dF(_applied_macroscopic_strain->expand(_r2_shape))
+                                       : -G_K_dF(torch::zeros_like(_tF));
+
   // _u += DbarF;
-  _u = _u + DbarF;
+  if (_applied_macroscopic_strain)
+    _u = _u + _applied_macroscopic_strain->expand(_r2_shape);
 
   const auto Fn =
       at::linalg_norm(_u, c10::nullopt, c10::nullopt, false, c10::nullopt).cpu().item<double>();
