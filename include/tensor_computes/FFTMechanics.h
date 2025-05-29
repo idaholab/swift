@@ -46,6 +46,9 @@ protected:
 
   const std::vector<int64_t> _r2_shape;
 
+  /// current deformation gradient
+  const torch::Tensor & _tF;
+
   /// Gamma projection operator
   torch::Tensor _Ghat4;
 
@@ -61,6 +64,9 @@ protected:
   unsigned int _nl_max_its;
 
   TensorOperatorBase & _constitutive_model;
+
+  /// applied macroscopic (affine) strain
+  const torch::Tensor * const _applied_macroscopic_strain;
 
   using TensorOperatorBase::_dim;
   using TensorOperatorBase::_domain;

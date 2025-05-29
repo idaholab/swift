@@ -71,6 +71,8 @@ SecantSolver::secantSolve()
 
   // initial guess computed using semi-implicit Euler
   _compute->computeBuffer();
+  forwardBuffers();
+
   for (const auto i : make_range(n))
   {
     auto & u_out = _variables[i]._buffer;
@@ -117,6 +119,7 @@ SecantSolver::secantSolve()
   {
     // re-evaluate the solve compute
     _compute->computeBuffer();
+    forwardBuffers();
 
     all_converged = true;
 
