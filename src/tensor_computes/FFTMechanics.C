@@ -32,7 +32,7 @@ FFTMechanics::validParams()
   params.addParam<TensorInputBufferName>("mu", "Shear modulus");
   params.addParam<Real>("l_tol", 1e-2, "Linear congugate gradient solve tolerance");
   params.addParam<unsigned int>(
-      "l_max_its", 100, "Maximum number of congugate gradient solve iterations");
+      "l_max_its", "Maximum number of congugate gradient solve iterations");
   params.addParam<Real>("nl_rel_tol", 1e-5, "Nonlinear solve absolute tolerance");
   params.addParam<Real>("nl_abs_tol", 1e-8, "Nonlinear solve relative tolerance");
   params.addParam<unsigned int>("nl_max_its", 100, "Maximum number of nonlinear solve iterations");
@@ -62,7 +62,7 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _tP(getInputBuffer("stress")),
     _tK4(getInputBuffer("tangent_operator")),
     _l_tol(getParam<Real>("l_tol")),
-    _l_max_its(getParam<unsigned int>("l_max_its")),
+    _l_max_its(isParamValid("l_max_its") ? getParam<unsigned int>("l_max_its") : _domain.getNumberOfCells()),
     _nl_rel_tol(getParam<Real>("nl_rel_tol")),
     _nl_abs_tol(getParam<Real>("nl_abs_tol")),
     _nl_max_its(getParam<unsigned int>("nl_max_its")),
@@ -135,6 +135,7 @@ FFTMechanics::computeBuffer()
 
     // update DOFs (array -> tens.grid)
     // _u += dFm.reshape(_r2_shape);
+    const auto dFm_norm = dFm
     _u = _u + dFm.reshape(_r2_shape);
 
     // new residual stress and tangent

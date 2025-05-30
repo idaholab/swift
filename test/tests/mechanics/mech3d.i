@@ -1,8 +1,8 @@
 [Domain]
   dim = 3
-  nx = 32
-  ny = 32
-  nz = 32
+  nx = 64
+  ny = 64
+  nz = 64
   xmax = ${fparse 2*pi}
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
@@ -46,7 +46,7 @@
     [hyper_elasticity]
       type = HyperElasticIsotropic
       buffer = stress
-      F = F
+      F = Fnew
       K = K
       mu = mu
     []
@@ -60,7 +60,6 @@
       F = F
       K = K
       mu = mu
-      l_max_its = 400
       l_tol = 1e-2
       nl_rel_tol = 2e-2
       nl_abs_tol = 2e-2

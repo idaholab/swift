@@ -45,21 +45,31 @@
     [hyper_elasticity]
       type = HyperElasticIsotropic
       buffer = stress
-      F = F
+      F = Fnew
       K = K
       mu = mu
     []
+    [applied_strain]
+      type = MacroscopicShearTensor
+      buffer = applied_strain
+    []
     [mech]
       type = FFTMechanics
-      buffer = F
+      buffer = Fnew
+      F = F
       K = K
       mu = mu
-      l_max_its = 400
-      l_tol = 1e-2
-      nl_rel_tol = 2e-3
-      nl_abs_tol = 2e-2
+      l_max_its = 40
+      l_tol = 1e-5
+      nl_rel_tol = 2e-4
+      nl_abs_tol = 2e-3
       constitutive_model = hyper_elasticity
       stress = stress
+      applied_macroscopic_strain = applied_strain
+    []
+    [root]
+      type = ComputeGroup
+      computes = 'applied_strain mech'
     []
   []
   [Postprocess]
@@ -78,7 +88,10 @@
 [TensorSolver]
   # no variables are integrated by this solver (FFTMechanics performs a steady state mechanics solve)
   type = ForwardEulerSolver
-  root_compute = mech
+  root_compute = root
+  # deformation tensor is just forwarded Fnew -> F
+  forward_buffer = F
+  forward_buffer_new = Fnew
 []
 
 [TensorOutputs]
@@ -93,6 +106,6 @@
 
 [Executioner]
   type = Transient
-  num_steps = 30
-  dt = 0.01
+  num_steps = 10
+  dt = 0.02
 []

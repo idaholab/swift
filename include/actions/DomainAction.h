@@ -40,6 +40,8 @@ public:
   const torch::Tensor & getAxis(std::size_t component) const;
   const torch::Tensor & getReciprocalAxis(std::size_t component) const;
 
+  int64_t getNumberOfCells() const;
+
   /// return X-vector (coordinate) tensor for the local real space domain
   const torch::Tensor & getXGrid() const;
 

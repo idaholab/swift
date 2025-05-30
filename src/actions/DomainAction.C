@@ -692,3 +692,9 @@ DomainAction::average(const torch::Tensor & t) const
 {
   return sum(t) / Real(_n_global[0] * _n_global[1] * _n_global[2]);
 }
+
+int64_t
+DomainAction::getNumberOfCells() const
+{
+  return _n_global[0] * _n_global[1] * _n_global[2];
+}
