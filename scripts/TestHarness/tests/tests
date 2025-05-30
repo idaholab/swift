@@ -4,5 +4,6 @@
     input = test_HDF5Diff.py
     requirement = "The system shall be able to compare HDF5 file in the test harness"
     issues = '#6'
+    method = opt
   []
 []

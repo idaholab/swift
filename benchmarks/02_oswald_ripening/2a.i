@@ -333,7 +333,7 @@ cvalues = 'sqrt(2) 0.3 0.7 5     1 5 5'
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = 'c n1 n2 n3 n4'
   reciprocal_buffer = 'c_bar n1_bar n2_bar n3_bar n4_bar'
   linear_reciprocal = 'MkappaL2bar kappaLbar kappaLbar kappaLbar kappaLbar'
