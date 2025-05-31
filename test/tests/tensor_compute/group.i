@@ -151,14 +151,12 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = cbar
-    linear_reciprocal = kappabarbar
-    nonlinear_reciprocal = Mbarmubar
-  []
+[TensorSolver]
+  type = AdamsBashforthMoulton
+  buffer = c
+  reciprocal_buffer = cbar
+  linear_reciprocal = kappabarbar
+  nonlinear_reciprocal = Mbarmubar
 []
 
 [Postprocessors]

@@ -2,7 +2,7 @@
   [adams_bashforth]
     requirement = 'The system shall provide an Adams-Bashforth semi-implicit time integrator'
     issues = '#32'
-    detail = 'SemiImplicitSolver.md'
+    detail = 'AdamsBashforthMoulton.md'
     [order_1]
       type = CSVDiff
       input = coupled.i

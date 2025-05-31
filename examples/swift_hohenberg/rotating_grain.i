@@ -120,7 +120,7 @@ crystal = '-sin(sin(a)*y/2+cos(a)*x/2)^2*sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*x/2
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = psi
   reciprocal_buffer = psibar
   linear_reciprocal = linear

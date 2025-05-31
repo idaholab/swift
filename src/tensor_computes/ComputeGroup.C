@@ -17,8 +17,8 @@ ComputeGroup::validParams()
 {
   InputParameters params = TensorOperatorBase::validParams();
   params.addClassDescription("Group of operators with internal dependency resolution.");
-  params.addRequiredParam<std::vector<TensorComputeName>>("computes",
-                                                          "List of grouped tensor computes.");
+  params.addParam<std::vector<TensorComputeName>>(
+      "computes", {}, "List of grouped tensor computes.");
   return params;
 }
 

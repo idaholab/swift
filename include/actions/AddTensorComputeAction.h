@@ -16,12 +16,12 @@ class TensorProblem;
  * This class adds an TensorOperator object.
  * The TensorOperator performs a mathematical operation on input tensors to produce output tensors
  */
-class AddTensorObjectAction : public MooseObjectAction
+class AddTensorComputeAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();
 
-  AddTensorObjectAction(const InputParameters & parameters);
+  AddTensorComputeAction(const InputParameters & parameters);
 
   virtual void act() override;
 };
