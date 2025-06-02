@@ -121,33 +121,51 @@ template<>
 void 
 LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
 {
-  // Step 1: Compute mean momentum flux
   int64_t nx = _shape[0];
   int64_t ny = _shape[1];
   int64_t nz = _shape[2];
 
-  auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q});
+  auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q, 1, 1, 1});
 
-  auto ex = _stencil._ex.view({_stencil._q, 1, 1, 1});
-  auto ey = _stencil._ey.view({_stencil._q, 1, 1});
-  auto ez = _stencil._ez.view({_stencil._q, 1});
+  auto zeros = torch::zeros({9}, MooseTensor::intTensorOptions());
+  auto ones = torch::ones({9}, MooseTensor::intTensorOptions());
+
+  auto ex_2d = torch::stack({ _stencil._ex, zeros, zeros});
+  auto ey_2d = torch::stack({ zeros, _stencil._ey, zeros});
+  auto ez_2d = torch::stack({zeros, zeros, _stencil._ez});
+
+  if (nz == 1)
+    ez_2d = torch::stack({ones, zeros, _stencil._ez});
 
   // outer product
   // expected shape: _q, 3, 3, 3
-  auto outer_products = ex * ey.unsqueeze(-1) * ez.unsqueeze(-1).unsqueeze(-1);
-  
+  auto outer_products = torch::zeros({9, 3, 3, 3}, MooseTensor::intTensorOptions());
+
+  for (int i = 0; i < _stencil._q; i++) 
+  {
+    auto ex_col = ex_2d.index({Slice(), i});
+    auto ey_col = ey_2d.index({Slice(), i});
+    auto ez_col = ez_2d.index({Slice(), i});
+    auto outer_product = torch::einsum("i,j,k->kij", {ex_col, ey_col, ez_col});
+    outer_products[i] = outer_product;
+  }
+  outer_products = outer_products.view({1, _stencil._q, 3, 3, 3});
+
   // momentum flux
-  auto Q = torch::matmul(f_neq_hat, outer_products).view({nx, ny, nz, 3, 3, 3});
+  auto Q = torch::sum(f_neq_hat * outer_products, 1).view({nx, ny, nz, 3, 3, 3});
 
   // Frobenius norm
   auto Q_mean =torch::norm(Q, 2, {3, 4, 5}); 
 
+  // relaxation parameter
   torch::Tensor tau_tot = 0.5 * (_tau_0 + 
-    torch::sqrt(Q * 1/(_mean_density * _lb_problem._cs4) * 2 * sqrt(2) * _C_s * _C_s +
+    torch::sqrt(Q_mean * 1.0/(_mean_density * _lb_problem._cs4) * 2.0 * sqrt(2) * _C_s * _C_s +
     _tau_0 * _tau_0));
-  
+  tau_tot.unsqueeze_(3);
+
   // BGK collision
   _u = _feq + _fneq - 1.0 / tau_tot * _fneq;
+
   _lb_problem.maskedFillSolids(_u, 0);
 }
 
@@ -167,6 +185,9 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
       break;
     case 1:
       MRTDynamics();
+      break;
+    case 2:
+      SmagorinskyDynamics();
       break;
     default:
       mooseError("Undefined template value");
