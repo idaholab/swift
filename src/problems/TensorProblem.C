@@ -161,6 +161,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     else
       for (auto & cmp : _computes)
         cmp->computeBuffer();
+  }
 
   if (exec_type == EXEC_TIMESTEP_END)
   {
