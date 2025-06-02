@@ -8,6 +8,8 @@
 
 #include "LBMStackTensors.h"
 
+registerMooseObject("SwiftApp", LBMStackTensors);
+
 InputParameters
 LBMStackTensors::validParams()
 {
@@ -45,19 +47,23 @@ LBMStackTensors::computeBuffer()
   if (_u.dim()<4)
     mooseError("Output buffer must be vectorial tensor.");
 
-  // get all input buffers
-  int dim_index = 0;
+  std::vector<torch::Tensor> tensor_vector;
   for (const auto & name : names)
   {
-    const auto tensor_buffer = getInputBufferByName(name);
-    if (tensor_buffer.dim()>3)
-    {
-      std::string error_msg="Input buffer ";
-      error_msg.append(name);
-      error_msg+=" must be scalar";
-      mooseError(error_msg);
-    }
-    _u.index_put_({Slice(), Slice(), Slice(), dim_index}, tensor_buffer);
-    dim_index ++;
+      auto tensor_buffer = getInputBufferByName(name);
+      
+      if (tensor_buffer.dim() < 3)
+          tensor_buffer = tensor_buffer.unsqueeze(2);
+      if (tensor_buffer.dim() > 3)
+      {
+          std::string error_msg = "Input buffer ";
+          error_msg.append(name);
+          error_msg += " must be scalar";
+          mooseError(error_msg);
+      }
+      tensor_vector.push_back(tensor_buffer);
   }
+
+  // Stack the tensors along a new dimension
+  _u = torch::stack(tensor_vector, 3);
 }
