@@ -32,6 +32,9 @@ PlainTensorBuffer::init()
 void
 PlainTensorBuffer::makeCPUCopy()
 {
+  if (!_u.defined())
+    return;
+
   if (_cpu_copy_requested)
   {
     if (_u.is_cpu())
