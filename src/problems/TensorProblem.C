@@ -94,9 +94,6 @@ TensorProblem::init()
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
-  // dependency resolution of TensorComputes
-  DependencyResolverInterface::sort(_computes);
-
   // dependency resolution of Tensor Postprocessors
   DependencyResolverInterface::sort(_pps);
 

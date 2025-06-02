@@ -61,7 +61,6 @@ TensorOutput::TensorOutput(const InputParameters & parameters)
 bool
 TensorOutput::shouldRun(const ExecFlagType & execute_flag) const
 {
-  std::cout << execute_flag << ' ' << _execute_on.isValueSet(execute_flag) << '\n';
   return _execute_on.isValueSet(execute_flag);
 }
 

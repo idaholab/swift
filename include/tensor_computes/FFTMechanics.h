@@ -68,6 +68,8 @@ protected:
   /// applied macroscopic (affine) strain
   const torch::Tensor * const _applied_macroscopic_strain;
 
+  const bool _verbose;
+
   using TensorOperatorBase::_dim;
   using TensorOperatorBase::_domain;
 };

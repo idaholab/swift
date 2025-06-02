@@ -9,10 +9,6 @@
   mesh_mode = DUMMY
 []
 
-[Problem]
-  type = TensorProblem
-[]
-
 [TensorComputes]
   [Initialize]
     [phase]
@@ -42,6 +38,7 @@
       buffer = F
     []
   []
+
   [Solve]
     [hyper_elasticity]
       type = HyperElasticIsotropic
@@ -50,28 +47,28 @@
       K = K
       mu = mu
     []
-    [applied_strain]
-      type = MacroscopicShearTensor
-      buffer = applied_strain
-    []
-    [mech]
-      type = FFTMechanics
-      buffer = Fnew
-      F = F
-      K = K
-      mu = mu
-      l_tol = 1e-2
-      nl_rel_tol = 2e-2
-      nl_abs_tol = 2e-2
-      constitutive_model = hyper_elasticity
-      stress = stress
-      applied_macroscopic_strain = applied_strain
-    []
+
     [root]
-      type = ComputeGroup
-      computes = 'applied_strain mech'
+      [applied_strain]
+        type = MacroscopicShearTensor
+        buffer = applied_strain
+      []
+      [mech]
+        type = FFTMechanics
+        buffer = Fnew
+        F = F
+        K = K
+        mu = mu
+        l_tol = 1e-2
+        nl_rel_tol = 2e-2
+        nl_abs_tol = 2e-2
+        constitutive_model = hyper_elasticity
+        stress = stress
+        applied_macroscopic_strain = applied_strain
+      []
     []
   []
+
   [Postprocess]
     [displacements]
       type = ComputeDisplacements
