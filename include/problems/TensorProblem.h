@@ -72,13 +72,7 @@ public:
   virtual void addTensorComputePostprocess(const std::string & compute_name,
                                            const std::string & name,
                                            InputParameters & parameters);
-  virtual void addTensorComputeOnDemand(const std::string & compute_name,
-                                        const std::string & name,
-                                        InputParameters & parameters);
 
-  virtual void addTensorTimeIntegrator(const std::string & time_integrator_name,
-                                       const std::string & name,
-                                       InputParameters & parameters);
   virtual void addTensorOutput(const std::string & output_name,
                                const std::string & name,
                                InputParameters & parameters);
@@ -96,8 +90,6 @@ public:
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getRawCPUBuffer(const std::string & buffer_name);
-
-  TensorOperatorBase & getOnDemandCompute(const std::string & name);
 
   virtual Real & subDt() { return _sub_dt; }
   virtual Real & subTime() { return _sub_time; }
@@ -189,12 +181,7 @@ protected:
   /// postprocessing objects
   TensorComputeList _pps;
 
-  /// on demand objects that are explicitly triggered by other objects
-  TensorComputeList _on_demand;
-
-  ///  time integrator objects
-  std::vector<std::shared_ptr<TensorTimeIntegrator<>>> _time_integrators;
-
+  /// tensor outputs
   std::vector<std::shared_ptr<TensorOutput>> _outputs;
 
   /// map from buffer name to variable name

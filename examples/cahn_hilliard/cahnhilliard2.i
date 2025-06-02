@@ -100,7 +100,7 @@
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = c
   reciprocal_buffer = cbar
   linear_reciprocal = kappabarbar

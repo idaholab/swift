@@ -6,11 +6,6 @@
   mesh_mode = DUMMY
 []
 
-[TensorBuffers]
-  [c]
-  []
-[]
-
 [TensorComputes]
   [Solve]
     [c]

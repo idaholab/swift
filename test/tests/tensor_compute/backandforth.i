@@ -77,7 +77,7 @@
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = eta
   reciprocal_buffer = eta_bar
   linear_reciprocal = zero

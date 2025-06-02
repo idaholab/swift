@@ -38,7 +38,7 @@ CreateTensorSolverAction::act()
   _moose_object_pars.addPrivateParam<TensorProblem *>("_tensor_problem", tensor_problem.get());
   _moose_object_pars.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
-  // check if a root compute was supplied, otherwise attomatically generate one
+  // check if a root compute was supplied, otherwise automatically generate one
   if (!_moose_object_pars.isParamValid("root_compute"))
   {
     mooseInfo("Automatically generating root compute.");
