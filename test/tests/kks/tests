@@ -13,6 +13,7 @@
         hdf5diff = KKS_no_flux_bc.h5
         requirement = 'The system shall be able to run a KKS simulation with no-flux BCs imposed using the Smooth Boundary Method (SBM), and output the result tensors in XDMF format using a HDF5 data file'
         design = 'XDMFTensorOutput.md'
+        abs_tol = 1e-10
     []
     [csv_output]
         type = CSVDiff
