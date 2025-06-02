@@ -75,6 +75,19 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   Registry::registerObjectsTo(f, {"SwiftApp"});
   Registry::registerActionsTo(af, {"SwiftApp"});
 
+  auto registerDeep = [&](const std::string & base_path, const std::string & task)
+  {
+    registerMooseObjectTask(task, TensorOperator, false);
+    std::string path = base_path;
+    // register five levels deep
+    for (unsigned int i = 0; i < 5; ++i)
+    {
+      path += "/*";
+      syntax.registerSyntaxType(path, "TensorComputeName");
+      registerSyntaxTask("AddTensorComputeAction", path, task);
+    }
+  };
+
   // ComputeDevice Action
   registerSyntax("DomainAction", "Domain");
 
@@ -86,41 +99,21 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   addTaskDependency("add_tensor_buffer", "add_aux_variable");
 
   // TensorComputes/Initial Actions
-  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Initialize/*", "add_tensor_ic");
-  syntax.registerSyntaxType("TensorComputes/Initialize/*", "TensorComputeName");
-  registerMooseObjectTask("add_tensor_ic", TensorOperator, false);
+  registerDeep("TensorComputes/Initialize", "add_tensor_ic");
   addTaskDependency("add_tensor_ic", "add_tensor_buffer");
 
   // TensorComputes/Solve Action
-  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Solve/*", "add_tensor_compute");
-  syntax.registerSyntaxType("TensorComputes/Solve/*", "TensorComputeName");
-  registerMooseObjectTask("add_tensor_compute", TensorOperator, false);
+  registerDeep("TensorComputes/Solve", "add_tensor_compute");
   addTaskDependency("add_tensor_compute", "add_tensor_ic");
 
-  // TensorComputes/OnDemand Action
-  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/OnDemand/*", "add_tensor_on_demand");
-  syntax.registerSyntaxType("TensorComputes/OnDemand/*", "TensorComputeName");
-  registerMooseObjectTask("add_tensor_on_demand", TensorOperator, false);
-  addTaskDependency("add_tensor_on_demand", "add_tensor_buffer");
-
   // TensorComputes/Postprocess Action
-  registerSyntaxTask(
-      "AddTensorObjectAction", "TensorComputes/Postprocess/*", "add_tensor_postprocessor");
-  syntax.registerSyntaxType("TensorComputes/Postprocess/*", "TensorComputeName");
-  registerMooseObjectTask("add_tensor_postprocessor", TensorOperator, false);
+  registerDeep("TensorComputes/Postprocess", "add_tensor_postprocessor");
   addTaskDependency("add_tensor_postprocessor", "add_tensor_compute");
 
   registerSyntaxTask("EmptyAction", "TensorComputes", "no_action"); // placeholder
 
-  // TensorTimeIntegrator Action
-  registerSyntaxTask(
-      "AddTensorObjectAction", "TensorTimeIntegrators/*", "add_tensor_time_integrator");
-  syntax.registerSyntaxType("TensorTimeIntegrators/*", "TensorTimeIntegratorName");
-  registerMooseObjectTask("add_tensor_time_integrator", TensorTimeIntegrator, false);
-  addTaskDependency("add_tensor_time_integrator", "add_tensor_postprocessor");
-
   // TensorOutputs Action
-  registerSyntaxTask("AddTensorObjectAction", "TensorOutputs/*", "add_tensor_output");
+  registerSyntaxTask("AddTensorOutputAction", "TensorOutputs/*", "add_tensor_output");
   syntax.registerSyntaxType("TensorOutputs/*", "TensorOutputName");
   registerMooseObjectTask("add_tensor_output", TensorOutput, false);
   addTaskDependency("add_tensor_output", "add_tensor_postprocessor");

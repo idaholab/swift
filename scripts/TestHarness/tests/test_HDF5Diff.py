@@ -24,7 +24,7 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
 
     def testValueMismatch(self):
         """
-        Test for error due to shape mismatch in HDF5Diff
+        Test for error due to value mismatch in HDF5Diff
         """
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             self.runTests('-i', 'hdf5diffs', '--re', 'value_mismatch')
@@ -35,7 +35,7 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
 
     def testDataSetMismatch(self):
         """
-        Test for error due to shape mismatch in HDF5Diff
+        Test for error due to dataset mismatch in HDF5Diff
         """
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             self.runTests('-i', 'hdf5diffs', '--re', 'dataset_mismatch')
