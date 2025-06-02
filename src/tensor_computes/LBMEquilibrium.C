@@ -32,6 +32,10 @@ LBMEquilibrium::computeBuffer()
 { 
   // prepping
   const unsigned int & dim = _mesh.getDim();
+
+  if (_rho.dim() < 3)
+    _rho.unsqueeze_(2);
+
   torch::Tensor rho_unsqueezed = _rho.unsqueeze(3);
   torch::Tensor ux = _velocity.select(3, 0).unsqueeze(3);
   torch::Tensor uy = _velocity.select(3, 1).unsqueeze(3);
