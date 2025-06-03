@@ -65,24 +65,24 @@ LBMCollisionDynamicsTempl<coll_dyn>::HermiteRegularization()
   auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q});
 
   torch::Tensor fneq = f_flat - feq_flat;
-  torch::Tensor fneqtimescc = torch::zeros({nx * ny * nz, 9}, MooseTensor::floatTensorOptions());
+  torch::Tensor fneqtimescc = torch::zeros({nx * ny * nz, _stencil._q}, MooseTensor::floatTensorOptions());
   torch::Tensor e_xyz = torch::stack({_stencil._ex, _stencil._ey, _stencil._ez}, 0);
 
   for (int ic = 0; ic < _stencil._q; ic++)
   {
     auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
     torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic).flatten();
-    fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, 9}));
+    fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, _stencil._q}));
   }
 
   // Compute Hermite tensor
-  torch::Tensor H2 = torch::zeros({1, 9}, MooseTensor::floatTensorOptions());
+  torch::Tensor H2 = torch::zeros({1, _stencil._q}, MooseTensor::floatTensorOptions());
   for (int ic = 0; ic < _stencil._q; ic++)
   {
     auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
     torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic) /
                       _lb_problem._cs2 - torch::eye(3, MooseTensor::floatTensorOptions());
-    H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, 9});
+    H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, _stencil._q});
 
     // Compute regularized non-equilibrium distribution
     f_neq_hat.index_put_({Slice(), ic}, (_stencil._weights[ic] * (1.0 / (2.0 * _lb_problem._cs2)) *
@@ -127,8 +127,8 @@ LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
 
   auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q, 1, 1, 1});
 
-  auto zeros = torch::zeros({9}, MooseTensor::intTensorOptions());
-  auto ones = torch::ones({9}, MooseTensor::intTensorOptions());
+  auto zeros = torch::zeros({_stencil._q}, MooseTensor::intTensorOptions());
+  auto ones = torch::ones({_stencil._q}, MooseTensor::intTensorOptions());
 
   auto ex_2d = torch::stack({ _stencil._ex, zeros, zeros});
   auto ey_2d = torch::stack({ zeros, _stencil._ey, zeros});
@@ -139,7 +139,7 @@ LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
 
   // outer product
   // expected shape: _q, 3, 3, 3
-  auto outer_products = torch::zeros({9, 3, 3, 3}, MooseTensor::intTensorOptions());
+  auto outer_products = torch::zeros({_stencil._q, 3, 3, 3}, MooseTensor::intTensorOptions());
 
   for (int i = 0; i < _stencil._q; i++) 
   {
