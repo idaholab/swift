@@ -15,7 +15,7 @@ The primary developer of Swift is _Daniel Schwen_. In case of questions or probl
 
 ## Install
 
-- MacOS [installation instructions](INSTALL_MacOS.md)
+- MacOS [installation instructions](doc/content/installation.md)
 
 ## Why another spectral solver?
 
