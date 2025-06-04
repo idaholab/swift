@@ -109,7 +109,7 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   addTaskDependency("add_tensor_ic", "add_tensor_buffer");
 
   // TensorComputes/Boundary Actions
-  registerSyntaxTask("AddTensorObjectAction", "TensorComputes/Boundary/*", "add_tensor_bc");
+  registerSyntaxTask("AddLBMBCAction", "TensorComputes/Boundary/*", "add_tensor_bc");
   syntax.registerSyntaxType("TensorComputes/Boundary/*", "TensorComputeName");
   registerMooseObjectTask("add_tensor_bc", TensorOperator, false);
   addTaskDependency("add_tensor_bc", "add_tensor_buffer");
