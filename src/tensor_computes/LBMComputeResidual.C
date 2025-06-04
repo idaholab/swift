@@ -40,7 +40,7 @@ LBMComputeResidual::computeBuffer()
   {
     Real sumUsqareMinusUsqareOld = torch::sum(torch::abs(_speed - _speed_old[0])).item<Real>();
     Real sumUsquare = torch::sum(_speed).item<Real>();
-    Real residual = (sumUsquare == 0) ? 1.0 : sumUsqareMinusUsqareOld / sumUsquare;
+    Real residual = (sumUsquare == 0 || sumUsqareMinusUsqareOld == 0) ? 1.0 : sumUsqareMinusUsqareOld / sumUsquare;
     _lb_problem.setSolverResidual(residual);
   }
 }
