@@ -138,7 +138,7 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
     executeTensorOutputs(EXEC_INITIAL);
   }
   
-  if (exec_type == EXEC_TIMESTEP_BEGIN)
+  if (exec_type == EXEC_TIMESTEP_BEGIN && timeStep() > 1)
   {
     if (dt() != dtOld())
       for (auto & pair : _tensor_buffer)
