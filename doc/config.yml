@@ -13,6 +13,16 @@ Renderer:
 Extensions:
     MooseDocs.extensions.navigation:
         name: swift
+        repo: https://github.com/idaholab/swift
+        menu:
+            Getting Started:
+                Installing Swift: installation.md
+                Help Forum: https://github.com/idaholab/swift/discussions
+            Documentation:
+                Syntax Index: syntax/index.md
+                Source Index: source/index.md
+            Examples: examples.md
+            Citing: citing.md
     MooseDocs.extensions.appsyntax:
         executable: ${ROOT_DIR}
         remove: !include ${MOOSE_DIR}/framework/doc/remove.yml

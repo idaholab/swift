@@ -1,6 +1,10 @@
-# Install on MacOS
+# Installing Swift
 
-## Arm64
+## Linux and INL HPC
+
+Use the `moose-dev-openmpi-cudatorch-x86_64` [apptainer](https://mooseframework.inl.gov/help/inl/apptainer.html).
+
+## macOS Arm64
 
 **Conda:** create a separate conda environment for PyTorch (and do not activate it)
 
