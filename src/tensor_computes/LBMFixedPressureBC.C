@@ -24,7 +24,7 @@ LBMFixedPressureBCTempl<dimension>::validParams()
   params.addClassDescription("LBMFixedPressureBC object");
   params.addRequiredParam<TensorInputBufferName>(
       "f", "Input buffer distribution function");
-  params.addRequiredParam<double>("density", "Fixed input density");
+  params.addRequiredParam<double>("value", "Fixed input value");
   return params;
 }
 
@@ -33,7 +33,7 @@ LBMFixedPressureBCTempl<dimension>::LBMFixedPressureBCTempl(const InputParameter
     : LBMBoundaryCondition(parameters),
     _f(getInputBuffer("f")),
     _grid_size(_lb_problem.getGridSize()),
-    _density(getParam<double>("density"))
+    _value(getParam<Real>("value"))
 {
 }
 
@@ -74,11 +74,11 @@ LBMFixedPressureBCTempl<2>::leftBoundary()
                         _f.index({0, Slice(), Slice(), 4}) + 
                         2 * (_f.index({0, Slice(), Slice(), 3}) + 
                         _f.index({0, Slice(), Slice(), 6}) + 
-                        _f.index({0, Slice(), Slice(), 7}))) / _density;
+                        _f.index({0, Slice(), Slice(), 7}))) / _value;
   
   // axis aligned direction
   const auto & opposite_dir = _stencil._op[_stencil._left[0]];
-  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]}, _f.index({0, Slice(), Slice(), opposite_dir}) + 2.0/3.0 * _density * velocity);
+  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]}, _f.index({0, Slice(), Slice(), opposite_dir}) + 2.0/3.0 * _value * velocity);
 
   // other directions
   for (unsigned int i = 1; i < _stencil._left.size(0); i++)
@@ -86,7 +86,7 @@ LBMFixedPressureBCTempl<2>::leftBoundary()
     const auto & opposite_dir = _stencil._op[_stencil._left[i]];
     _u.index_put_({0, Slice(), Slice(), _stencil._left[i]}, _f.index({0, Slice(), Slice(), opposite_dir}) - 0.5 * _stencil._ey[_stencil._left[i]] * 
                                                           (_f.index({0, Slice(), Slice(), 2}) - _f.index({0, Slice(), Slice(), 4})) + 
-                                                          1.0/6.0 * _density * velocity );
+                                                          1.0/6.0 * _value * velocity );
   }
 }
 
@@ -106,11 +106,11 @@ LBMFixedPressureBCTempl<2>::rightBoundary()
                         _f.index({_grid_size[0] - 1, Slice(), Slice(), 4}) + 
                         2 * (_f.index({_grid_size[0] - 1, Slice(), Slice(), 1}) + 
                         _f.index({_grid_size[0] - 1, Slice(), Slice(), 5}) + 
-                        _f.index({_grid_size[0] - 1, Slice(), Slice(), 8}))) / _density - 1.0;
+                        _f.index({_grid_size[0] - 1, Slice(), Slice(), 8}))) / _value - 1.0;
   
   // axis aligned direction
   const auto & opposite_dir = _stencil._op[_stencil._left[0]];
-  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir}, _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) - 2.0/3.0 * _density * velocity);
+  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir}, _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) - 2.0/3.0 * _value * velocity);
 
   // other directions
   for (unsigned int i = 1; i < _stencil._left.size(0); i++)
@@ -118,7 +118,7 @@ LBMFixedPressureBCTempl<2>::rightBoundary()
     const auto & opposite_dir = _stencil._op[_stencil._left[i]];
     _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir}, _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) + 0.5 * _stencil._ey[opposite_dir] * 
                                                           (_f.index({_grid_size[0] - 1, Slice(), Slice(), 4}) - _f.index({_grid_size[0] - 1, Slice(), Slice(), 2})) - 
-                                                          1.0/6.0 * _density * velocity );
+                                                          1.0/6.0 * _value * velocity );
   }
 }
 
@@ -138,11 +138,11 @@ LBMFixedPressureBCTempl<2>::frontBoundary()
                         _f.index({Slice(), 0, Slice(), 3}) + 
                         2 * (_f.index({Slice(), 0, Slice(), 4}) + 
                         _f.index({Slice(), 0, Slice(), 7}) + 
-                        _f.index({Slice(), 0, Slice(), 8}))) / _density;
+                        _f.index({Slice(), 0, Slice(), 8}))) / _value;
   
   // axis aligned direction
   const auto & opposite_dir = _stencil._op[_stencil._front[0]];
-  _u.index_put_({Slice(), 0, Slice(), _stencil._front[0]}, _f.index({Slice(), 0, Slice(), opposite_dir}) + 2.0/3.0 * _density * velocity);
+  _u.index_put_({Slice(), 0, Slice(), _stencil._front[0]}, _f.index({Slice(), 0, Slice(), opposite_dir}) + 2.0/3.0 * _value * velocity);
 
   // other directions
   for (unsigned int i = 1; i < _stencil._front.size(0); i++)
@@ -150,7 +150,7 @@ LBMFixedPressureBCTempl<2>::frontBoundary()
     const auto & opposite_dir = _stencil._op[_stencil._front[i]];
     _u.index_put_({Slice(), 0, Slice(), _stencil._front[i]}, _f.index({Slice(), 0, Slice(), opposite_dir}) - 0.5 * _stencil._ex[_stencil._front[i]] * 
                                                           (_f.index({Slice(), 0, Slice(), 1}) - _f.index({Slice(), 0, Slice(), 3})) + 
-                                                          1.0/6.0 * _density * velocity );
+                                                          1.0/6.0 * _value * velocity );
   }
 }
 
@@ -170,11 +170,11 @@ LBMFixedPressureBCTempl<2>::backBoundary()
                         _f.index({Slice(), _grid_size[1] - 1, Slice(), 3}) + 
                         2 * (_f.index({Slice(), _grid_size[1] - 1, Slice(), 2}) + 
                         _f.index({Slice(), _grid_size[1] - 1, Slice(), 5}) + 
-                        _f.index({Slice(), _grid_size[1] - 1, Slice(), 6}))) / _density - 1.0;
+                        _f.index({Slice(), _grid_size[1] - 1, Slice(), 6}))) / _value - 1.0;
   
   // axis aligned direction
   const auto & opposite_dir = _stencil._op[_stencil._front[0]];
-  _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir}, _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[0]}) - 2.0/3.0 * _density * velocity);
+  _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir}, _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[0]}) - 2.0/3.0 * _value * velocity);
 
   // other directions
   for (unsigned int i = 1; i < _stencil._front.size(0); i++)
@@ -182,7 +182,7 @@ LBMFixedPressureBCTempl<2>::backBoundary()
     const auto & opposite_dir = _stencil._op[_stencil._front[i]];
     _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir}, _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[i]}) + 0.5 * _stencil._ey[opposite_dir] * 
                                                           (_f.index({Slice(), _grid_size[1] - 1, Slice(), 4}) - _f.index({Slice(), _grid_size[1] - 1, Slice(), 2})) - 
-                                                          1.0/6.0 * _density * velocity );
+                                                          1.0/6.0 * _value * velocity );
   }
 }
 

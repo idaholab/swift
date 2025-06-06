@@ -37,7 +37,7 @@ LBMStream::computeBuffer()
   {
     // do not overwrite previous
     _u = _u.clone();
-    for (int i = 1; i < _stencil._q; i++)
+    for (int i = 0; i < _stencil._q; i++)
     {
       _u.index_put_({Slice(), Slice(), Slice(),i},
                   torch::roll(_f_old[0].index({Slice(), Slice(), Slice(), i}),
