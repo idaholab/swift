@@ -94,6 +94,10 @@ public:
                                const std::string & name,
                                InputParameters & parameters);
 
+  /// check if a tensor buffer with the given type exists
+  template <typename T>
+  bool hasBuffer(const std::string & buffer_name);
+
   /// returns the current state of the tensor
   template <typename T = torch::Tensor>
   T & getBuffer(const std::string & buffer_name);
@@ -239,6 +243,14 @@ TensorProblem::getSolver() const
         "No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
   }
   mooseError("No TensorSolver has been set up.");
+}
+
+template <typename T>
+bool
+TensorProblem::hasBuffer(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+  return (it != _tensor_buffer.end() && !dynamic_cast<TensorBuffer<T> *>(it->second.get()));
 }
 
 template <typename T>
