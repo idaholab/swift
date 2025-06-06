@@ -35,5 +35,5 @@ LBMTensorBuffer::init()
     shape.push_back(1);
   if (_dimension > 0)
     shape.push_back(static_cast<int64_t>(_dimension));
-  _u = torch::zeros(shape);
+  _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
 }

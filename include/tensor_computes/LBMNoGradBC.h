@@ -1,3 +1,4 @@
+
 /**********************************************************************/
 /*                    DO NOT MODIFY THIS HEADER                       */
 /*             Swift, a Fourier spectral solver for MOOSE             */
@@ -11,30 +12,25 @@
 #include "LBMBoundaryCondition.h"
 
 /**
- * LBMFixedPressureBC object
+ * LBMBounceBack object
  */
-template <int dimension>
-class LBMFixedPressureBCTempl : public LBMBoundaryCondition
+class LBMNoGradBC : public LBMBoundaryCondition
 {
 public:
   static InputParameters validParams();
 
-  LBMFixedPressureBCTempl(const InputParameters & parameters);
+  LBMNoGradBC(const InputParameters & parameters);
 
-  void topBoundary() override;
-  void bottomBoundary() override;
-  void leftBoundary() override;
+  void topBoundary() override{};
+  void bottomBoundary() override{};
+  void leftBoundary() override{};
   void rightBoundary() override;
-  void frontBoundary() override;
-  void backBoundary() override;
+  void frontBoundary() override{};
+  void backBoundary() override{};
+  void wallBoundary() override{};
   void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _f;
+  const std::vector<torch::Tensor> &  _f_old;
   const std::array<int64_t, 3> _grid_size;
-  const Real _value;
 };
-
-
-typedef LBMFixedPressureBCTempl<2> LBMFixedPressureBC2D;
-typedef LBMFixedPressureBCTempl<3> LBMFixedPressureBC3D;
