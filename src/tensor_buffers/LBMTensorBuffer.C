@@ -37,3 +37,18 @@ LBMTensorBuffer::init()
     shape.push_back(static_cast<int64_t>(_dimension));
   _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
 }
+
+void
+LBMTensorBuffer::makeCPUCopy()
+{
+  if (!_u.defined())
+    return;
+
+  if (_cpu_copy_requested)
+  {
+    if (_u.is_cpu())
+      _u_cpu = _u.clone().contiguous();
+    else
+      _u_cpu = _u.cpu().contiguous();
+  }
+}

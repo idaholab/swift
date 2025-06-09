@@ -14,13 +14,13 @@ registerMooseAction("SwiftApp", AddLBMStencilAction, "add_stencil");
 InputParameters
 AddLBMStencilAction::validParams()
 {
-  InputParameters params = AddTensorObjectAction::validParams();
+  InputParameters params = MooseObjectAction::validParams();
   params.addClassDescription("Add LBM stencil object to the simulation.");
   return params;
 }
 
 AddLBMStencilAction::AddLBMStencilAction(const InputParameters & parameters)
-  : AddTensorObjectAction(parameters)
+  : MooseObjectAction(parameters)
 {
 }
 
