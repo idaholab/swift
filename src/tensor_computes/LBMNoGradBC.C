@@ -20,14 +20,11 @@ LBMNoGradBC::validParams()
 {
   InputParameters params = LBMBoundaryCondition::validParams();
   params.addClassDescription("LBMNoGradBC object");
-  params.addRequiredParam<TensorInputBufferName>(
-      "f_old", "Old state distribution function");
   return params;
 }
 
 LBMNoGradBC::LBMNoGradBC(const InputParameters & parameters)
     : LBMBoundaryCondition(parameters),
-    _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1)),
     _grid_size(_lb_problem.getGridSize())
 {
 }
@@ -35,15 +32,12 @@ LBMNoGradBC::LBMNoGradBC(const InputParameters & parameters)
 void
 LBMNoGradBC::rightBoundary()
 {
-    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), Slice()}, _f_old[0].index({_grid_size[0] - 2, Slice(), Slice(), Slice()}));
+    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), Slice()}, _u.index({_grid_size[0] - 2, Slice(), Slice(), Slice()}));
 }
 
 void
 LBMNoGradBC::computeBuffer()
 {
-  const auto n_old = _f_old.size();
-  if (n_old != 0)
-  {
     // do not overwrite previous
     _u = _u.clone();
 
@@ -73,6 +67,6 @@ LBMNoGradBC::computeBuffer()
     default:
       mooseError("Undefined boundary names");
     }
-  }
+
   _lb_problem.maskedFillSolids(_u, 0);
 }

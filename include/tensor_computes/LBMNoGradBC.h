@@ -31,6 +31,5 @@ public:
   void computeBuffer() override;
 
 protected:
-  const std::vector<torch::Tensor> &  _f_old;
   const std::array<int64_t, 3> _grid_size;
 };
