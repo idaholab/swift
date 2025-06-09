@@ -73,10 +73,6 @@ LatticeBoltzmannProblem::init()
   if (_solver)
     _solver->updateDependencies();
 
-  // update dependencies for on demand objects
-  for (auto & od : _on_demand)
-    od->updateDependencies();
-
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
@@ -152,9 +148,8 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
       // create old state buffers
       advanceState();
 
-      // run timeintegrators
-      for (auto & ti : _time_integrators)
-        ti->computeBuffer();
+      // run solver for streaming
+      _solver->computeBuffer();
 
       // run bcs
       for (auto & bc : _bcs)

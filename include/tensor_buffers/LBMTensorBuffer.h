@@ -20,7 +20,8 @@ public:
 
     LBMTensorBuffer(const InputParameters & parameters);
 
-    void init();
+    void init() override;
+    virtual void makeCPUCopy() override;
 
 protected:
     Real _dimension;

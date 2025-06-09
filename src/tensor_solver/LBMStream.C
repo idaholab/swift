@@ -8,6 +8,7 @@
 
 #include "LBMStream.h"
 #include "LatticeBoltzmannProblem.h"
+#include "LatticeBoltzmannStencilBase.h"
 
 using namespace torch::indexing;
 
@@ -16,15 +17,20 @@ registerMooseObject("SwiftApp", LBMStream);
 InputParameters
 LBMStream::validParams()
 {
-  InputParameters params = LatticeBoltzmannTimeIntegrator::validParams();
+  InputParameters params = TensorSolver::validParams();
   params.addClassDescription("LBM Streaming operation.");
+  params.addRequiredParam<TensorOutputBufferName>("buffer",
+                                                  "The buffer this compute is writing to");
   params.addRequiredParam<TensorInputBufferName>(
       "f_old", "Old time step distribution");
   return params;
 }
 
 LBMStream::LBMStream(const InputParameters & parameters)
-  : LatticeBoltzmannTimeIntegrator(parameters),
+  : TensorSolver(parameters),
+  _lb_problem(dynamic_cast<LatticeBoltzmannProblem&>(_tensor_problem)),
+  _stencil(_lb_problem.getStencil()),
+  _u(getOutputBuffer<torch::Tensor>("buffer")),
   _f_old(getBufferOld("f_old", 1))
 {
 }

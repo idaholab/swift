@@ -9,13 +9,12 @@
 #pragma once
 
 #include "MooseObjectAction.h"
-#include "AddTensorObjectAction.h"
 
 /**
  * This class adds LBM stencil object.
  */
 
-class AddLBMStencilAction : public AddTensorObjectAction
+class AddLBMStencilAction : public MooseObjectAction
 {
 public:
   static InputParameters validParams();

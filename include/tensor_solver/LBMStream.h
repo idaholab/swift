@@ -8,22 +8,27 @@
 
 #pragma once
 
-#include "TensorTimeIntegrator.h"
+#include "TensorSolver.h"
 
 class LatticeBoltzmannProblem;
 class LatticeBoltzmannStencilBase;
 
 /**
- * TimeIntegrator object for LB computes to handle streaming operation
+ * LBM Stream object
  */
-class LatticeBoltzmannTimeIntegrator : public TensorTimeIntegrator<>
+class LBMStream : public TensorSolver
 {
 public:
   static InputParameters validParams();
 
-  LatticeBoltzmannTimeIntegrator(const InputParameters & parameters);
+  LBMStream(const InputParameters & parameters);
+
+  virtual void computeBuffer() override;
 
 protected:
   LatticeBoltzmannProblem& _lb_problem;
   const LatticeBoltzmannStencilBase & _stencil;
+  
+  torch::Tensor & _u;
+  const std::vector<torch::Tensor> &  _f_old;
 };
