@@ -115,7 +115,7 @@
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = c
   substeps = 1000
   history_size = 1

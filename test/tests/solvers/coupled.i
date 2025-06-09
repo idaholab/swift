@@ -11,7 +11,6 @@
   xmax = '${fparse pi*2}'
   ymax = '${fparse pi*2}'
   mesh_mode = DUMMY
-  device_names = cpu
 []
 
 [GlobalParams]
@@ -87,7 +86,7 @@
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   buffer = 'u v'
   reciprocal_buffer = 'u_bar v_bar'
   linear_reciprocal = 'Du Dv'

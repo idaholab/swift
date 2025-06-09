@@ -23,7 +23,6 @@ public:
 
   virtual std::size_t advanceState() override;
   virtual void clearStates() override;
-  virtual void makeCPUCopy() override;
 
   T & getTensor();
   const std::vector<T> & getOldTensor(std::size_t states_requested);
@@ -87,25 +86,6 @@ TensorBuffer<T>::clearStates()
 }
 
 template <typename T>
-void
-TensorBuffer<T>::makeCPUCopy()
-{
-  if (_cpu_copy_requested)
-  {
-    try
-    {
-      if (_u.is_cpu())
-        _u_cpu = _u.clone().contiguous();
-      else
-        _u_cpu = _u.cpu().contiguous();
-    }
-    catch (...)
-    {
-    }
-  }
-}
-
-template <typename T>
 const torch::Tensor &
 TensorBuffer<T>::getRawTensor() const
 {
@@ -141,10 +121,7 @@ TensorBuffer<T>::getOldTensor(std::size_t states_requested)
  * listed under [TensorBuffers]).
  */
 template <typename T>
-struct TensorBufferSpecialization
-{
-  using type = TensorBuffer<T>;
-};
+struct TensorBufferSpecialization;
 
 #define registerTensorType(derived_class, tensor_type)                                             \
   template <>                                                                                      \

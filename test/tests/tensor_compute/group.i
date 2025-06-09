@@ -6,9 +6,6 @@
   xmax = ${fparse pi*4}
   ymax = ${fparse pi*4}
   zmax = ${fparse pi*4}
-
-  device_names = 'cuda:3'
-
   mesh_mode = DUMMY
 []
 
@@ -154,14 +151,12 @@
   []
 []
 
-[TensorTimeIntegrators]
-  [c]
-    type = FFTSemiImplicit
-    buffer = c
-    reciprocal_buffer = cbar
-    linear_reciprocal = kappabarbar
-    nonlinear_reciprocal = Mbarmubar
-  []
+[TensorSolver]
+  type = AdamsBashforthMoulton
+  buffer = c
+  reciprocal_buffer = cbar
+  linear_reciprocal = kappabarbar
+  nonlinear_reciprocal = Mbarmubar
 []
 
 [Postprocessors]

@@ -6,6 +6,7 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
+#include "MooseError.h"
 #include "TensorProblem.h"
 #include "TensorSolver.h"
 #include "UniformTensorMesh.h"
@@ -85,10 +86,6 @@ TensorProblem::init()
   if (_solver)
     _solver->updateDependencies();
 
-  // update dependencies for on demand objects
-  for (auto & od : _on_demand)
-    od->updateDependencies();
-
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
 
@@ -148,38 +145,12 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     // update time
     _sub_time = FEProblem::timeOld();
 
-    // legacy time integrator system
-    if (!_solver)
-    {
-      // if the time step changed and the current time integrator does not support variable time
-      // step size, we clear the histories
-      if (dt() != dtOld())
-        for (auto & pair : _tensor_buffer)
-          pair.second->clearStates();
-
-      // update substepping dt
-      _sub_dt = FEProblem::dt() / _substeps;
-
-      for (unsigned substep = 0; substep < _substeps; ++substep)
-      {
-        // run computes on begin
-        for (auto & cmp : _computes)
-          cmp->computeBuffer();
-
-        // run timeintegrators
-        for (auto & ti : _time_integrators)
-          ti->computeBuffer();
-
-        // advance step (this will not work with solve failures!)
-        if (substep < _substeps - 1)
-          advanceState();
-
-        _sub_time += _sub_dt;
-      }
-    }
-    else
-      // new time integrator
+    // run solver
+    if (_solver)
       _solver->computeBuffer();
+    else
+      for (auto & cmp : _computes)
+        cmp->computeBuffer();
 
     // run postprocessing before output
     for (auto & pp : _pps)
@@ -329,7 +300,11 @@ TensorProblem::mapBuffersToAux()
     const long int n2 = is_nodal ? _n[2] + 1 : _n[2];
 
     // TODO: better design that works for NEML2 tensors as well
-    const auto buffer = getBuffer<torch::Tensor>(buffer_name);
+    const auto buffer = getRawCPUBuffer(buffer_name);
+    if (buffer.sizes().size() != _dim)
+      mooseError("Buffer '",
+                 buffer_name,
+                 "' is not a scalar tensor field and is not yet supported for AuxVariable mapping");
     std::size_t idx = 0;
     switch (_dim)
     {
@@ -536,14 +511,6 @@ TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
 }
 
 void
-TensorProblem::addTensorComputeOnDemand(const std::string & compute_type,
-                                        const std::string & compute_name,
-                                        InputParameters & parameters)
-{
-  addTensorCompute(compute_type, compute_name, parameters, _on_demand);
-}
-
-void
 TensorProblem::addTensorCompute(const std::string & compute_type,
                                 const std::string & compute_name,
                                 InputParameters & parameters,
@@ -561,34 +528,6 @@ TensorProblem::addTensorCompute(const std::string & compute_type,
 }
 
 void
-TensorProblem::addTensorTimeIntegrator(const std::string & time_integrator_type,
-                                       const std::string & time_integrator_name,
-                                       InputParameters & parameters)
-{
-  // Add a pointer to the TensorProblem and the Domain
-  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
-  parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
-
-  // check that we have no other TI that advances the same buffer
-  const auto & output_buffer = parameters.get<TensorOutputBufferName>("buffer");
-  for (const auto & ti : _time_integrators)
-    if (ti->parameters().get<TensorOutputBufferName>("buffer") == output_buffer)
-      mooseError("Buffer '",
-                 output_buffer,
-                 "' is already advanced by time integrator '",
-                 ti->name(),
-                 "'. Cannot add '",
-                 time_integrator_name,
-                 "'.");
-
-  // Create the object
-  auto time_integrator_object = _factory.create<TensorTimeIntegrator<>>(
-      time_integrator_type, time_integrator_name, parameters, 0);
-  logAdd("TensorTimeIntegrator", time_integrator_name, time_integrator_type, parameters);
-  _time_integrators.push_back(time_integrator_object);
-}
-
-void
 TensorProblem::addTensorOutput(const std::string & output_type,
                                const std::string & output_name,
                                InputParameters & parameters)
@@ -603,16 +542,6 @@ TensorProblem::addTensorOutput(const std::string & output_type,
   _outputs.push_back(output_object);
 }
 
-TensorOperatorBase &
-TensorProblem::getOnDemandCompute(const std::string & name)
-{
-  for (auto & od : _on_demand)
-    if (od->name() == name)
-      return *od;
-
-  mooseError("OnDemand compute '", name, "' not found.");
-}
-
 void
 TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
                          const MooseTensor::Key<CreateTensorSolverAction> &)
@@ -621,11 +550,6 @@ TensorProblem::setSolver(std::shared_ptr<TensorSolver> solver,
     mooseError("A solver has already been set up.");
 
   _solver = solver;
-
-  // check that no legacy time integrators have been set
-  if (!_time_integrators.empty())
-    mooseError(
-        "Do not supply any legacy TensorTimeIntegrators if a TensorSolver is given in the input.");
 }
 
 TensorBufferBase &

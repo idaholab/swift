@@ -11,7 +11,6 @@
   xmax = 3
   ymax = 3
   mesh_mode = DOMAIN
-  device_names = cpu
 []
 
 # In this input we fully trely on implicit TensorBuffer declaration
@@ -45,42 +44,38 @@
   []
 
   [Solve]
-    [mu]
-      type = ParsedCompute
-      buffer = mu
-      enable_jit = true
-      expression = '0.1*c^2*(c-1)^2'
-      derivatives = c
-      inputs = c
-    []
-    [mubar]
-      type = ForwardFFT
-      buffer = mubar
-      input = mu
-    []
-    [Mbarmubar]
-      type = ParsedCompute
-      buffer = Mbarmubar
-      enable_jit = true
-      expression = 'Mbar*mubar'
-      inputs = 'Mbar mubar'
-    []
-    [cbar]
-      type = ForwardFFT
-      buffer = cbar
-      input = c
-    []
-
-    # root compute
     [cahn_hilliard]
-      type = ComputeGroup
-      computes = 'mu mubar Mbarmubar cbar'
+      [mu]
+        type = ParsedCompute
+        buffer = mu
+        enable_jit = true
+        expression = '0.1*c^2*(c-1)^2'
+        derivatives = c
+        inputs = c
+      []
+      [mubar]
+        type = ForwardFFT
+        buffer = mubar
+        input = mu
+      []
+      [Mbarmubar]
+        type = ParsedCompute
+        buffer = Mbarmubar
+        enable_jit = true
+        expression = 'Mbar*mubar'
+        inputs = 'Mbar mubar'
+      []
+      [cbar]
+        type = ForwardFFT
+        buffer = cbar
+        input = c
+      []
     []
   []
 []
 
 [TensorSolver]
-  type = SemiImplicitSolver
+  type = AdamsBashforthMoulton
   root_compute = cahn_hilliard
   buffer = c
   reciprocal_buffer = cbar

@@ -248,10 +248,10 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
         s[sp] = 1.0 / s[sp];
         break;
       case cDeg:
-        s[sp] *= 180.0 / libMesh::pi;
+        s[sp] = s[sp] * (180.0 / libMesh::pi);
         break;
       case cRad:
-        s[sp] /= 180.0 / libMesh::pi;
+        s[sp] = s[sp] / (180.0 / libMesh::pi);
         break;
 
       case cFetch:
@@ -306,7 +306,7 @@ ParsedTensor::Eval(const std::vector<const torch::Tensor *> & params)
 #endif
 
       case cSqr:
-        s[sp] *= s[sp];
+        s[sp] = s[sp] * s[sp];
         break;
       case cSqrt:
         s[sp] = torch::sqrt(s[sp]);
