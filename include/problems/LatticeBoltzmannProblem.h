@@ -26,7 +26,7 @@ public:
   void addTensorBoundaryCondition(const std::string & compute_name,
                                   const std::string & name,
                                   InputParameters & parameters);
-  
+
   // setup stuff
   void init() override;
 
@@ -37,27 +37,28 @@ public:
                   const std::string & name,
                   InputParameters & parameters);
 
-  const LatticeBoltzmannStencilBase & getStencil() const {return *_stencil; }
+  const LatticeBoltzmannStencilBase & getStencil() const { return *_stencil; }
 
-  const bool & isSlipEnabled() const {return _enable_slip; }
+  const bool & isSlipEnabled() const { return _enable_slip; }
 
-  const torch::Tensor & getSlipRelaxationMatrix() const {return _slip_relaxation_matrix;}
+  const torch::Tensor & getSlipRelaxationMatrix() const { return _slip_relaxation_matrix; }
 
-  const int & getTotalSteps() const {return _t_total;}
-  
-  const std::array<int64_t, 3> & getGridSize() const {return _n;}
+  const int & getTotalSteps() const { return _t_total; }
+
+  const std::array<int64_t, 3> & getGridSize() const { return _n; }
 
   /// sets up slip model
   void enableSlipModel();
 
   /// sets convergence residual
-  void setSolverResidual(const Real & residual) {_convergence_residual = residual;};
+  void setSolverResidual(const Real & residual) { _convergence_residual = residual; };
 
   /// sets tensor to a value (normally zeros) at solid nodes
   void maskedFillSolids(torch::Tensor & t, const Real & value);
 
   /// prints the tensor buffer, good for debugging
-  void printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
+  void
+  printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
 
 protected:
   /// LBM Mesh object
@@ -68,7 +69,7 @@ protected:
 
   /// bc objects
   TensorComputeList _bcs;
-  
+
   /// enables slip models
   bool _enable_slip;
 

@@ -30,14 +30,13 @@ LatticeBoltzmannProblem::validParams()
   // params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
   params.addParam<unsigned int>("substeps", 1, "Number of LBM iterations for every MOOSE timestep");
   params.addParam<Real>("tolerance", 0.0, "LBM convergence tolerance");
-  params.addClassDescription(
-      "Problem object to enable solving lattice Boltzmann problems");
+  params.addClassDescription("Problem object to enable solving lattice Boltzmann problems");
 
   return params;
 }
 
 LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & parameters)
-    : TensorProblem(parameters),
+  : TensorProblem(parameters),
     _lbm_mesh(dynamic_cast<LatticeBoltzmannMesh *>(&_mesh)),
     _enable_slip(getParam<bool>("enable_slip")),
     /*_mfp(getParam<Real>("mfp")),
@@ -45,16 +44,20 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     _lbm_substeps(getParam<unsigned int>("substeps")),
     _tolerance(getParam<Real>("tolerance"))
 {
-   // set up unit conversion
-    Real Cl = _scalar_constants.at("dx");
-    Real nu_lu = 1.0 / 3.0 * (_scalar_constants.at("tau") - 0.5);
-    Real Ct = nu_lu / _scalar_constants.at("nu") * Cl * Cl;
-    Real Cm = _scalar_constants.at("rho") * Cl * Cl * Cl;
-    Real Cu = Ct / Cl;
-    
-    _scalar_constants.insert(std::pair<std::string, Real>("Ct", Ct));
-    _scalar_constants.insert(std::pair<std::string, Real>("Cm", Cm));
-    _scalar_constants.insert(std::pair<std::string, Real>("Cu", Cu));
+  // compute unit conversion constants (must happen before compute object init)
+  Real Cl = _scalar_constants.at("dx");
+  Real nu_lu = 1.0 / 3.0 * (_scalar_constants.at("tau") - 0.5);
+  Real Ct = Cl * Cl * nu_lu / _scalar_constants.at("nu");
+  Real Cm = _scalar_constants.at("rho") * Cl * Cl * Cl;
+  Real Cu = Cl / Ct;
+  Real Crho = _scalar_constants.at("rho");
+  _scalar_constants.insert(std::pair<std::string, Real>("C_t", Ct));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_m", Cm));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_Ux", Cu));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_Uy", Cu));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_Uz", Cu));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_U", Cu));
+  _scalar_constants.insert(std::pair<std::string, Real>("C_rho", Crho));
 }
 
 void
@@ -74,6 +77,10 @@ LatticeBoltzmannProblem::init()
 
   // compute grid dependent quantities
   gridChanged();
+
+  // init computes (must happen before dependency update)
+  for (auto & initializer : _ics)
+    initializer->init();
 
   // init computes (must happen before dependency update)
   for (auto & cmp : _computes)
@@ -142,7 +149,7 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
     executeTensorInitialConditions();
     executeTensorOutputs(EXEC_INITIAL);
   }
-  
+
   if (exec_type == EXEC_TIMESTEP_BEGIN && timeStep() > 1)
   {
     if (dt() != dtOld())
@@ -167,15 +174,16 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
       // run computes
       for (auto & cmp : _computes)
         cmp->computeBuffer();
-      _console << COLOR_WHITE << "Lattice Boltzmann Substep "<< substep<<", Residual "<<_convergence_residual << COLOR_DEFAULT << std::endl;
+      _console << COLOR_WHITE << "Lattice Boltzmann Substep " << substep << ", Residual "
+               << _convergence_residual << COLOR_DEFAULT << std::endl;
 
-      _t_total ++;
+      _t_total++;
     }
 
     // run postprocessing before output
     for (auto & pp : _pps)
       pp->computeBuffer();
-    
+
     // run outputs
     executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
 
@@ -186,23 +194,22 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 
 void
 LatticeBoltzmannProblem::addTensorBoundaryCondition(const std::string & compute_type,
-                                      const std::string & name,
-                                      InputParameters & parameters)
+                                                    const std::string & name,
+                                                    InputParameters & parameters)
 {
   addTensorCompute(compute_type, name, parameters, _bcs);
 }
 
 void
-LatticeBoltzmannProblem::addStencil(
-                            const std::string & stencil_name,
-                             const std::string & name,
-                             InputParameters & parameters)
+LatticeBoltzmannProblem::addStencil(const std::string & stencil_name,
+                                    const std::string & name,
+                                    InputParameters & parameters)
 {
   if (_stencil_counter > 0)
     mooseError("Problem object LatticeBoltzmannProblem can only have one stencil");
   // Create the object
   _stencil = _factory.create<LatticeBoltzmannStencilBase>(stencil_name, name, parameters, 0);
-  _stencil_counter ++;
+  _stencil_counter++;
   logAdd("LatticeBoltzmannStencilBase", name, stencil_name, parameters);
 }
 
@@ -235,11 +242,12 @@ LatticeBoltzmannProblem::enableSlipModel()
   //         Real pore_size_scalar = pore_size[i][j][k].item<Real>();
   //         Real kn_scalar = Kn[i][j][k].item<Real>();
 
-  //         Real tau_s = 0.5 + sqrt(6.0 / M_PI) * pore_size_scalar * kn_scalar / (1 + 2 * kn_scalar);
-  //         Real tau_d = 0.5 + (3.0 / 2.0) * sqrt(3.0) * 1.0 / pow((1.0 /
+  //         Real tau_s = 0.5 + sqrt(6.0 / M_PI) * pore_size_scalar * kn_scalar / (1 + 2 *
+  //         kn_scalar); Real tau_d = 0.5 + (3.0 / 2.0) * sqrt(3.0) * 1.0 / pow((1.0 /
   //                     sqrt((_mfp / _dx * 1.0 / (1.0 + 2.0 * kn_scalar))) * 2.0), 2.0);
-  //         Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A_1) / (8.0 * (2.0 * tau_s - 1.0));
-  //         torch::Tensor  relaxation_matrix = torch::diag(torch::tensor({1.0 / 1.0, 1.0 / 1.1, 1.0 / 1.2, 1.0 / tau_d, 1.0 / tau_q,
+  //         Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A_1) /
+  //         (8.0 * (2.0 * tau_s - 1.0)); torch::Tensor  relaxation_matrix =
+  //         torch::diag(torch::tensor({1.0 / 1.0, 1.0 / 1.1, 1.0 / 1.2, 1.0 / tau_d, 1.0 / tau_q,
   //                         1.0 / tau_d, 1.0 / tau_q,  1.0 / tau_s,  1.0 / tau_s}, _options));
 
   //         _slip_relaxation_matrix.index_put_({i, j, k}, relaxation_matrix);
@@ -272,7 +280,9 @@ LatticeBoltzmannProblem::maskedFillSolids(torch::Tensor & t, const Real & value)
 }
 
 void
-LatticeBoltzmannProblem::printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index)
+LatticeBoltzmannProblem::printBuffer(const torch::Tensor & t,
+                                     const unsigned int & precision,
+                                     const unsigned int & index)
 {
   /**
    * Print the entire field for debugging
@@ -281,7 +291,7 @@ LatticeBoltzmannProblem::printBuffer(const torch::Tensor & t, const unsigned int
   // for buffers higher than 3 dimensions, such as distribution functions
   // select a direction to print or call this method repeatedly to print all directions
   // higher than 4 dimensions is not supported
-  // why would one need 5 dimensional tensor for LBM anyway?? 
+  // why would one need 5 dimensional tensor for LBM anyway??
   if (t.dim() == 4)
     field = t.select(3, index);
 
@@ -289,12 +299,13 @@ LatticeBoltzmannProblem::printBuffer(const torch::Tensor & t, const unsigned int
   if (t.dim() < 3)
     mooseError("Selected buffer is not 3 dimensional.");
 
-  for(int64_t i = 0; i <field.size(2); i++)
+  for (int64_t i = 0; i < field.size(2); i++)
   {
-    for(int64_t j = 0; j < field.size(1); j++)
+    for (int64_t j = 0; j < field.size(1); j++)
     {
-      for(int64_t k = 0; k < field.size(0); k++)
-        std::cout<<std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>() << " ";
+      for (int64_t k = 0; k < field.size(0); k++)
+        std::cout << std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>()
+                  << " ";
       std::cout << std::endl;
     }
     std::cout << std::endl;

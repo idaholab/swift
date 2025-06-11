@@ -8,21 +8,25 @@
 
 #pragma once
 
-#include "LatticeBoltzmannOperator.h"
+#include "TensorPostprocessor.h"
 
 /**
- * LBMConstantTensor object
+ * Compute Reynolds number
  */
-class LBMConstantTensor : public LatticeBoltzmannOperator
+class ComputeReynoldsNumber : public TensorPostprocessor
 {
 public:
   static InputParameters validParams();
 
-  LBMConstantTensor(const InputParameters & parameters);
+  ComputeReynoldsNumber(const InputParameters & parameters);
 
-  virtual void init() override;
-  virtual void computeBuffer() override;
+  virtual void initialize() override {}
+  virtual void execute() override;
+  virtual void finalize() override {}
+  virtual PostprocessorValue getValue() const override;
 
 protected:
-  std::vector<Real> _values;
+  const Real _kinematic_viscosity;
+  const Real _D; // diameter
+  Real _Reynolds_number;
 };

@@ -21,6 +21,8 @@ public:
 
   LBMFixedVelocityBCTempl(const InputParameters & parameters);
 
+  void init() override {};
+
   void topBoundary() override;
   void bottomBoundary() override;
   void leftBoundary() override;
@@ -32,7 +34,7 @@ public:
 protected:
   const torch::Tensor & _f;
   const std::array<int64_t, 3> _grid_size;
-  const double _velocity;
+  const Real _velocity;
 };
 
 typedef LBMFixedVelocityBCTempl<2> LBMFixedVelocityBC2D;

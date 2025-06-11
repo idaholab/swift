@@ -1,4 +1,4 @@
-  /**********************************************************************/
+/**********************************************************************/
 /*                    DO NOT MODIFY THIS HEADER                       */
 /*             Swift, a Fourier spectral solver for MOOSE             */
 /*                                                                    */
@@ -11,12 +11,12 @@
 #include "LatticeBoltzmannOperator.h"
 
 /**
-  * Template object for LBM collision dynamics
-  */
-template<int coll_dyn>
-class LBMCollisionDynamicsTempl: public LatticeBoltzmannOperator
+ * Template object for LBM collision dynamics
+ */
+template <int coll_dyn>
+class LBMCollisionDynamicsTempl : public LatticeBoltzmannOperator
 {
-public: 
+public:
   static InputParameters validParams();
 
   LBMCollisionDynamicsTempl(const InputParameters & parameters);
@@ -36,9 +36,10 @@ protected:
   const std::array<int64_t, 3> _shape;
 
   const Real _tau_0;
-  const Real _C_s; // Smagorinsky constant
-  const Real _mean_density;
+  const Real _C_s;     // Smagorinsky constant
+  const Real _delta_x; // grid resolution
   const bool _projection;
+  Real _mean_density;
 };
 
 typedef LBMCollisionDynamicsTempl<0> LBMBGKCollision;
