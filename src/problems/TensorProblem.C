@@ -33,6 +33,9 @@ TensorProblem::validParams()
       "spectral_solve_substeps",
       1,
       "How many substeps to divide the spectral solve for each MOOSE timestep into.");
+  params.addParam<std::vector<std::string>>("constant_names", "Scalar constant names");
+  params.addParam<std::vector<Real>>("constant_values", "Scalar constant values");
+
   return params;
 }
 
@@ -46,7 +49,9 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
     _grid_spacing(_domain.getGridSpacing()),
     _n((_domain.getGridSize())),
     _shape(_domain.getShape()),
-    _solver(nullptr)
+    _solver(nullptr),
+    _scalar_constant_list(getParam<std::string, Real>("constant_names", "constant_values")),
+    _scalar_constants(_scalar_constant_list.begin(), _scalar_constant_list.end())
 {
   // make sure AuxVariables are contiguous in the solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
@@ -565,4 +570,12 @@ const torch::Tensor &
 TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
 {
   return getBufferBase(buffer_name).getRawCPUTensor();
+}
+
+const Real & 
+TensorProblem::getScalarConstant(const std::string & name) const 
+{ 
+  if (_scalar_constants.find(name) == _scalar_constants.end())
+    paramError("constant_names", " and `constant_values` should contain ", name, ".");
+  return _scalar_constants.at(name); 
 }

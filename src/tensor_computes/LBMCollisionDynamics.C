@@ -22,8 +22,6 @@ LBMCollisionDynamicsTempl<coll_dyn>::validParams()
   params.addRequiredParam<TensorInputBufferName>("f", "Input buffer distribution function");
   params.addRequiredParam<TensorInputBufferName>("feq", "Input buffer equilibrium distribution function");
   
-  params.addParam<Real>("tau_0", 1.0, "Relaxation parameter");
-  params.addParam<Real>("C_s", 0.11, "Smagorinsky constant");
   params.addParam<Real>("mean_density", 1.0, "Mean density ");
   params.addParam<bool>("projection", false, "Whether or not to project non-equilibrium onto Hermite space.");
 
@@ -36,8 +34,8 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
   _f(getInputBuffer("f")),
   _feq(getInputBuffer("feq")),
   _shape(_lb_problem.getGridSize()),
-  _tau_0(getParam<Real>("tau_0")),
-  _C_s(getParam<Real>("C_s")),
+  _tau_0(_lb_problem.getScalarConstant("tau")),
+  _C_s(_lb_problem.getScalarConstant("Cs")),
   _mean_density(getParam<Real>("mean_density")),
   _projection(getParam<bool>("projection"))
 {

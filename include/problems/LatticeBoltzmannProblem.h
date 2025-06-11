@@ -72,12 +72,6 @@ protected:
   /// enables slip models
   bool _enable_slip;
 
-  /// mean free path
-  Real _mfp;
-
-  /// resolution
-  Real _dx;
-
   /// slip coefficient
   const Real _A_1 = 0.6;
   const Real _A_2 = 0.9;

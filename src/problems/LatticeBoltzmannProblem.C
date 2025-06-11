@@ -26,8 +26,8 @@ LatticeBoltzmannProblem::validParams()
 {
   InputParameters params = TensorProblem::validParams();
   params.addParam<bool>("enable_slip", false, "Enable slip model");
-  params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
-  params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
+  // params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
+  // params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
   params.addParam<unsigned int>("substeps", 1, "Number of LBM iterations for every MOOSE timestep");
   params.addParam<Real>("tolerance", 0.0, "LBM convergence tolerance");
   params.addClassDescription(
@@ -40,11 +40,21 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     : TensorProblem(parameters),
     _lbm_mesh(dynamic_cast<LatticeBoltzmannMesh *>(&_mesh)),
     _enable_slip(getParam<bool>("enable_slip")),
-    _mfp(getParam<Real>("mfp")),
-    _dx(getParam<Real>("dx")),
+    /*_mfp(getParam<Real>("mfp")),
+    _dx(getParam<Real>("dx")),*/
     _lbm_substeps(getParam<unsigned int>("substeps")),
     _tolerance(getParam<Real>("tolerance"))
 {
+   // set up unit conversion
+    Real Cl = _scalar_constants.at("dx");
+    Real nu_lu = 1.0 / 3.0 * (_scalar_constants.at("tau") - 0.5);
+    Real Ct = nu_lu / _scalar_constants.at("nu") * Cl * Cl;
+    Real Cm = _scalar_constants.at("rho") * Cl * Cl * Cl;
+    Real Cu = Ct / Cl;
+    
+    _scalar_constants.insert(std::pair<std::string, Real>("Ct", Ct));
+    _scalar_constants.insert(std::pair<std::string, Real>("Cm", Cm));
+    _scalar_constants.insert(std::pair<std::string, Real>("Cu", Cu));
 }
 
 void
@@ -129,7 +139,6 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
   {
     // update time
     _sub_time = FEProblem::time();
-
     executeTensorInitialConditions();
     executeTensorOutputs(EXEC_INITIAL);
   }
@@ -201,41 +210,41 @@ void
 LatticeBoltzmannProblem::enableSlipModel()
 {
 
-  const bool & is_mesh_vtk = _lbm_mesh->isMeshVTKFile();
+  // const bool & is_mesh_vtk = _lbm_mesh->isMeshVTKFile();
 
-  if (!is_mesh_vtk)
-    mooseError("Knudsen and local pore size distributions must be provided with vtk file");
+  // if (!is_mesh_vtk)
+  //   mooseError("Knudsen and local pore size distributions must be provided with vtk file");
 
-  else
-  {
-    // shape of relaxation matrix
-    std::array<int64_t, 5> extended_shape = {_n[0], _n[1], _n[2], _stencil->_q, _stencil->_q};
+  // else
+  // {
+  //   // shape of relaxation matrix
+  //   std::array<int64_t, 5> extended_shape = {_n[0], _n[1], _n[2], _stencil->_q, _stencil->_q};
 
-    // saves relaxation matrix for every mesh element in the domain
-    _slip_relaxation_matrix = torch::zeros(extended_shape, _options);
+  //   // saves relaxation matrix for every mesh element in the domain
+  //   _slip_relaxation_matrix = torch::zeros(extended_shape, _options);
 
-    // retrieve Knudsen and Local pore sizes
-    const auto & Kn = _lbm_mesh->getKn();
-    const auto & pore_size = _lbm_mesh->getPoreSize();
+  //   // retrieve Knudsen and Local pore sizes
+  //   const auto & Kn = _lbm_mesh->getKn();
+  //   const auto & pore_size = _lbm_mesh->getPoreSize();
 
-    // compute relaxation matrix
-    for (int i = 0; i < _shape[0]; i++)
-      for (int j = 0; j < _shape[1]; j++)
-        for (int k = 0; k < _shape[2]; k++)
-        {
-          Real pore_size_scalar = pore_size[i][j][k].item<Real>();
-          Real kn_scalar = Kn[i][j][k].item<Real>();
+  //   // compute relaxation matrix
+  //   for (int i = 0; i < _shape[0]; i++)
+  //     for (int j = 0; j < _shape[1]; j++)
+  //       for (int k = 0; k < _shape[2]; k++)
+  //       {
+  //         Real pore_size_scalar = pore_size[i][j][k].item<Real>();
+  //         Real kn_scalar = Kn[i][j][k].item<Real>();
 
-          Real tau_s = 0.5 + sqrt(6.0 / M_PI) * pore_size_scalar * kn_scalar / (1 + 2 * kn_scalar);
-          Real tau_d = 0.5 + (3.0 / 2.0) * sqrt(3.0) * 1.0 / pow((1.0 /
-                      sqrt((_mfp / _dx * 1.0 / (1.0 + 2.0 * kn_scalar))) * 2.0), 2.0);
-          Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A_1) / (8.0 * (2.0 * tau_s - 1.0));
-          torch::Tensor  relaxation_matrix = torch::diag(torch::tensor({1.0 / 1.0, 1.0 / 1.1, 1.0 / 1.2, 1.0 / tau_d, 1.0 / tau_q,
-                          1.0 / tau_d, 1.0 / tau_q,  1.0 / tau_s,  1.0 / tau_s}, _options));
+  //         Real tau_s = 0.5 + sqrt(6.0 / M_PI) * pore_size_scalar * kn_scalar / (1 + 2 * kn_scalar);
+  //         Real tau_d = 0.5 + (3.0 / 2.0) * sqrt(3.0) * 1.0 / pow((1.0 /
+  //                     sqrt((_mfp / _dx * 1.0 / (1.0 + 2.0 * kn_scalar))) * 2.0), 2.0);
+  //         Real tau_q = 0.5 + (3.0 + M_PI * (2.0 * tau_s - 1.0) * (2.0 * tau_s - 1.0) * _A_1) / (8.0 * (2.0 * tau_s - 1.0));
+  //         torch::Tensor  relaxation_matrix = torch::diag(torch::tensor({1.0 / 1.0, 1.0 / 1.1, 1.0 / 1.2, 1.0 / tau_d, 1.0 / tau_q,
+  //                         1.0 / tau_d, 1.0 / tau_q,  1.0 / tau_s,  1.0 / tau_s}, _options));
 
-          _slip_relaxation_matrix.index_put_({i, j, k}, relaxation_matrix);
-        }
-  }
+  //         _slip_relaxation_matrix.index_put_({i, j, k}, relaxation_matrix);
+  //       }
+  // }
 }
 
 void
