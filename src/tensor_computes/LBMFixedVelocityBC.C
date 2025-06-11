@@ -40,7 +40,7 @@ LBMFixedVelocityBCTempl<dimension>::LBMFixedVelocityBCTempl(const InputParameter
     : LBMBoundaryCondition(parameters),
     _f(getInputBuffer("f")),
     _grid_size(_lb_problem.getGridSize()),
-    _velocity(getParam<double>("velocity"))
+    _velocity(_lb_problem.getScalarConstant("U") / _lb_problem.getScalarConstant("Cu"))
 {
 }
 

@@ -609,3 +609,11 @@ TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
 {
   return getBufferBase(buffer_name).getRawCPUTensor();
 }
+
+const Real &
+TensorProblem::getScalarConstant(const std::string & name) const
+{
+  if (_scalar_constants.find(name) == _scalar_constants.end())
+    paramError("constant_names", " and `constant_values` should contain ", name, ".");
+  return _scalar_constants.at(name);
+}
