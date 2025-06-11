@@ -14,7 +14,7 @@ InputParameters
 LBMConstantTensor::validParams()
 {
   InputParameters params = LatticeBoltzmannOperator::validParams();
-  params.addParam<Real>("value", 0.0, "The constant value.");
+  params.addRequiredParam<std::vector<std::string>>("values", "The scalar constant names.");
   params.addClassDescription("LBMConstantTensor object.");
   return params;
 }
@@ -25,8 +25,26 @@ LBMConstantTensor::LBMConstantTensor(const InputParameters & parameters)
 }
 
 void
+LBMConstantTensor::init()
+{
+  auto names = getParam<std::vector<std::string>>("values");
+
+  for (auto name : names)
+  {
+    const std::string coefficient_name = "C_" + name;
+    const Real & coefficient = _lb_problem.getScalarConstant(coefficient_name);
+    auto value = (_lb_problem.getScalarConstant(name)) / coefficient;
+    _values.push_back(value);
+  }
+}
+
+void
 LBMConstantTensor::computeBuffer()
 {
-  const auto value = getParam<Real>("value");
-  _u.fill_(value);
+  if (_u.dim() > 3)
+    for (int64_t i = 0; i < _values.size(); i++)
+      _u.index({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(), i})
+          .fill_(_values[i]);
+  else
+    _u.fill_(_values[0]);
 }

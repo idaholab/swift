@@ -44,16 +44,15 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     _lbm_substeps(getParam<unsigned int>("substeps")),
     _tolerance(getParam<Real>("tolerance"))
 {
-  // set up unit conversion
-  Real Cl = _scalar_constants.at("dx");
-  Real nu_lu = 1.0 / 3.0 * (_scalar_constants.at("tau") - 0.5);
-  Real Ct = nu_lu / _scalar_constants.at("nu") * Cl * Cl;
-  Real Cm = _scalar_constants.at("rho") * Cl * Cl * Cl;
-  Real Cu = Ct / Cl;
+}
 
-  _scalar_constants.insert(std::pair<std::string, Real>("Ct", Ct));
-  _scalar_constants.insert(std::pair<std::string, Real>("Cm", Cm));
-  _scalar_constants.insert(std::pair<std::string, Real>("Cu", Cu));
+void
+LatticeBoltzmannProblem::init()
+{
+  TensorProblem::init();
+
+  // dependency resolution of boundary conditions
+  DependencyResolverInterface::sort(_bcs);
 }
 
 void
