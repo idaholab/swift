@@ -107,6 +107,8 @@ public:
   typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
   const TensorOutputList & getOutputs() const { return _outputs; }
 
+  const Real & getScalarConstant(const std::string & name);
+
   /// The CreateTensorSolverAction calls this to set the active solver
   void setSolver(std::shared_ptr<TensorSolver> solver,
                  const MooseTensor::Key<CreateTensorSolverAction> &);
@@ -195,6 +197,10 @@ protected:
 
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
+
+  /// scalar constants
+  const std::vector<std::pair<std::string, Real>> _scalar_constant_list;
+  std::map<std::string, Real> _scalar_constants;
 };
 
 template <typename T>
