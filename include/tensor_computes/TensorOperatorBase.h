@@ -12,7 +12,7 @@
 #include "SwiftTypes.h"
 #include "TensorProblem.h"
 #include "DependencyResolverInterface.h"
-#include "TensorBufferBase.h"
+#include "SwiftConstantInterface.h"
 
 #include <torch/torch.h>
 
@@ -22,7 +22,9 @@ class DomainAction;
 /**
  * TensorOperatorBase object
  */
-class TensorOperatorBase : public MooseObject, public DependencyResolverInterface
+class TensorOperatorBase : public MooseObject,
+                           public DependencyResolverInterface,
+                           public SwiftConstantInterface
 {
 public:
   static InputParameters validParams();

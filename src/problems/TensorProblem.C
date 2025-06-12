@@ -19,6 +19,7 @@
 
 #include "SwiftUtils.h"
 #include "DependencyResolverInterface.h"
+#include <memory>
 
 registerMooseObject("SwiftApp", TensorProblem);
 
@@ -34,8 +35,8 @@ TensorProblem::validParams()
       "spectral_solve_substeps",
       1,
       "How many substeps to divide the spectral solve for each MOOSE timestep into.");
-  params.addParam<std::vector<std::string>>("constant_scalar_names", "Scalar constant names");
-  params.addParam<std::vector<Real>>("constant_values", "Scalar constant values");
+  params.addParam<std::vector<std::string>>("scalar_constant_names", "Scalar constant names");
+  params.addParam<std::vector<Real>>("scalar_constant_values", "Scalar constant values");
   return params;
 }
 
@@ -50,9 +51,13 @@ TensorProblem::TensorProblem(const InputParameters & parameters)
     _n((_domain.getGridSize())),
     _shape(_domain.getShape()),
     _solver(nullptr),
-    _scalar_constant_list(getParam<std::string, Real>("constant_scalar_names", "constant_values")),
-    _scalar_constants(_scalar_constant_list.begin(), _scalar_constant_list.end())
+    _can_fetch_constants(true)
 {
+  // get constants (for scalar constants we provide a shortcut in the problem block)
+  for (const auto & [name, value] :
+       getParam<std::string, Real>("scalar_constant_names", "scalar_constant_values"))
+    declareConstant<Real>(name, value);
+
   // make sure AuxVariables are contiguous in the solution vector
   getAuxiliarySystem().sys().identify_variable_groups(false);
 }
@@ -138,6 +143,16 @@ TensorProblem::execute(const ExecFlagType & exec_type)
 {
   if (exec_type == EXEC_INITIAL)
   {
+    // check for constants
+    if (_fetched_constants.size() == 1)
+      mooseError(
+          "Constant ", Moose::stringify(_fetched_constants), " was requested but never declared.");
+    if (_fetched_constants.size() > 1)
+      mooseError("Constants ",
+                 Moose::stringify(_fetched_constants),
+                 " were requested but never declared.");
+    _can_fetch_constants = false;
+
     // update time
     _sub_time = FEProblem::time();
 
@@ -570,12 +585,4 @@ const torch::Tensor &
 TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
 {
   return getBufferBase(buffer_name).getRawCPUTensor();
-}
-
-const Real &
-TensorProblem::getScalarConstant(const std::string & name)
-{
-  if (_scalar_constants.find(name) == _scalar_constants.end())
-    paramError("constant_scalar_names", " and `constant_values` should contain ", name, ".");
-  return _scalar_constants.at(name);
 }

@@ -51,6 +51,31 @@
       detail = 'in three dimensions with an odd number of grid cells'
       libtorch_devices = 'cpu cuda mps'
     []
+
+    [constants]
+      type = CSVDiff
+      input = backandforth.i
+      csvdiff = backandforth_out.csv
+      cli_args = 'Domain/dim=1 Domain/nx=10 Problem/scalar_constant_names="null zero" Problem/scalar_constant_values="0 0" TensorComputes/Initialize/zero/real=null TensorComputes/Initialize/zero/imaginary=zero'
+      detail = ' throwing an error when encountering multiple undefined constants'
+      libtorch_devices = 'cpu'
+    []
+    [constant_1error]
+      type = RunException
+      input = backandforth.i
+      expect_err = 'Constant null was requested but never declared'
+      cli_args = 'Domain/dim=1 Domain/nx=10 TensorComputes/Initialize/zero/real=null'
+      detail = ' throwing an error when encountering one undefined constant'
+      libtorch_devices = 'cpu'
+    []
+    [constant_2errors]
+      type = RunException
+      input = backandforth.i
+      expect_err = 'Constants null, zero were requested but never declared'
+      cli_args = 'Domain/dim=1 Domain/nx=10 TensorComputes/Initialize/zero/real=null TensorComputes/Initialize/zero/imaginary=zero'
+      detail = ' throwing an error when encountering multiple undefined constants'
+      libtorch_devices = 'cpu'
+    []
   []
   [rotating_grain_secant]
     type = HDF5Diff

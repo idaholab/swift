@@ -23,6 +23,8 @@ TensorOperatorBase::validParams()
 
 TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
   : MooseObject(parameters),
+    DependencyResolverInterface(),
+    SwiftConstantInterface(parameters),
     _requested_buffers(),
     _supplied_buffers(),
     _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem")),
