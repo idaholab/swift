@@ -35,6 +35,7 @@ protected:
   const torch::Tensor & _f;
   const std::array<int64_t, 3> _grid_size;
   const Real _velocity;
+  const bool _perturb;
 };
 
 typedef LBMFixedVelocityBCTempl<2> LBMFixedVelocityBC2D;
