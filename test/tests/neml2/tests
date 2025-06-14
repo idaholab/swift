@@ -1,0 +1,10 @@
+[Tests]
+  [scalar]
+    type = CSVDiff
+    input = scalar.i
+    csvdiff = scalar_out.csv
+    issues = '#35'
+    design = NEML2TensorCompute.md
+    requirement = 'The system shall be able to use NEML2 models as tensor computes'
+  []
+[]
