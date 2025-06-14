@@ -1,0 +1,13 @@
+@article{DEGEUS2017412,
+title = {Finite strain FFT-based non-linear solvers made simple},
+journal = {Computer Methods in Applied Mechanics and Engineering},
+volume = {318},
+pages = {412-430},
+year = {2017},
+issn = {0045-7825},
+doi = {https://doi.org/10.1016/j.cma.2016.12.032},
+url = {https://www.sciencedirect.com/science/article/pii/S0045782516318709},
+author = {T.W.J. {de Geus} and J. Vondřejc and J. Zeman and R.H.J. Peerlings and M.G.D. Geers},
+keywords = {Homogenization, Micromechanics, Fast Fourier Transform (FFT), Representative Volume Element (RVE), Finite strains},
+abstract = {Computational micromechanics and homogenization require the solution of the mechanical equilibrium of a periodic cell that comprises a (generally complex) microstructure. Techniques that apply the Fast Fourier Transform have attracted much attention as they outperform other methods in terms of speed and memory footprint. Moreover, the Fast Fourier Transform is a natural companion of pixel-based digital images which often serve as input. In its original form, one of the biggest challenges for the method is the treatment of (geometrically) non-linear problems, partially due to the need for a uniform linear reference problem. In a geometrically linear setting, the problem has recently been treated in a variational form resulting in an unconditionally stable scheme that combines Newton iterations with an iterative linear solver, and therefore exhibits robust and quadratic convergence behavior. Through this approach, well-known key ingredients were recovered in terms of discretization, numerical quadrature, consistent linearization of the material model, and the iterative solution of the resulting linear system. As a result, the extension to finite strains, using arbitrary constitutive models, is at hand. Because of the application of the Fast Fourier Transform, the implementation is substantially easier than that of other (Finite Element) methods. Both claims are demonstrated in this paper and substantiated with a simple code in Python of just 59 lines (without comments). The aim is to render the method transparent and accessible, whereby researchers that are new to this method should be able to implement it efficiently. The potential of this method is demonstrated using two examples, each with a different material model.}
+}

@@ -1,0 +1,18 @@
+[Tests]
+  [mechanics_2d]
+    type = HDF5Diff
+    input = mech.i
+    hdf5diff = mech.h5
+    requirement = 'The system shall be able to solve a heterogeneous 2d mechanics problem with hyperelasticity.'
+    design = 'FFTMechanics.md'
+    abs_tol = 1e-10
+  []
+  [mechanics_3d]
+    type = HDF5Diff
+    input = mech3d.i
+    hdf5diff = mech3d.h5
+    requirement = 'The system shall be able to solve a heterogeneous 3d mechanics problem with hyperelasticity.'
+    design = 'FFTMechanics.md'
+    abs_tol = 1e-10
+  []
+[]

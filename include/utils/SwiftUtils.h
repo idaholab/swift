@@ -50,8 +50,7 @@ torch::Tensor dyad22(const torch::Tensor & A2, const torch::Tensor & B2);
 
 template <typename T1, typename T2>
 std::tuple<torch::Tensor, unsigned int, double>
-conjugateGradientSolve(
-    T1 A, torch::Tensor b, torch::Tensor x0, double tol, int64_t maxiter, T2 M)
+conjugateGradientSolve(T1 A, torch::Tensor b, torch::Tensor x0, double tol, int64_t maxiter, T2 M)
 {
   // initialize solution guess
   torch::Tensor x = x0.defined() ? x0.clone() : torch::zeros_like(b);

@@ -43,8 +43,6 @@ ComputeGroup::init()
 void
 ComputeGroup::computeBuffer()
 {
-  mooseInfoRepeated("ComputeGroup::computeBuffer");
-
   for (const auto i : index_range(_computes))
   {
     if (_domain.debug())
