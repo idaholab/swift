@@ -43,7 +43,7 @@ public:
   /// called  after all objects have been constructed (before dependency resolution)
   virtual void init() {}
 
-    /// called  after all objects have been constructed (after dependency resolution)
+  /// called  after all objects have been constructed (after dependency resolution)
   virtual void check() {}
 
   /// called if the simulation cell dimensions change
