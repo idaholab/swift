@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "MooseTypes.h"
 
 /// Name of an TensorOperator object
 // DerivativeStringClass(TensorComputeName);
@@ -24,6 +24,10 @@ typedef std::string TensorOutputBufferName;
 /// Name of an TensorOutput object
 // DerivativeStringClass(TensorOutputName);
 typedef std::string TensorOutputName;
+
+/// Name of an TensorOutput object
+// DerivativeStringClass(SwiftConstantName);
+typedef std::string SwiftConstantName;
 
 /// Forward declarations
 class TensorBufferBase;

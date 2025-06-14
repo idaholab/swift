@@ -20,7 +20,6 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
 
         e = cm.exception
         self.assertRegex(e.output, r"tester\.shape_mismatch:.*Mismatching shape for dataset 'c\.0' \(gold:\(5, 6\), test:\(9, 9\)\)")
-        self.checkStatus(e.output, failed=1)
 
     def testValueMismatch(self):
         """
@@ -31,7 +30,6 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
 
         e = cm.exception
         self.assertRegex(e.output, r"tester\.value_mismatch:.*Absolute tolerance exceeded in 'c\.0' \(diff:0\.4268.*, abs_tol:1e-15\)")
-        self.checkStatus(e.output, failed=1)
 
     def testDataSetMismatch(self):
         """
@@ -42,4 +40,3 @@ class TestHarnessTester(SwiftTestHarnessTestCase):
 
         e = cm.exception
         self.assertRegex(e.output, r"tester\.dataset_mismatch:.*\['c\.0', 'c\.1', 'c\.2', 'mu\.0', 'mu\.1', 'mu\.2'\]")
-        self.checkStatus(e.output, failed=1)

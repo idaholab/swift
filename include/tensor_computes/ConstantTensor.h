@@ -26,6 +26,10 @@ public:
   /// mesh dimension
   const unsigned int & _dim;
 
+  /// constants
+  const Real & _real;
+  const Real & _imaginary;
+
   using TensorOperator<>::_domain;
   using TensorOperator<>::_u;
 };
