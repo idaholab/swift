@@ -35,7 +35,7 @@ MacroscopicShearTensor::computeBuffer()
   // macroscopic loading
   auto applied_shear = torch::eye(_dim, MooseTensor::floatTensorOptions());
   applied_shear.index_put_({torch::indexing::Ellipsis, 0, 1},
-                   applied_shear.index({torch::indexing::Ellipsis, 0, 1}) + _time);
+                           applied_shear.index({torch::indexing::Ellipsis, 0, 1}) + _time);
 
   _u = (applied_shear - avg);
 }

@@ -13,7 +13,6 @@
 #include <ATen/TensorIndexing.h>
 #include <ATen/core/TensorBody.h>
 #include <ATen/ops/unsqueeze_ops.h>
-#include <torch/linalg.h>
 #include <util/Optional.h>
 
 #ifdef NEML2_ENABLED

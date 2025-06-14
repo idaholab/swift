@@ -1,8 +1,8 @@
 [Domain]
   dim = 3
-  nx = 64
-  ny = 64
-  nz = 64
+  nx = 16
+  ny = 16
+  nz = 16
   xmax = ${fparse 2*pi}
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
@@ -89,6 +89,7 @@
   # deformation tensor is just forwarded Fnew -> F
   forward_buffer = F
   forward_buffer_new = Fnew
+  substeps = 10
 []
 
 [TensorOutputs]
@@ -103,6 +104,6 @@
 
 [Executioner]
   type = Transient
-  num_steps = 30
+  num_steps = 3
   dt = 0.01
 []

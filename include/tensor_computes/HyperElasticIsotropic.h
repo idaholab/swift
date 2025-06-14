@@ -14,7 +14,7 @@
 #include "neml2/tensors/Vec.h"
 
 /**
- * Gradient of a tensor field
+ * Hyperelastic isotropic material model
  */
 class HyperElasticIsotropic : public TensorOperator<>
 {

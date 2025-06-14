@@ -8,10 +8,6 @@
   mesh_mode = DUMMY
 []
 
-[Problem]
-  type = TensorProblem
-[]
-
 [TensorComputes]
   [Initialize]
     [phase]
@@ -93,6 +89,7 @@
   # deformation tensor is just forwarded Fnew -> F
   forward_buffer = F
   forward_buffer_new = Fnew
+  substeps = 3
 []
 
 [TensorOutputs]
@@ -107,6 +104,6 @@
 
 [Executioner]
   type = Transient
-  num_steps = 10
+  num_steps = 3
   dt = 0.02
 []

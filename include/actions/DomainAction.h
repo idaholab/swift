@@ -246,4 +246,3 @@ DomainAction::cosineTransform(const torch::Tensor & t, int64_t axis) const
   mooseError("Not implemented!");
   // return t_bar;
 }
-

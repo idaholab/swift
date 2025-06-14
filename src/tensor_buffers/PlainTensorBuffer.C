@@ -17,7 +17,7 @@ InputParameters
 PlainTensorBuffer::validParams()
 {
   InputParameters params = TensorBuffer<torch::Tensor>::validParams();
-  params.addParam<std::vector<int64_t>>("value_dimensions",{}, "Optional value dimensions");
+  params.addParam<std::vector<int64_t>>("value_dimensions", {}, "Optional value dimensions");
   return params;
 }
 
@@ -29,7 +29,8 @@ PlainTensorBuffer::PlainTensorBuffer(const InputParameters & parameters)
 void
 PlainTensorBuffer::init()
 {
-  _u = torch::zeros(_domain.getValueShape(getParam<std::vector<int64_t>>("value_dimensions")), MooseTensor::floatTensorOptions());
+  _u = torch::zeros(_domain.getValueShape(getParam<std::vector<int64_t>>("value_dimensions")),
+                    MooseTensor::floatTensorOptions());
 }
 
 void

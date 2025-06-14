@@ -111,7 +111,7 @@ public:
   template <typename T = torch::Tensor>
   const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
 
-    /// returns a reference to a rat torch::Tensor view of buffer_name
+  /// returns a reference to a raw torch::Tensor view of buffer_name
   const torch::Tensor & getRawBuffer(const std::string & buffer_name);
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device

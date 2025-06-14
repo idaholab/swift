@@ -17,6 +17,9 @@
 				<Attribute Name="eta" Center="Cell">
 					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">KKS_no_flux_bc.h5:/eta.0</DataItem>
 				</Attribute>
+				<Attribute Name="mu" Center="Cell">
+					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">KKS_no_flux_bc.h5:/mu.0</DataItem>
+				</Attribute>
 				<Attribute Name="psi" Center="Cell">
 					<DataItem DataType="Float" Dimensions="20 20" Format="HDF">KKS_no_flux_bc.h5:/psi.0</DataItem>
 				</Attribute>

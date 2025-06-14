@@ -14,7 +14,6 @@
 #include "SwiftApp.h"
 #include "CreateProblemAction.h"
 
-
 #include <initializer_list>
 #include <util/Optional.h>
 
@@ -338,8 +337,6 @@ DomainAction::act()
   {
     // check if a SetupMesh action exists
     auto mesh_actions = _awh.getActions<SetupMeshAction>();
-    // for (const auto & ma : mesh_actions)
-    //   mooseInfoRepeated(ma->name());
     if (mesh_actions.size() > 0)
       paramError("mesh_mode", "Do not specify a [Mesh] block unless mesh_mode is set to MANUAL");
 
@@ -394,16 +391,15 @@ DomainAction::act()
       const std::string type = "TensorProblem";
       auto params = _factory.getValidParams(type);
 
-      // apply common parameters of the object held by CreateProblemAction to honor user inputs in
-      // [Problem]
+      // apply common parameters of the object held by CreateProblemAction
+      // to honor user inputs in [Problem]
       auto p = _awh.getActionByTask<CreateProblemAction>("create_problem");
       if (p)
         params.applyParameters(p->getObjectParams());
 
-      // params.set<MooseMesh *>("mesh") = _mesh.get();
+      params.set<MooseMesh *>("mesh") = _mesh.get();
       _problem = _factory.create<FEProblemBase>(type, "MOOSE Problem", params);
     }
-
   }
 }
 

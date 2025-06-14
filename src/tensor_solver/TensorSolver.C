@@ -22,12 +22,13 @@ TensorSolver::validParams()
       "automatically if the user does not provide this parameter.");
   params.addClassDescription("TensorSolver object.");
 
-  params.addRequiredParam<std::vector<TensorOutputBufferName>>(
+  params.addParam<std::vector<TensorOutputBufferName>>(
       "forward_buffer",
-      "These buffers are updated with the corresponding bufefrs from forward_buffer_old. No "
+      {},
+      "These buffers are updated with the corresponding buffers from forward_buffer_old. No "
       "integration is performed. Buffer forwarding is used only to resolve cyclic dependencies.");
-  params.addRequiredParam<std::vector<TensorInputBufferName>>(
-      "forward_buffer_new", "New values to update `forward_buffer` with.");
+  params.addParam<std::vector<TensorInputBufferName>>(
+      "forward_buffer_new", {}, "New values to update `forward_buffer` with.");
 
   return params;
 }
