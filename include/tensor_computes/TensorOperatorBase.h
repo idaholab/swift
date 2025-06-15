@@ -59,6 +59,13 @@ protected:
   template <typename T = torch::Tensor>
   T & getOutputBufferByName(const TensorOutputBufferName & buffer_name);
 
+  template <typename T = torch::Tensor>
+  const std::vector<T> & getBufferOld(const std::string & param, unsigned int max_states);
+
+  template <typename T = torch::Tensor>
+  const std::vector<T> & getBufferOldByName(const std::string & buffer_name,
+                                            unsigned int max_states);
+
   std::set<std::string> _requested_buffers;
   std::set<std::string> _supplied_buffers;
 
@@ -109,4 +116,18 @@ TensorOperatorBase::getOutputBufferByName(const TensorOutputBufferName & buffer_
 {
   _supplied_buffers.insert(buffer_name);
   return _tensor_problem.getBuffer<T>(buffer_name);
+}
+
+template <typename T>
+const std::vector<T> &
+TensorOperatorBase::getBufferOld(const std::string & param, unsigned int max_states)
+{
+  return getBufferOldByName<T>(getParam<TensorInputBufferName>(param), max_states);
+}
+
+template <typename T>
+const std::vector<T> &
+TensorOperatorBase::getBufferOldByName(const std::string & buffer_name, unsigned int max_states)
+{
+  return _tensor_problem.getBufferOld<T>(buffer_name, max_states);
 }
