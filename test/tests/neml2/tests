@@ -7,4 +7,12 @@
     design = NEML2TensorCompute.md
     requirement = 'The system shall be able to use NEML2 models as tensor computes'
   []
+  [old_state]
+    type = CSVDiff
+    input = old_state.i
+    csvdiff = old_state_out.csv
+    issues = '#50'
+    design = NEML2TensorCompute.md
+    requirement = 'The system shall be able to use old state in NEML2 models'
+  []
 []
