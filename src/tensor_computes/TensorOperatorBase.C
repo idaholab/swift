@@ -41,3 +41,13 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
     _dim(_domain.getDim())
 {
 }
+
+TensorOperatorBase &
+TensorOperatorBase::getCompute(const std::string & param_name)
+{
+  const auto name = getParam<TensorComputeName>(param_name);
+  for (const auto & cmp : _tensor_problem.getComputes())
+    if (cmp->name() == name)
+      return *cmp;
+  paramError(param_name, "Compute not found.");
+}
