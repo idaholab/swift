@@ -21,12 +21,26 @@ TensorSolver::validParams()
       "ComputeGroup object. A ComputeGroup encompassing all computes will be generated "
       "automatically if the user does not provide this parameter.");
   params.addClassDescription("TensorSolver object.");
+
+  params.addParam<std::vector<TensorOutputBufferName>>(
+      "forward_buffer",
+      {},
+      "These buffers are updated with the corresponding buffers from forward_buffer_old. No "
+      "integration is performed. Buffer forwarding is used only to resolve cyclic dependencies.");
+  params.addParam<std::vector<TensorInputBufferName>>(
+      "forward_buffer_new", {}, "New values to update `forward_buffer` with.");
+
   return params;
 }
 
 TensorSolver::TensorSolver(const InputParameters & parameters)
   : TensorOperatorBase(parameters), _dt(_tensor_problem.dt()), _dt_old(_tensor_problem.dtOld())
 {
+  const auto & forward_buffer_names = getParam<TensorOutputBufferName, TensorOutputBufferName>(
+      "forward_buffer", "forward_buffer_new");
+  for (const auto & [forward_buffer, forward_buffer_new] : forward_buffer_names)
+    _forwarded_buffers.emplace_back(getOutputBufferByName(forward_buffer),
+                                    getInputBufferByName(forward_buffer_new));
 }
 
 const std::vector<torch::Tensor> &
@@ -55,4 +69,11 @@ TensorSolver::updateDependencies()
     }
 
   paramError("root_compute", "Compute object not found.");
+}
+
+void
+TensorSolver::forwardBuffers()
+{
+  for (const auto & [forward_buffer, forward_buffer_new] : _forwarded_buffers)
+    forward_buffer = forward_buffer_new;
 }

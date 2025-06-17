@@ -16,13 +16,15 @@ ExplicitSolverBase::validParams()
   InputParameters params = TensorSolver::validParams();
   params.addClassDescription("Base class for explicit time integrators.");
 
-  params.addRequiredParam<std::vector<TensorOutputBufferName>>(
-      "buffer", "The buffer this solver is writing to");
+  params.addParam<std::vector<TensorOutputBufferName>>(
+      "buffer", {}, "The buffer this solver is writing to");
 
-  params.addRequiredParam<std::vector<TensorInputBufferName>>(
-      "reciprocal_buffer", "Buffer with the reciprocal of the integrated buffer");
-  params.addRequiredParam<std::vector<TensorInputBufferName>>(
-      "time_derivative_reciprocal", "Buffer with the reciprocal of the time derivative function");
+  params.addParam<std::vector<TensorInputBufferName>>(
+      "reciprocal_buffer", {}, "Buffer with the reciprocal of the integrated buffer");
+  params.addParam<std::vector<TensorInputBufferName>>(
+      "time_derivative_reciprocal",
+      {},
+      "Buffer with the reciprocal of the time derivative function");
   return params;
 }
 

@@ -103,7 +103,6 @@ NEML2TensorCompute::computeBuffer()
   {
     // convert tensors on the fly at runtime
     auto sizes = tensor_ptr->sizes();
-    mooseInfoRepeated(name(), " sizes size ", sizes.size(), " is ", Moose::stringify(sizes));
     if (sizes.size() == _dim)
       in[label] = neml2::Scalar(*tensor_ptr);
     else if (sizes.size() == _dim + 1)
