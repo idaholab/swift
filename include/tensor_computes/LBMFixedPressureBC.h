@@ -35,6 +35,5 @@ protected:
   const Real _value;
 };
 
-
 typedef LBMFixedPressureBCTempl<2> LBMFixedPressureBC2D;
 typedef LBMFixedPressureBCTempl<3> LBMFixedPressureBC3D;

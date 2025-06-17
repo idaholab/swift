@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include"TensorBuffer.h"
+#include "TensorBuffer.h"
 
 /**
  * Tensor wrapper for LBM tensors
@@ -16,15 +16,15 @@
 class LBMTensorBuffer : public TensorBuffer<torch::Tensor>
 {
 public:
-    static InputParameters validParams();
+  static InputParameters validParams();
 
-    LBMTensorBuffer(const InputParameters & parameters);
+  LBMTensorBuffer(const InputParameters & parameters);
 
-    void init() override;
-    virtual void makeCPUCopy() override;
+  void init() override;
+  virtual void makeCPUCopy() override;
 
 protected:
-    Real _dimension;
+  Real _dimension;
 };
 
 // registerTensorType(LBMTensorBuffer, torch::Tensor);

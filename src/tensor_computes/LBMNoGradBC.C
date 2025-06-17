@@ -24,25 +24,25 @@ LBMNoGradBC::validParams()
 }
 
 LBMNoGradBC::LBMNoGradBC(const InputParameters & parameters)
-    : LBMBoundaryCondition(parameters),
-    _grid_size(_lb_problem.getGridSize())
+  : LBMBoundaryCondition(parameters), _grid_size(_lb_problem.getGridSize())
 {
 }
 
 void
 LBMNoGradBC::rightBoundary()
 {
-    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), Slice()}, _u.index({_grid_size[0] - 2, Slice(), Slice(), Slice()}));
+  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), Slice()},
+                _u.index({_grid_size[0] - 2, Slice(), Slice(), Slice()}));
 }
 
 void
 LBMNoGradBC::computeBuffer()
 {
-    // do not overwrite previous
-    _u = _u.clone();
+  // do not overwrite previous
+  _u = _u.clone();
 
-    switch (_boundary)
-    {
+  switch (_boundary)
+  {
     case Boundary::top:
       topBoundary();
       break;
@@ -66,7 +66,7 @@ LBMNoGradBC::computeBuffer()
       break;
     default:
       mooseError("Undefined boundary names");
-    }
+  }
 
   _lb_problem.maskedFillSolids(_u, 0);
 }

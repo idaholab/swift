@@ -16,20 +16,21 @@ LBMEquilibrium::validParams()
   InputParameters params = LatticeBoltzmannOperator::validParams();
   params.addClassDescription("Compute LB equilibrium distribution object.");
   params.addRequiredParam<TensorInputBufferName>("rho", "LBM Density");
-  params.addRequiredParam<TensorInputBufferName>("velocity", "LBM Velocty in x, y and z directions");
+  params.addRequiredParam<TensorInputBufferName>("velocity",
+                                                 "LBM Velocty in x, y and z directions");
   return params;
 }
 
 LBMEquilibrium::LBMEquilibrium(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
-  _rho(getInputBuffer("rho")),
-  _velocity(getInputBuffer("velocity"))
-{ 
+    _rho(getInputBuffer("rho")),
+    _velocity(getInputBuffer("velocity"))
+{
 }
 
 void
 LBMEquilibrium::computeBuffer()
-{ 
+{
   // prepping
   const unsigned int & dim = _mesh.getDim();
 
@@ -47,15 +48,17 @@ LBMEquilibrium::computeBuffer()
       uz = _velocity.select(3, 2).unsqueeze(3);
       break;
     case 2:
-      uz = torch::zeros_like(rho_unsqueezed,  MooseTensor::floatTensorOptions());
+      uz = torch::zeros_like(rho_unsqueezed, MooseTensor::floatTensorOptions());
       break;
     default:
       mooseError("Unsupported dimensions for buffer _u");
   }
-  
+
   // compute equilibrium
-  _u = _w * rho_unsqueezed * (1.0 + (_ex * ux + _ey * uy + _ez * uz) / _lb_problem._cs2 \
-                         + 0.5 * ((_ex * ux + _ey * uy + _ez * uz) * (_ex * ux + _ey * uy + _ez * uz)) / _lb_problem._cs4 \
-                          -0.5 * (ux * ux + uy * uy + uz * uz) / _lb_problem._cs2);
+  _u = _w * rho_unsqueezed *
+       (1.0 + (_ex * ux + _ey * uy + _ez * uz) / _lb_problem._cs2 +
+        0.5 * ((_ex * ux + _ey * uy + _ez * uz) * (_ex * ux + _ey * uy + _ez * uz)) /
+            _lb_problem._cs4 -
+        0.5 * (ux * ux + uy * uy + uz * uz) / _lb_problem._cs2);
   _lb_problem.maskedFillSolids(_u, 0);
 }

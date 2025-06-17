@@ -17,6 +17,7 @@ LatticeBoltzmannStencilBase::validParams()
   return params;
 }
 
-LatticeBoltzmannStencilBase::LatticeBoltzmannStencilBase(const InputParameters & parameters) : MooseObject(parameters) 
+LatticeBoltzmannStencilBase::LatticeBoltzmannStencilBase(const InputParameters & parameters)
+  : MooseObject(parameters)
 {
 }

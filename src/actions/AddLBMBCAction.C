@@ -19,8 +19,7 @@ AddLBMBCAction::validParams()
   return params;
 }
 
-AddLBMBCAction::AddLBMBCAction(const InputParameters & parameters)
-  : MooseObjectAction(parameters)
+AddLBMBCAction::AddLBMBCAction(const InputParameters & parameters) : MooseObjectAction(parameters)
 {
 }
 
@@ -29,7 +28,8 @@ AddLBMBCAction::act()
 {
   auto lb_problem = std::dynamic_pointer_cast<LatticeBoltzmannProblem>(_problem);
   if (!lb_problem)
-    mooseError("LBM BCs are only supported if the problem class is set to `LatticeBoltzmannProblem`");
+    mooseError(
+        "LBM BCs are only supported if the problem class is set to `LatticeBoltzmannProblem`");
 
   if (_current_task == "add_tensor_bc")
     lb_problem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);

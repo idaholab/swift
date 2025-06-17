@@ -26,9 +26,9 @@ public:
   virtual void computeBuffer() override;
 
 protected:
-  LatticeBoltzmannProblem& _lb_problem;
+  LatticeBoltzmannProblem & _lb_problem;
   const LatticeBoltzmannStencilBase & _stencil;
-  
+
   torch::Tensor & _u;
-  const std::vector<torch::Tensor> &  _f_old;
+  const std::vector<torch::Tensor> & _f_old;
 };

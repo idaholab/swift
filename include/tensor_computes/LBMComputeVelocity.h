@@ -13,12 +13,12 @@
 /**
  * Compute object for macroscopic velocity reconstruction
  */
-class LBMComputeVelocity  : public LatticeBoltzmannOperator
+class LBMComputeVelocity : public LatticeBoltzmannOperator
 {
 public:
   static InputParameters validParams();
 
-  LBMComputeVelocity (const InputParameters & parameters);
+  LBMComputeVelocity(const InputParameters & parameters);
 
   void computeBuffer() override;
 

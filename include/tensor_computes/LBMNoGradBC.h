@@ -21,13 +21,13 @@ public:
 
   LBMNoGradBC(const InputParameters & parameters);
 
-  void topBoundary() override{};
-  void bottomBoundary() override{};
-  void leftBoundary() override{};
+  void topBoundary() override {};
+  void bottomBoundary() override {};
+  void leftBoundary() override {};
   void rightBoundary() override;
-  void frontBoundary() override{};
-  void backBoundary() override{};
-  void wallBoundary() override{};
+  void frontBoundary() override {};
+  void backBoundary() override {};
+  void wallBoundary() override {};
   void computeBuffer() override;
 
 protected:

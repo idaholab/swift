@@ -17,17 +17,16 @@ LBMTensorBuffer::validParams()
   InputParameters params = TensorBuffer<torch::Tensor>::validParams();
   params.addParam<Real>("dimension", 0, "The vector dimension of tensor");
   params.addClassDescription("Tensor wrapper form LBM tensors");
-    
+
   return params;
 }
 
 LBMTensorBuffer::LBMTensorBuffer(const InputParameters & parameters)
-  : TensorBuffer<torch::Tensor>(parameters),
-  _dimension(getParam<Real>("dimension"))
+  : TensorBuffer<torch::Tensor>(parameters), _dimension(getParam<Real>("dimension"))
 {
 }
 
-void 
+void
 LBMTensorBuffer::init()
 {
   std::vector<int64_t> shape(_domain.getShape().begin(), _domain.getShape().end());
