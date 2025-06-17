@@ -10,6 +10,7 @@
 
 #include "FEProblem.h"
 #include "DomainInterface.h"
+#include "InputParameters.h"
 #include "SwiftTypes.h"
 #include "SwiftUtils.h"
 #include "TensorBuffer.h"
@@ -22,8 +23,11 @@
 #include "libmesh/petsc_vector.h"
 #include "libmesh/print_trace.h"
 
+#include <cstddef>
+#include <list>
 #include <memory>
 #include <torch/torch.h>
+#include <type_traits>
 
 class UniformTensorMesh;
 class TensorOperatorBase;
@@ -32,6 +36,21 @@ class TensorTimeIntegrator;
 class TensorOutput;
 class TensorSolver;
 class CreateTensorSolverAction;
+
+namespace Swift
+{
+struct ConstantBase
+{
+  virtual std::string getType() = 0;
+};
+
+template <typename T>
+struct Constant : public ConstantBase
+{
+  virtual std::string getType() override { return libMesh::demangle(typeid(T).name()); }
+  T _value;
+};
+}
 
 /**
  * Problem for solving eigenvalue problems
@@ -77,6 +96,10 @@ public:
                                const std::string & name,
                                InputParameters & parameters);
 
+  /// check if a tensor buffer with the given type exists
+  template <typename T>
+  bool hasBuffer(const std::string & buffer_name);
+
   /// returns the current state of the tensor
   template <typename T = torch::Tensor>
   T & getBuffer(const std::string & buffer_name);
@@ -87,6 +110,9 @@ public:
   /// return the old states of the tensor
   template <typename T = torch::Tensor>
   const std::vector<T> & getBufferOld(const std::string & buffer_name, unsigned int max_states);
+
+  /// returns a reference to a raw torch::Tensor view of buffer_name
+  const torch::Tensor & getRawBuffer(const std::string & buffer_name);
 
   /// returns a reference to a copy of buffer_name that is guaranteed to be contiguous and located on the CPU device
   const torch::Tensor & getRawCPUBuffer(const std::string & buffer_name);
@@ -104,10 +130,16 @@ public:
   typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
   const TensorComputeList & getComputes() const { return _computes; }
 
+  TensorOperatorBase & getCompute(const std::string & param_name) const;
+
   typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
   const TensorOutputList & getOutputs() const { return _outputs; }
 
-  const Real & getScalarConstant(const std::string & name) const;
+  template <typename T>
+  const T & getConstant(const std::string & name);
+
+  template <typename T>
+  void declareConstant(const std::string & name, const T & value);
 
   /// The CreateTensorSolverAction calls this to set the active solver
   void setSolver(std::shared_ptr<TensorSolver> solver,
@@ -198,9 +230,14 @@ protected:
   /// The [TensorSolver]
   std::shared_ptr<TensorSolver> _solver;
 
-  /// scalar constants
-  const std::vector<std::pair<std::string, Real>> _scalar_constant_list;
-  std::map<std::string, Real> _scalar_constants;
+  /// parameters
+  std::map<std::string, std::unique_ptr<Swift::ConstantBase>> _constants;
+  std::set<std::string> _fetched_constants;
+  std::list<Real> _literal_constants;
+  bool _can_fetch_constants;
+
+private:
+  std::list<InputParameters> _buffer_params;
 };
 
 template <typename T>
@@ -216,6 +253,14 @@ TensorProblem::getSolver() const
         "No TensorSolver supporting the requested type '", typeid(T).name(), "' has been set up.");
   }
   mooseError("No TensorSolver has been set up.");
+}
+
+template <typename T>
+bool
+TensorProblem::hasBuffer(const std::string & buffer_name)
+{
+  auto it = _tensor_buffer.find(buffer_name);
+  return (it != _tensor_buffer.end() && !dynamic_cast<TensorBuffer<T> *>(it->second.get()));
 }
 
 template <typename T>
@@ -265,7 +310,9 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
                       "' of type '",
                       libMesh::demangle(typeid(T).name()),
                       "'");
-  auto params = TensorBuffer<T>::validParams();
+
+  _buffer_params.push_back(TensorBufferSpecialization<T>::type::validParams());
+  auto & params = _buffer_params.back();
   params.template set<std::string>("_object_name") = buffer_name;
   params.template set<FEProblem *>("_fe_problem") = this;
   params.template set<FEProblemBase *>("_fe_problem_base") = this;
@@ -273,12 +320,88 @@ TensorProblem::addTensorBuffer(const std::string & buffer_name)
   params.template set<std::string>("_type") = "TensorBufferBase";
   params.template set<MooseApp *>("_moose_app") = &getMooseApp();
   params.finalize(buffer_name);
-
-  // params.addPrivateParam<TensorProblem *>("_tensor_problem", this);
-  // params.addPrivateParam<const DomainAction *>("_domain", &_domain);
-
   auto tensor_buffer = std::make_shared<typename TensorBufferSpecialization<T>::type>(params);
 
   _tensor_buffer.try_emplace(buffer_name, tensor_buffer);
   return tensor_buffer;
+}
+
+template <typename T>
+const T &
+TensorProblem::getConstant(const std::string & name)
+{
+  if (!_can_fetch_constants)
+    mooseError("Constants must be gotten during object construction.");
+
+  // deal with literal scalars
+  if constexpr (std::is_same_v<T, Real>)
+  {
+    // check if we are able to convert the name into a Real
+    Real real_value;
+    std::istringstream ss(name);
+    if (ss >> real_value && ss.eof())
+    {
+      _literal_constants.push_back(real_value);
+      return _literal_constants.back();
+    }
+  }
+
+  const auto it = _constants.find(name);
+  if (it != _constants.end())
+  {
+    auto * t_param = dynamic_cast<Swift::Constant<T> *>(it->second.get());
+    if (t_param == nullptr)
+      mooseError("Fetching constant '",
+                 name,
+                 "' (which is of type ",
+                 it->second->getType(),
+                 ") with the wrong type (",
+                 libMesh::demangle(typeid(T).name()),
+                 ").");
+    return t_param->_value;
+  }
+  else
+  {
+    auto param = std::make_unique<Swift::Constant<T>>();
+    const auto & ref = param->_value;
+    _constants[name] = std::move(param);
+    _fetched_constants.insert(name);
+    return ref;
+  }
+}
+
+template <typename T>
+void
+TensorProblem::declareConstant(const std::string & name, const T & value)
+{
+  if (!_can_fetch_constants)
+    mooseError("Constants must be declared during object construction.");
+
+  const auto it = _constants.find(name);
+  if (it != _constants.end())
+  {
+    auto * t_param = dynamic_cast<Swift::Constant<T> *>(it->second.get());
+    if (t_param == nullptr)
+      mooseError("Declaring constant '",
+                 name,
+                 "' (which was already fetched as type ",
+                 it->second->getType(),
+                 ") with the wrong type (",
+                 libMesh::demangle(typeid(T).name()),
+                 ").");
+
+    if (_fetched_constants.count(name))
+    {
+      // placeholder parameter created by getParameter
+      t_param->_value = value;
+      _fetched_constants.erase(name);
+    }
+    else
+      mooseError("Parameter '", name, "' has already been declared.");
+  }
+  else
+  {
+    auto param = std::make_unique<Swift::Constant<T>>();
+    _constants[name] = std::move(param);
+  }
 }

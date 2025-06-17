@@ -27,6 +27,13 @@ public:
   virtual void updateDependencies() override;
 
 protected:
+  /// nested tensor computes
   std::vector<std::shared_ptr<TensorOperatorBase>> _computes;
+
+  /// for diagnostic purposes we can make sure that every requested buffer is defined
+  typedef std::vector<std::tuple<const torch::Tensor *, std::string, std::string>>
+      CheckedTensorList;
+  std::vector<CheckedTensorList> _checked_tensors;
+
   bool _visited;
 };

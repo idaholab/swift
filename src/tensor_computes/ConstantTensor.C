@@ -18,14 +18,15 @@ InputParameters
 ConstantTensorTempl<reciprocal>::validParams()
 {
   InputParameters params = TensorOperator<>::validParams();
+  params.addParam<SwiftConstantName>("imaginary", "0.0", "Imaginary part of the constant value.");
   if constexpr (reciprocal)
-  {
     params.addClassDescription("Constant tensor in reciprocal space.");
-    params.addParam<Real>("imaginary", 0.0, "Imaginary part of the constant value.");
-  }
   else
+  {
     params.addClassDescription("Constant tensor in real space.");
-  params.addParam<Real>("real", 0.0, "Real part of the constant value.");
+    params.suppressParameter<SwiftConstantName>("imaginary");
+  }
+  params.addParam<SwiftConstantName>("real", "0.0", "Real part of the constant value.");
   params.addParam<bool>("reciprocal", false, "Construct a reciprocal buffer");
   params.addParam<bool>("full", false, "Construct a full tensor will all entries");
   return params;
@@ -33,7 +34,10 @@ ConstantTensorTempl<reciprocal>::validParams()
 
 template <bool reciprocal>
 ConstantTensorTempl<reciprocal>::ConstantTensorTempl(const InputParameters & parameters)
-  : TensorOperator(parameters), _dim(_domain.getDim())
+  : TensorOperator(parameters),
+    _dim(_domain.getDim()),
+    _real(this->getConstant<Real>("real")),
+    _imaginary(this->getConstant<Real>("imaginary"))
 {
 }
 
@@ -41,21 +45,12 @@ template <bool reciprocal>
 void
 ConstantTensorTempl<reciprocal>::computeBuffer()
 {
-  const auto real = this->getParam<Real>("real");
   if constexpr (reciprocal)
-  {
-    const auto & n = _domain.getLocalReciprocalGridSize();
-    c10::IntArrayRef shape(n.data(), _dim);
-    const auto imaginary = this->getParam<Real>("imaginary");
-    _u = torch::complex(torch::full(shape, real, MooseTensor::floatTensorOptions()),
-                        torch::full(shape, imaginary, MooseTensor::floatTensorOptions()));
-  }
+    _u = torch::complex(
+        torch::full(_domain.getReciprocalShape(), _real, MooseTensor::floatTensorOptions()),
+        torch::full(_domain.getReciprocalShape(), _imaginary, MooseTensor::floatTensorOptions()));
   else
-  {
-    const auto & n = _domain.getLocalGridSize();
-    c10::IntArrayRef shape(n.data(), _dim);
-    _u = torch::full(shape, real, MooseTensor::floatTensorOptions());
-  }
+    _u = torch::full(_domain.getShape(), _real, MooseTensor::floatTensorOptions());
 }
 
 template class ConstantTensorTempl<true>;

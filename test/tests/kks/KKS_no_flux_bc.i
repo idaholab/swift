@@ -181,6 +181,7 @@ F = '${h_eta}*(${rho_sq}*((c - (1-${h_eta})*(${c0_b} - ${c0_a}))-${c0_a})^2) + (
         type = XDMFTensorOutput
         buffer = 'eta c mu psi'
         enable_hdf5 = true
+        transpose = false
     []
 []
 

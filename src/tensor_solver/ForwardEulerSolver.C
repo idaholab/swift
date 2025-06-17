@@ -40,6 +40,7 @@ ForwardEulerSolver::computeBuffer()
   {
     // re-evaluate the solve compute
     _compute->computeBuffer();
+    forwardBuffers();
 
     // integrate all variables
     for (auto & [u, reciprocal_buffer, time_derivative_reciprocal] : _variables)

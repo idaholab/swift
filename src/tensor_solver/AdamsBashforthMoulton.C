@@ -91,6 +91,7 @@ AdamsBashforthMoulton::computeBuffer()
   {
     // re-evaluate the solve compute
     _compute->computeBuffer();
+    forwardBuffers();
 
     // Adams-Bashforth predictor on all variables
     for (auto & [u,
@@ -147,6 +148,7 @@ AdamsBashforthMoulton::computeBuffer()
       {
         // re-evaluate the solve compute with the predicted variable values
         _compute->computeBuffer();
+        forwardBuffers();
 
         for (const auto k : index_range(_variables))
         {

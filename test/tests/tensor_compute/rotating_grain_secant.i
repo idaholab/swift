@@ -119,5 +119,8 @@ crystal = '-(sin(sin(a)*y/2+cos(a)*x/2)^2 + sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*
     type = XDMFTensorOutput
     buffer = 'psi'
     enable_hdf5 = true
+    # Do not transpose output to avoid regolding the test. In practice the default
+    # of transpose = true should always be used
+    transpose = false
   []
 []

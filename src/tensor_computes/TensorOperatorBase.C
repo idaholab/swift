@@ -23,6 +23,8 @@ TensorOperatorBase::validParams()
 
 TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
   : MooseObject(parameters),
+    DependencyResolverInterface(),
+    SwiftConstantInterface(parameters),
     _requested_buffers(),
     _supplied_buffers(),
     _tensor_problem(*getCheckedPointerParam<TensorProblem *>("_tensor_problem")),
@@ -38,4 +40,14 @@ TensorOperatorBase::TensorOperatorBase(const InputParameters & parameters)
     _time(_tensor_problem.subTime()),
     _dim(_domain.getDim())
 {
+}
+
+TensorOperatorBase &
+TensorOperatorBase::getCompute(const std::string & param_name)
+{
+  const auto name = getParam<TensorComputeName>(param_name);
+  for (const auto & cmp : _tensor_problem.getComputes())
+    if (cmp->name() == name)
+      return *cmp;
+  paramError(param_name, "Compute not found.");
 }
