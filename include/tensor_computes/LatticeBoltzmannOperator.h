@@ -25,7 +25,7 @@ public:
   LatticeBoltzmannOperator(const InputParameters & parameters);
 
 protected:
-  LatticeBoltzmannProblem& _lb_problem;
+  LatticeBoltzmannProblem & _lb_problem;
   const LatticeBoltzmannStencilBase & _stencil;
   LatticeBoltzmannMesh & _mesh;
 

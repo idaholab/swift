@@ -32,7 +32,7 @@ public:
   void computeBuffer() override;
 
 protected:
-  const std::vector<torch::Tensor> &  _f_old;
+  const std::vector<torch::Tensor> & _f_old;
   torch::Tensor _specular_reflection_indices;
   const Real _r; // combination coefficient
 };

@@ -21,14 +21,13 @@ LBMComputeDensity::validParams()
 }
 
 LBMComputeDensity::LBMComputeDensity(const InputParameters & parameters)
-  : LatticeBoltzmannOperator(parameters),
-  _f(getInputBuffer("f"))
+  : LatticeBoltzmannOperator(parameters), _f(getInputBuffer("f"))
 {
 }
 
 void
 LBMComputeDensity::computeBuffer()
-{   
+{
   _u = torch::sum(_f, 3);
   _lb_problem.maskedFillSolids(_u, 0);
 }

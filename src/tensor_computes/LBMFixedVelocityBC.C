@@ -79,30 +79,32 @@ template <>
 void
 LBMFixedVelocityBCTempl<2>::leftBoundary()
 {
-  Real deltaU = 0.0;  
-  torch::Tensor u_x_perturbed = torch::zeros({_grid_size[1], 1},  MooseTensor::floatTensorOptions());
+  Real deltaU = 0.0;
+  torch::Tensor u_x_perturbed = torch::zeros({_grid_size[1], 1}, MooseTensor::floatTensorOptions());
 
   if (_perturb)
   {
     deltaU = 1.0e-4 * _velocity;
-    Real phi = 0.0; //static_cast<Real>(rand()) / static_cast<float>(RAND_MAX) * 2.0 * M_PI;
-    torch::Tensor y_coords = torch::arange(0, _grid_size[1], MooseTensor::floatTensorOptions()).unsqueeze(1);
-    u_x_perturbed = _velocity + deltaU * torch::sin(y_coords / _grid_size[1] * 2.0 * M_PI + phi); 
+    Real phi = 0.0; // static_cast<Real>(rand()) / static_cast<float>(RAND_MAX) * 2.0 * M_PI;
+    torch::Tensor y_coords =
+        torch::arange(0, _grid_size[1], MooseTensor::floatTensorOptions()).unsqueeze(1);
+    u_x_perturbed = _velocity + deltaU * torch::sin(y_coords / _grid_size[1] * 2.0 * M_PI + phi);
   }
   else
     u_x_perturbed.fill_(_velocity);
-  
+
   torch::Tensor density =
       1.0 / (1.0 - u_x_perturbed) *
       (_f.index({0, Slice(), Slice(), 0}) + _f.index({0, Slice(), Slice(), 2}) +
        _f.index({0, Slice(), Slice(), 4}) +
        2.0 * (_f.index({0, Slice(), Slice(), 3}) + _f.index({0, Slice(), Slice(), 6}) +
-            _f.index({0, Slice(), Slice(), 7})));
+              _f.index({0, Slice(), Slice(), 7})));
 
   // axis aligned direction
   const auto & opposite_dir = _stencil._op[_stencil._left[0]];
   _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
-                _f.index({0, Slice(), Slice(), opposite_dir}) + 2.0 / 3.0 * density * u_x_perturbed);
+                _f.index({0, Slice(), Slice(), opposite_dir}) +
+                    2.0 / 3.0 * density * u_x_perturbed);
 
   // other directions
   for (unsigned int i = 1; i < _stencil._left.size(0); i++)

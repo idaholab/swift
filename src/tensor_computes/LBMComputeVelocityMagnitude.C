@@ -22,8 +22,7 @@ LBMComputeVelocityMagnitude::validParams()
 }
 
 LBMComputeVelocityMagnitude::LBMComputeVelocityMagnitude(const InputParameters & parameters)
-  : LatticeBoltzmannOperator(parameters),
-  _velocity(getInputBuffer("velocity"))
+  : LatticeBoltzmannOperator(parameters), _velocity(getInputBuffer("velocity"))
 {
 }
 
@@ -31,13 +30,14 @@ void
 LBMComputeVelocityMagnitude::computeBuffer()
 {
   const unsigned int & dim = _mesh.getDim();
-  switch(dim)
+  switch (dim)
   {
     case 2:
       _u = torch::sqrt(_velocity.select(3, 0).pow(2) + _velocity.select(3, 1).pow(2));
       break;
     case 3:
-      _u = torch::sqrt(_velocity.select(3, 0).pow(2) + _velocity.select(3, 1).pow(2) + _velocity.select(3, 2).pow(2));
+      _u = torch::sqrt(_velocity.select(3, 0).pow(2) + _velocity.select(3, 1).pow(2) +
+                       _velocity.select(3, 2).pow(2));
       break;
     default:
       mooseError("Unsupported dimension");

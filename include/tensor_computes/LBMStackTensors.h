@@ -11,12 +11,11 @@
 #include "LatticeBoltzmannOperator.h"
 
 /**
-  *  Stack given scalar tensor buffers and output vectorial tensor
-  */
+ *  Stack given scalar tensor buffers and output vectorial tensor
+ */
 class LBMStackTensors : public LatticeBoltzmannOperator
 {
 public:
-
   static InputParameters validParams();
 
   LBMStackTensors(const InputParameters &);

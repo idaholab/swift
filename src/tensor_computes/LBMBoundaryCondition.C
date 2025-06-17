@@ -14,15 +14,16 @@
 InputParameters
 LBMBoundaryCondition::validParams()
 {
-    InputParameters params = LatticeBoltzmannOperator::validParams();
-    MooseEnum boundary("top bottom left right front back wall");
-    params.addRequiredParam<MooseEnum>("boundary", boundary, "Edges/Faces where boundary condition is applied.");
-    params.addClassDescription("LBMBoundaryCondition object.");
-    return params;
+  InputParameters params = LatticeBoltzmannOperator::validParams();
+  MooseEnum boundary("top bottom left right front back wall");
+  params.addRequiredParam<MooseEnum>(
+      "boundary", boundary, "Edges/Faces where boundary condition is applied.");
+  params.addClassDescription("LBMBoundaryCondition object.");
+  return params;
 }
 
 LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
-    : LatticeBoltzmannOperator(parameters),
+  : LatticeBoltzmannOperator(parameters),
     _boundary(getParam<MooseEnum>("boundary").getEnum<Boundary>())
 {
   /**
@@ -49,25 +50,25 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
   }
 }
 
-int64_t 
+int64_t
 LBMBoundaryCondition::countNumberofBoundaries()
 {
   /**
    * For efficiency, we count the number of boundaries first
    */
   std::vector<int64_t> expected_shape = {_mesh.getElementsInDimension(0),
-    _mesh.getElementsInDimension(1),
-    _mesh.getElementsInDimension(2),
-    _stencil._q};
-  
+                                         _mesh.getElementsInDimension(1),
+                                         _mesh.getElementsInDimension(2),
+                                         _stencil._q};
+
   LBMBoundaryCondition::determineBoundaryTypes();
-  
+
   int64_t k = 0;
   int64_t num_of_boundaries = 0;
   for (int64_t i = 0; i < expected_shape[0]; i++)
     for (int64_t j = 0; j < expected_shape[1]; j++)
       for (int64_t ic = 0; ic < expected_shape[3]; ic++)
-      { 
+      {
         // Avoid calling item() repeatedly
         int64_t boundary_type = _boundary_types[i][j][k].item<int64_t>();
 
@@ -78,11 +79,11 @@ LBMBoundaryCondition::countNumberofBoundaries()
           // when streaming along ic is NOT possible at i, j, k i.e zero
           if (_if_stream[if_stream_index].item<int64_t>() == 0)
           {
-            num_of_boundaries ++;
+            num_of_boundaries++;
           }
         }
       }
-  
+
   return num_of_boundaries;
 }
 
@@ -93,15 +94,15 @@ LBMBoundaryCondition::buildBoundaryIndices()
    * Building boundary indices
    */
   std::vector<int64_t> expected_shape = {_mesh.getElementsInDimension(0),
-    _mesh.getElementsInDimension(1),
-    _mesh.getElementsInDimension(2),
-    _stencil._q};
-  
-  // const torch::Tensor & mesh_expanded = _mesh.getBinaryMesh().unsqueeze(3).expand(expected_shape);
-  // auto mask = (mesh_expanded == 2) & (_u == 0);
-  // _boundary_indices = torch::nonzero(mask);
-  // _boundary_indices = _boundary_indices.to(MooseTensor::intTensorOptions());
-  
+                                         _mesh.getElementsInDimension(1),
+                                         _mesh.getElementsInDimension(2),
+                                         _stencil._q};
+
+  // const torch::Tensor & mesh_expanded =
+  // _mesh.getBinaryMesh().unsqueeze(3).expand(expected_shape); auto mask = (mesh_expanded == 2) &
+  // (_u == 0); _boundary_indices = torch::nonzero(mask); _boundary_indices =
+  // _boundary_indices.to(MooseTensor::intTensorOptions());
+
   int64_t num_of_boundaries = countNumberofBoundaries();
 
   // initialize boundary indices
@@ -115,33 +116,35 @@ LBMBoundaryCondition::buildBoundaryIndices()
       {
         // Avoid calling item() repeatedly
         int64_t boundary_type = _boundary_types[i][j][k].item<int64_t>();
-        
+
         if (boundary_type != -1)
         {
           int64_t if_stream_index = _all_boundary_types.size(0) * ic + boundary_type;
-          
+
           // when streaming along ic is NOT possible at i, j, k i.e zero
           if (_if_stream[if_stream_index].item<int64_t>() == 0)
           {
-            _boundary_indices[row_index] = torch::tensor({i, j, k, _stencil._op[ic].item<int64_t>()}, MooseTensor::intTensorOptions());
-            row_index ++;
+            _boundary_indices[row_index] = torch::tensor(
+                {i, j, k, _stencil._op[ic].item<int64_t>()}, MooseTensor::intTensorOptions());
+            row_index++;
           }
         }
       }
 }
 
-void 
+void
 LBMBoundaryCondition::determineBoundaryTypes()
 {
   /**
    * Scan the binary domain in a 3x3 window to determine boundary types
    * D2Q9 only
-  */
+   */
 
-  const torch::Tensor & binary_mesh =  _mesh.getBinaryMesh();
-  _boundary_types = torch::zeros({_mesh.getElementsInDimension(0), 
-                                  _mesh.getElementsInDimension(1), 
-                                  _mesh.getElementsInDimension(2)}, MooseTensor::intTensorOptions());
+  const torch::Tensor & binary_mesh = _mesh.getBinaryMesh();
+  _boundary_types = torch::zeros({_mesh.getElementsInDimension(0),
+                                  _mesh.getElementsInDimension(1),
+                                  _mesh.getElementsInDimension(2)},
+                                 MooseTensor::intTensorOptions());
 
   _boundary_types.fill_(-1);
 
@@ -165,10 +168,14 @@ LBMBoundaryCondition::determineBoundaryTypes()
 
           // ensuring periodicity
           i_prime = (i_prime < 0) ? i_prime + _mesh.getElementsInDimension(0) : i_prime;
-          i_prime = (i_prime >= _mesh.getElementsInDimension(0)) ? i_prime - _mesh.getElementsInDimension(0) : i_prime;
+          i_prime = (i_prime >= _mesh.getElementsInDimension(0))
+                        ? i_prime - _mesh.getElementsInDimension(0)
+                        : i_prime;
 
           j_prime = (j_prime < 0) ? j_prime + _mesh.getElementsInDimension(1) : j_prime;
-          j_prime = (j_prime >= _mesh.getElementsInDimension(1)) ? j_prime - _mesh.getElementsInDimension(1) : j_prime;
+          j_prime = (j_prime >= _mesh.getElementsInDimension(1))
+                        ? j_prime - _mesh.getElementsInDimension(1)
+                        : j_prime;
 
           //
           if (binary_mesh[i_prime][j_prime][k].item<int64_t>() == 0)
@@ -187,7 +194,8 @@ LBMBoundaryCondition::determineBoundaryTypes()
 
           if (!is_decimal_number_in_boundary_types)
           {
-            std::string error_message = "Boundary type " + std::to_string(decimal_number) + " is not found";
+            std::string error_message =
+                "Boundary type " + std::to_string(decimal_number) + " is not found";
             mooseError(error_message);
           }
           else
@@ -204,7 +212,7 @@ LBMBoundaryCondition::determineBoundaryTypes()
 
 void
 LBMBoundaryCondition::computeBuffer()
-{ 
+{
   switch (_boundary)
   {
     case Boundary::top:

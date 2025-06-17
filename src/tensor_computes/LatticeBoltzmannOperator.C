@@ -21,12 +21,12 @@ LatticeBoltzmannOperator::validParams()
 
 LatticeBoltzmannOperator::LatticeBoltzmannOperator(const InputParameters & parameters)
   : TensorOperator(parameters),
-  _lb_problem(dynamic_cast<LatticeBoltzmannProblem&>(_tensor_problem)),
-  _stencil(_lb_problem.getStencil()),
-  _mesh(dynamic_cast<LatticeBoltzmannMesh &>(_lb_problem.mesh())),
-  _ex(_stencil._ex.clone().reshape({1, 1, 1, _stencil._q})),
-  _ey(_stencil._ey.clone().reshape({1, 1, 1, _stencil._q})),
-  _ez(_stencil._ez.clone().reshape({1, 1, 1, _stencil._q})),
-  _w(_stencil._weights.clone().reshape({1, 1, 1, _stencil._q}))
+    _lb_problem(dynamic_cast<LatticeBoltzmannProblem &>(_tensor_problem)),
+    _stencil(_lb_problem.getStencil()),
+    _mesh(dynamic_cast<LatticeBoltzmannMesh &>(_lb_problem.mesh())),
+    _ex(_stencil._ex.clone().reshape({1, 1, 1, _stencil._q})),
+    _ey(_stencil._ey.clone().reshape({1, 1, 1, _stencil._q})),
+    _ez(_stencil._ez.clone().reshape({1, 1, 1, _stencil._q})),
+    _w(_stencil._weights.clone().reshape({1, 1, 1, _stencil._q}))
 {
 }

@@ -13,7 +13,7 @@
 
 using namespace torch::indexing;
 
-registerMooseObject("SwiftApp", LBMComputeVelocity );
+registerMooseObject("SwiftApp", LBMComputeVelocity);
 
 InputParameters
 LBMComputeVelocity::validParams()
@@ -26,27 +26,29 @@ LBMComputeVelocity::validParams()
   return params;
 }
 
-LBMComputeVelocity::LBMComputeVelocity (const InputParameters & parameters)
+LBMComputeVelocity::LBMComputeVelocity(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
-  _f(getInputBuffer("f")),
-  _rho(getInputBuffer("rho")),
-  _body_force(getParam<Real>("body_force"))
+    _f(getInputBuffer("f")),
+    _rho(getInputBuffer("rho")),
+    _body_force(getParam<Real>("body_force"))
 {
 }
 
 void
 LBMComputeVelocity::computeBuffer()
-{   
+{
   const unsigned int & dim = _mesh.getDim();
   switch (dim)
   {
     case 3:
-      _u.index_put_({Slice(), Slice(), Slice(), 0}, torch::sum(_f * _stencil._ex, 3) / _rho + _body_force) ;
+      _u.index_put_({Slice(), Slice(), Slice(), 0},
+                    torch::sum(_f * _stencil._ex, 3) / _rho + _body_force);
       _u.index_put_({Slice(), Slice(), Slice(), 1}, torch::sum(_f * _stencil._ey, 3) / _rho);
       _u.index_put_({Slice(), Slice(), Slice(), 2}, torch::sum(_f * _stencil._ez, 3) / _rho);
       break;
     case 2:
-      _u.index_put_({Slice(), Slice(), Slice(), 0}, torch::sum(_f * _stencil._ex, 3) / _rho + _body_force);
+      _u.index_put_({Slice(), Slice(), Slice(), 0},
+                    torch::sum(_f * _stencil._ex, 3) / _rho + _body_force);
       _u.index_put_({Slice(), Slice(), Slice(), 1}, torch::sum(_f * _stencil._ey, 3) / _rho);
       break;
     default:

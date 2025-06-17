@@ -22,12 +22,12 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
 {
   _q = 19;
   // LBMD3Q19 lattice
-  _ex = torch::tensor({0,  0,  0,  0,  0,  1, -1,  0,  0,  0,
-                                                0,  1,  1, -1, -1,  1,  1, -1,  -1}, MooseTensor::intTensorOptions());
-  _ey = torch::tensor({0,  0,  0,  1, -1,  0,  0,  1,  1, -1,
-                                             -1,  0,  0,  0,  0,  1,  -1, 1,  -1}, MooseTensor::intTensorOptions());
-  _ez = torch::tensor({0,  1, -1,  0,  0,  0,  0,  1, -1,  1,
-                                             -1,  1, -1,  1, -1,  0,   0,  0,  0}, MooseTensor::intTensorOptions());
+  _ex = torch::tensor({0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 1, 1, -1, -1, 1, 1, -1, -1},
+                      MooseTensor::intTensorOptions());
+  _ey = torch::tensor({0, 0, 0, 1, -1, 0, 0, 1, 1, -1, -1, 0, 0, 0, 0, 1, -1, 1, -1},
+                      MooseTensor::intTensorOptions());
+  _ez = torch::tensor({0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, 1, -1, 0, 0, 0, 0},
+                      MooseTensor::intTensorOptions());
   _weights = torch::tensor(
       {
           1.0 / 3.0,  1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0,
@@ -60,7 +60,7 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
        {0., 0., 0., 0., 0., 0., 0., -1., -1., 1., 1., 0., 0., 0., 0., 1., -1., 1., -1.},
        {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., -1., -1., -1., -1., 1., 1.}},
       MooseTensor::floatTensorOptions());
-  
+
   _M_inv = torch::linalg::inv(_M);
 
   // relaxation matrix
@@ -90,7 +90,7 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
    * the opposite faces can be determined using _op vector
    * E.g. the opposite of _top[0] is _bottom[0] = _op[top[0]]
    */
-  _left = torch::tensor({5, 11, 12, 15, 16}, MooseTensor::intTensorOptions());  // x dir
-  _front = torch::tensor({3, 7, 8, 15, 17}, MooseTensor::intTensorOptions());   // y dir
-  _bottom = torch::tensor({1, 7, 9, 11, 13}, MooseTensor::intTensorOptions());  // z dir
+  _left = torch::tensor({5, 11, 12, 15, 16}, MooseTensor::intTensorOptions()); // x dir
+  _front = torch::tensor({3, 7, 8, 15, 17}, MooseTensor::intTensorOptions());  // y dir
+  _bottom = torch::tensor({1, 7, 9, 11, 13}, MooseTensor::intTensorOptions()); // z dir
 }
