@@ -1,12 +1,12 @@
-//* This file is part of the MOOSE framework
-//* https://www.mooseframework.org
-//*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
-//*
-//* Licensed under LGPL 2.1, please see LICENSE for details
-//* https://www.gnu.org/licenses/lgpl-2.1.html
+/**********************************************************************/
+/*                    DO NOT MODIFY THIS HEADER                       */
+/*             Swift, a Fourier spectral solver for MOOSE             */
+/*                                                                    */
+/*            Copyright 2024 Battelle Energy Alliance, LLC            */
+/*                        ALL RIGHTS RESERVED                         */
+/**********************************************************************/
 
+#include "Moose.h"
 #include "MooseError.h"
 #include "TensorProblem.h"
 #include "TensorSolver.h"
@@ -80,8 +80,7 @@ TensorProblem::init()
     torch::set_num_threads(n_threads);
   }
 
-  // initialize tensors (assuming all scalar for now, but in the future well have an
-  // TensorBufferBase pointer as well)
+  // initialize tensors
   for (auto pair : _tensor_buffer)
     pair.second->init();
 
@@ -95,12 +94,14 @@ TensorProblem::init()
   // update dependencies
   if (_solver)
     _solver->updateDependencies();
+  else
+  {
+    // dependency resolution of TensorComputes
+    DependencyResolverInterface::sort(_computes);
+  }
 
   // dependency resolution of TensorICs
   DependencyResolverInterface::sort(_ics);
-
-  // dependency resolution of TensorComputes
-  DependencyResolverInterface::sort(_computes);
 
   // dependency resolution of Tensor Postprocessors
   DependencyResolverInterface::sort(_pps);
@@ -127,6 +128,10 @@ TensorProblem::init()
   // init outputs
   for (auto & output : _outputs)
     output->init();
+
+  // check computes (after dependency update)
+  for (auto & cmp : _computes)
+    cmp->check();
 
   updateDOFMap();
 
@@ -157,6 +162,7 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     _sub_time = FEProblem::time();
 
     executeTensorInitialConditions();
+
     executeTensorOutputs(EXEC_INITIAL);
   }
 
@@ -171,13 +177,12 @@ TensorProblem::execute(const ExecFlagType & exec_type)
     else
       for (auto & cmp : _computes)
         cmp->computeBuffer();
+  }
 
-    // run postprocessing before output
-    for (auto & pp : _pps)
-      pp->computeBuffer();
-
+  if (exec_type == EXEC_TIMESTEP_END)
+  {
     // run outputs
-    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
+    executeTensorOutputs(EXEC_TIMESTEP_END);
   }
 
   FEProblem::execute(exec_type);
@@ -203,8 +208,12 @@ TensorProblem::executeTensorInitialConditions()
 
 /// perform output tasks
 void
-TensorProblem::executeTensorOutputs(const ExecFlagType &)
+TensorProblem::executeTensorOutputs(const ExecFlagType & exec_flag)
 {
+  // run postprocessing before output
+  for (auto & pp : _pps)
+    pp->computeBuffer();
+
   // wait for prior asynchronous activity on CPU buffers to complete
   // (this is a synchronization barrier for the threaded CPU activity)
   for (auto & output : _outputs)
@@ -219,8 +228,8 @@ TensorProblem::executeTensorOutputs(const ExecFlagType &)
 
   // run direct buffer outputs (asynchronous in threads)
   for (auto & output : _outputs)
-    output->startOutput();
-  // output->output();
+    if (output->shouldRun(exec_flag))
+      output->startOutput();
 
   if (_options.dtype() == torch::kFloat64)
     mapBuffersToAux<double>();
@@ -579,6 +588,12 @@ TensorProblem::getBufferBase(const std::string & buffer_name)
   if (it == _tensor_buffer.end())
     mooseError("TensorBuffer '", buffer_name, " does not exist in the system.");
   return *it->second.get();
+}
+
+const torch::Tensor &
+TensorProblem::getRawBuffer(const std::string & buffer_name)
+{
+  return getBufferBase(buffer_name).getRawTensor();
 }
 
 const torch::Tensor &
