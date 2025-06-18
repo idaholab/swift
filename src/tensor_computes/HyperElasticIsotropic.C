@@ -9,6 +9,8 @@
 #include "MooseError.h"
 #include "HyperElasticIsotropic.h"
 
+#ifdef NEML2_ENABLED
+
 registerMooseObject("SwiftApp", HyperElasticIsotropic);
 
 InputParameters
@@ -50,3 +52,5 @@ HyperElasticIsotropic::computeBuffer()
   _u = dot22(_tF, S);
   _tK4 = dot24(S, _tI4) + ddot44(ddot44(_tI4rt, dot42(dot24(_tF, C4), trans2(_tF))), _tI4rt);
 }
+
+#endif
