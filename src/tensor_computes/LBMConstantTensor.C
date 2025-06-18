@@ -32,8 +32,8 @@ LBMConstantTensor::init()
   for (auto name : names)
   {
     const std::string coefficient_name = "C_" + name;
-    const Real & coefficient = _lb_problem.getScalarConstant(coefficient_name);
-    auto value = (_lb_problem.getScalarConstant(name)) / coefficient;
+    const Real & coefficient = _lb_problem.getConstant<Real>(coefficient_name);
+    auto value = (_lb_problem.getConstant<Real>(name)) / coefficient;
     _values.push_back(value);
   }
 }
