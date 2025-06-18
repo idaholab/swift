@@ -45,19 +45,19 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
     _tolerance(getParam<Real>("tolerance"))
 {
   // compute unit conversion constants (must happen before compute object init)
-  Real Cl = _scalar_constants.at("dx");
-  Real nu_lu = 1.0 / 3.0 * (_scalar_constants.at("tau") - 0.5);
-  Real Ct = Cl * Cl * nu_lu / _scalar_constants.at("nu");
-  Real Cm = _scalar_constants.at("rho") * Cl * Cl * Cl;
-  Real Cu = Cl / Ct;
-  Real Crho = _scalar_constants.at("rho");
-  _scalar_constants.insert(std::pair<std::string, Real>("C_t", Ct));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_m", Cm));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_Ux", Cu));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_Uy", Cu));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_Uz", Cu));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_U", Cu));
-  _scalar_constants.insert(std::pair<std::string, Real>("C_rho", Crho));
+  const Real & dx = getConstant<Real>("dx");
+  const Real & nu_lu = 1.0 / 3.0 * getConstant<Real>("tau") - 0.5;
+  const Real & Ct = dx * dx * nu_lu / getConstant<Real>("nu");
+  const Real & Cm = getConstant<Real>("rho") * dx * dx * dx;
+  const Real & Cu = dx / Ct;
+  const Real & Crho = getConstant<Real>("rho");
+  declareConstant("C_t", Ct);
+  declareConstant("C_m", Cm);
+  declareConstant("C_Ux", Cu);
+  declareConstant("C_Uy", Cu);
+  declareConstant("C_Uz", Cu);
+  declareConstant("C_U", Cu);
+  declareConstant("C_Rho", Crho);
 }
 
 void

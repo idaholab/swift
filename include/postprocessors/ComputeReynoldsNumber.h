@@ -26,7 +26,8 @@ public:
   virtual PostprocessorValue getValue() const override;
 
 protected:
-  const Real _kinematic_viscosity;
-  const Real _D; // diameter
+  const Real & _kinematic_viscosity;
+  const Real & _D; // diameter
+  const Real & _C_U;
   Real _Reynolds_number;
 };

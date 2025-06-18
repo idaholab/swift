@@ -8,7 +8,6 @@
 
 #include "ComputeReynoldsNumber.h"
 #include "TensorProblem.h"
-#include "TensorBuffer.h"
 
 registerMooseObject("SwiftApp", ComputeReynoldsNumber);
 
@@ -25,16 +24,16 @@ ComputeReynoldsNumber::validParams()
 ComputeReynoldsNumber::ComputeReynoldsNumber(const InputParameters & parameters)
   : TensorPostprocessor(parameters),
     _kinematic_viscosity(
-        _tensor_problem.getScalarConstant(getParam<std::string>("kinematic_viscosity"))),
-    _D(_tensor_problem.getScalarConstant(getParam<std::string>("diameter")))
+        _tensor_problem.getConstant<Real>(getParam<std::string>("kinematic_viscosity"))),
+    _D(_tensor_problem.getConstant<Real>(getParam<std::string>("diameter"))),
+    _C_U(_tensor_problem.getConstant<Real>("C_U"))
 {
 }
 
 void
 ComputeReynoldsNumber::execute()
 {
-  const auto avg_speed =
-      _u.sum().cpu().item<double>() / torch::numel(_u) * _tensor_problem.getScalarConstant("C_U");
+  const auto avg_speed = _u.sum().cpu().item<double>() / torch::numel(_u) * _C_U;
   _Reynolds_number = avg_speed * _D / _kinematic_viscosity;
 }
 

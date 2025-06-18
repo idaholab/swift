@@ -34,9 +34,9 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
     _f(getInputBuffer("f")),
     _feq(getInputBuffer("feq")),
     _shape(_lb_problem.getGridSize()),
-    _tau_0(_lb_problem.getScalarConstant("tau")),
-    _C_s(_lb_problem.getScalarConstant("Cs")),
-    _delta_x(1.0), //_lb_problem.getScalarConstant("dx")
+    _tau_0(_lb_problem.getConstant<Real>("tau")),
+    _C_s(_lb_problem.getConstant<Real>("Cs")),
+    _delta_x(1.0), //_lb_problem.getConstant("dx")
     _projection(getParam<bool>("projection"))
 {
   //
