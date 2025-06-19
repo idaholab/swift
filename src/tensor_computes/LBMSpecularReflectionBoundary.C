@@ -39,11 +39,6 @@ LBMSpecularReflectionBoundary::buildBoundaryIndices()
   /**
    * Building boundary mask
    */
-  std::vector<int64_t> expected_shape = {_mesh.getElementsInDimension(0),
-                                         _mesh.getElementsInDimension(1),
-                                         _mesh.getElementsInDimension(2),
-                                         _stencil._q};
-
   // call parent class method
   LBMBoundaryCondition::buildBoundaryIndices();
 
@@ -54,9 +49,9 @@ LBMSpecularReflectionBoundary::buildBoundaryIndices()
   // determineBoundaryTypes();
   int64_t row_index = 0;
   int64_t k = 0;
-  for (int64_t i = 0; i < expected_shape[0]; i++)
-    for (int64_t j = 0; j < expected_shape[1]; j++)
-      for (int64_t ic = 0; ic < expected_shape[3]; ic++)
+  for (int64_t i = 0; i < _shape[0]; i++)
+    for (int64_t j = 0; j < _shape[1]; j++)
+      for (int64_t ic = 0; ic < _shape[3]; ic++)
       {
         int64_t boundary_type = _boundary_types[i][j][k].item<int64_t>();
         if (boundary_type != -1)

@@ -12,7 +12,6 @@
 
 class LatticeBoltzmannProblem;
 class LatticeBoltzmannStencilBase;
-class LatticeBoltzmannMesh;
 
 /**
  * LatticeBoltzmannOperator object
@@ -27,10 +26,12 @@ public:
 protected:
   LatticeBoltzmannProblem & _lb_problem;
   const LatticeBoltzmannStencilBase & _stencil;
-  LatticeBoltzmannMesh & _mesh;
 
   const torch::Tensor _ex;
   const torch::Tensor _ey;
   const torch::Tensor _ez;
   const torch::Tensor _w;
+
+  const std::vector<int64_t> & _shape;
+  const std::vector<int64_t> & _shape_q;
 };

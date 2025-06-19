@@ -29,7 +29,7 @@ LBMComputeVelocityMagnitude::LBMComputeVelocityMagnitude(const InputParameters &
 void
 LBMComputeVelocityMagnitude::computeBuffer()
 {
-  const unsigned int & dim = _mesh.getDim();
+  const unsigned int & dim = _domain.getDim();
   switch (dim)
   {
     case 2:

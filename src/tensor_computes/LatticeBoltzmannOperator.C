@@ -9,7 +9,6 @@
 #include "LatticeBoltzmannOperator.h"
 #include "LatticeBoltzmannProblem.h"
 #include "LatticeBoltzmannStencilBase.h"
-#include "LatticeBoltzmannMesh.h"
 
 InputParameters
 LatticeBoltzmannOperator::validParams()
@@ -23,10 +22,11 @@ LatticeBoltzmannOperator::LatticeBoltzmannOperator(const InputParameters & param
   : TensorOperator(parameters),
     _lb_problem(dynamic_cast<LatticeBoltzmannProblem &>(_tensor_problem)),
     _stencil(_lb_problem.getStencil()),
-    _mesh(dynamic_cast<LatticeBoltzmannMesh &>(_lb_problem.mesh())),
     _ex(_stencil._ex.clone().reshape({1, 1, 1, _stencil._q})),
     _ey(_stencil._ey.clone().reshape({1, 1, 1, _stencil._q})),
     _ez(_stencil._ez.clone().reshape({1, 1, 1, _stencil._q})),
-    _w(_stencil._weights.clone().reshape({1, 1, 1, _stencil._q}))
+    _w(_stencil._weights.clone().reshape({1, 1, 1, _stencil._q})),
+    _shape(_lb_problem.getExtendedShape()),
+    _shape_q(_lb_problem.getExtendedShapeQ())
 {
 }
