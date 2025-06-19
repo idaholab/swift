@@ -10,6 +10,9 @@
 
 #include "TensorBuffer.h"
 
+class LatticeBoltzmannStencilBase;
+class LatticeBoltzmannProblem;
+
 /**
  * Tensor wrapper for LBM tensors
  */
@@ -24,7 +27,7 @@ public:
   virtual void makeCPUCopy() override;
 
 protected:
-  Real _dimension;
+  const std::string _buffer_type;
+  LatticeBoltzmannProblem & _lb_problem;
+  const LatticeBoltzmannStencilBase & _stencil;
 };
-
-// registerTensorType(LBMTensorBuffer, torch::Tensor);
