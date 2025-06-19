@@ -26,6 +26,8 @@ public:
   void init() override;
   virtual void makeCPUCopy() override;
 
+  void readTensorFromFile(const std::vector<int64_t> &);
+
 protected:
   const std::string _buffer_type;
   LatticeBoltzmannProblem & _lb_problem;

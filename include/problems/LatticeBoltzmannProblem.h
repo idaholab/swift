@@ -49,6 +49,13 @@ public:
 
   const std::array<int64_t, 3> & getGridSize() const { return _n; }
 
+  const bool & isBinaryMedia() { return _is_binary_media; }
+
+  const torch::Tensor & getBinaryMedia() { return _binary_media; }
+
+  const std::vector<int64_t> & getExtendedShape() { return _shape_extended; }
+  const std::vector<int64_t> & getExtendedShapeQ() { return _shape_extended_to_q; }
+
   /// sets up slip model
   void enableSlipModel();
 
@@ -63,8 +70,13 @@ public:
   printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
 
 protected:
-  /// LBM Mesh object
-  LatticeBoltzmannMesh * _lbm_mesh;
+  /// LBM mesh/media
+  torch::Tensor _binary_media;
+  const bool _is_binary_media;
+
+  ///
+  std::vector<int64_t> _shape_extended;
+  std::vector<int64_t> _shape_extended_to_q;
 
   /// LBM stencils object
   std::shared_ptr<LatticeBoltzmannStencilBase> _stencil;

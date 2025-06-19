@@ -25,6 +25,9 @@ InputParameters
 LatticeBoltzmannProblem::validParams()
 {
   InputParameters params = TensorProblem::validParams();
+  params.addParam<bool>("is_binary_media", false, "Is binary media provided");
+  params.addParam<std::string>(
+      "binary_media", "", "The tensor buffer object containing binary media/mesh");
   params.addParam<bool>("enable_slip", false, "Enable slip model");
   // params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
   // params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
@@ -37,14 +40,25 @@ LatticeBoltzmannProblem::validParams()
 
 LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & parameters)
   : TensorProblem(parameters),
-    _lbm_mesh(dynamic_cast<LatticeBoltzmannMesh *>(&_mesh)),
+    _is_binary_media(getParam<bool>("is_binary_media")),
     _enable_slip(getParam<bool>("enable_slip")),
     /*_mfp(getParam<Real>("mfp")),
     _dx(getParam<Real>("dx")),*/
     _lbm_substeps(getParam<unsigned int>("substeps")),
     _tolerance(getParam<Real>("tolerance"))
 {
-  // compute unit conversion constants (must happen before compute object init)
+  // fix sizes
+  std::vector<int64_t> shape(_domain.getShape().begin(), _domain.getShape().end());
+  if (_domain.getDim() < 3)
+    shape.push_back(1);
+
+  for (int64_t i = 0; i < shape.size(); i++)
+  {
+    _shape_extended.push_back(shape[i]);
+    _shape_extended_to_q.push_back(shape[i]);
+  }
+
+  // compute unit conversion constants (must happen before compute object::init)
   const Real & dx = getConstant<Real>("dx");
   const Real & nu_lu = 1.0 / 3.0 * getConstant<Real>("tau") - 0.5;
   const Real & Ct = dx * dx * nu_lu / getConstant<Real>("nu");
@@ -57,13 +71,19 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
   declareConstant("C_Uy", Cu);
   declareConstant("C_Uz", Cu);
   declareConstant("C_U", Cu);
-  declareConstant("C_Rho", Crho);
+  declareConstant("C_rho", Crho);
 }
 
 void
 LatticeBoltzmannProblem::init()
 {
   TensorProblem::init();
+
+  // fix mesh if provided
+  if (_is_binary_media)
+    _binary_media = getBuffer(getParam<std::string>("binary_media"));
+  else
+    _binary_media = torch::ones(_shape, MooseTensor::intTensorOptions());
 
   // dependency resolution of boundary conditions
   DependencyResolverInterface::sort(_bcs);
@@ -145,27 +165,26 @@ LatticeBoltzmannProblem::addStencil(const std::string & stencil_name,
   _stencil = _factory.create<LatticeBoltzmannStencilBase>(stencil_name, name, parameters, 0);
   _stencil_counter++;
   logAdd("LatticeBoltzmannStencilBase", name, stencil_name, parameters);
+
+  _shape_extended_to_q.push_back(_stencil->_q);
 }
 
 void
 LatticeBoltzmannProblem::maskedFillSolids(torch::Tensor & t, const Real & value)
 {
   const auto tensor_shape = t.sizes();
-  const bool & is_mesh_file = _lbm_mesh->isMeshDatFile();
-  const bool & is_mesh_vtk = _lbm_mesh->isMeshVTKFile();
-  const auto & binary_mesh = _lbm_mesh->getBinaryMesh();
-  if (is_mesh_file || is_mesh_vtk)
+  if (_is_binary_media)
   {
-    if (t.dim() == binary_mesh.dim())
+    if (t.dim() == _binary_media.dim())
     {
       // 3D
-      const auto solid_mask = (binary_mesh == value);
+      const auto solid_mask = (_binary_media == value);
       t.masked_fill_(solid_mask, value);
     }
     else
     {
       // 2D and 1D
-      const auto solid_mask = (binary_mesh == value).unsqueeze(-1).expand(tensor_shape);
+      const auto solid_mask = (_binary_media == value).unsqueeze(-1).expand(tensor_shape);
       t.masked_fill_(solid_mask, value);
     }
   }

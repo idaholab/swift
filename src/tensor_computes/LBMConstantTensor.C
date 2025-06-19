@@ -14,7 +14,7 @@ InputParameters
 LBMConstantTensor::validParams()
 {
   InputParameters params = LatticeBoltzmannOperator::validParams();
-  params.addRequiredParam<std::vector<std::string>>("values", "The scalar constant names.");
+  params.addRequiredParam<std::vector<std::string>>("constants", "The scalar constant names.");
   params.addClassDescription("LBMConstantTensor object.");
   return params;
 }
@@ -27,7 +27,7 @@ LBMConstantTensor::LBMConstantTensor(const InputParameters & parameters)
 void
 LBMConstantTensor::init()
 {
-  auto names = getParam<std::vector<std::string>>("values");
+  auto names = getParam<std::vector<std::string>>("constants");
 
   for (auto name : names)
   {

@@ -9,7 +9,6 @@
 #include "LBMBoundaryCondition.h"
 #include "LatticeBoltzmannProblem.h"
 #include "LatticeBoltzmannStencilBase.h"
-#include "LatticeBoltzmannMesh.h"
 
 InputParameters
 LBMBoundaryCondition::validParams()
@@ -32,22 +31,22 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
    * This will be achieved by shifting the mesh around in streaming directions and finding where
    * boundary hit happens
    */
-  if (_mesh.isMeshDatFile() || _mesh.isMeshVTKFile())
-  {
-    torch::Tensor new_mesh = _mesh.getBinaryMesh().clone();
-    for (int64_t ic = 1; ic < _stencil._q; ic++)
-    {
-      int64_t ex = _stencil._ex[ic].item<int64_t>();
-      int64_t ey = _stencil._ey[ic].item<int64_t>();
-      int64_t ez = _stencil._ez[ic].item<int64_t>();
-      torch::Tensor shifted_mesh = torch::roll(new_mesh, {ex, ey, ez}, {0, 1, 2});
-      torch::Tensor adjacent_to_boundary = (shifted_mesh == 0) & (new_mesh == 1);
-      new_mesh.masked_fill_(adjacent_to_boundary, 2);
-    }
-    // Deep copy new mesh
-    // MooseTensor::printField(new_mesh, 1, 0);
-    _mesh.setBinaryMesh(new_mesh);
-  }
+  // if (_lb_problem.isBinaryMedia())
+  // {
+  //   auto new_mesh = _mesh.getBinaryMesh().clone();
+  //   for (int64_t ic = 1; ic < _stencil._q; ic++)
+  //   {
+  //     int64_t ex = _stencil._ex[ic].item<int64_t>();
+  //     int64_t ey = _stencil._ey[ic].item<int64_t>();
+  //     int64_t ez = _stencil._ez[ic].item<int64_t>();
+  //     torch::Tensor shifted_mesh = torch::roll(new_mesh, {ex, ey, ez}, {0, 1, 2});
+  //     torch::Tensor adjacent_to_boundary = (shifted_mesh == 0) & (new_mesh == 1);
+  //     new_mesh.masked_fill_(adjacent_to_boundary, 2);
+  //   }
+  //   // Deep copy new mesh
+  //   // MooseTensor::printField(new_mesh, 1, 0);
+  //   _mesh.setBinaryMesh(new_mesh);
+  // }
 }
 
 int64_t
@@ -56,18 +55,14 @@ LBMBoundaryCondition::countNumberofBoundaries()
   /**
    * For efficiency, we count the number of boundaries first
    */
-  std::vector<int64_t> expected_shape = {_mesh.getElementsInDimension(0),
-                                         _mesh.getElementsInDimension(1),
-                                         _mesh.getElementsInDimension(2),
-                                         _stencil._q};
 
   LBMBoundaryCondition::determineBoundaryTypes();
 
   int64_t k = 0;
   int64_t num_of_boundaries = 0;
-  for (int64_t i = 0; i < expected_shape[0]; i++)
-    for (int64_t j = 0; j < expected_shape[1]; j++)
-      for (int64_t ic = 0; ic < expected_shape[3]; ic++)
+  for (int64_t i = 0; i < _shape_q[0]; i++)
+    for (int64_t j = 0; j < _shape_q[1]; j++)
+      for (int64_t ic = 0; ic < _shape_q[3]; ic++)
       {
         // Avoid calling item() repeatedly
         int64_t boundary_type = _boundary_types[i][j][k].item<int64_t>();
@@ -93,11 +88,6 @@ LBMBoundaryCondition::buildBoundaryIndices()
   /**
    * Building boundary indices
    */
-  std::vector<int64_t> expected_shape = {_mesh.getElementsInDimension(0),
-                                         _mesh.getElementsInDimension(1),
-                                         _mesh.getElementsInDimension(2),
-                                         _stencil._q};
-
   // const torch::Tensor & mesh_expanded =
   // _mesh.getBinaryMesh().unsqueeze(3).expand(expected_shape); auto mask = (mesh_expanded == 2) &
   // (_u == 0); _boundary_indices = torch::nonzero(mask); _boundary_indices =
@@ -110,9 +100,9 @@ LBMBoundaryCondition::buildBoundaryIndices()
 
   int64_t row_index = 0;
   int64_t k = 0;
-  for (int64_t i = 0; i < expected_shape[0]; i++)
-    for (int64_t j = 0; j < expected_shape[1]; j++)
-      for (int64_t ic = 0; ic < expected_shape[3]; ic++)
+  for (int64_t i = 0; i < _shape_q[0]; i++)
+    for (int64_t j = 0; j < _shape_q[1]; j++)
+      for (int64_t ic = 0; ic < _shape_q[3]; ic++)
       {
         // Avoid calling item() repeatedly
         int64_t boundary_type = _boundary_types[i][j][k].item<int64_t>();
@@ -140,11 +130,9 @@ LBMBoundaryCondition::determineBoundaryTypes()
    * D2Q9 only
    */
 
-  const torch::Tensor & binary_mesh = _mesh.getBinaryMesh();
-  _boundary_types = torch::zeros({_mesh.getElementsInDimension(0),
-                                  _mesh.getElementsInDimension(1),
-                                  _mesh.getElementsInDimension(2)},
-                                 MooseTensor::intTensorOptions());
+  const torch::Tensor & binary_mesh = _lb_problem.getBinaryMedia();
+  _boundary_types =
+      torch::zeros({_shape[0], _shape[1], _shape[2]}, MooseTensor::intTensorOptions());
 
   _boundary_types.fill_(-1);
 
@@ -153,8 +141,8 @@ LBMBoundaryCondition::determineBoundaryTypes()
 
   int64_t k = 0;
 
-  for (int64_t i = 0; i < _mesh.getElementsInDimension(0); i++)
-    for (int64_t j = 0; j < _mesh.getElementsInDimension(1); j++)
+  for (int64_t i = 0; i < _shape[0]; i++)
+    for (int64_t j = 0; j < _shape[1]; j++)
     {
       if (binary_mesh[i][j][k].item<int64_t>() != 0)
       {
@@ -167,15 +155,11 @@ LBMBoundaryCondition::determineBoundaryTypes()
           int64_t j_prime = j + _stencil._ey[d2q9_order_to_new_order[ic]].item<int64_t>();
 
           // ensuring periodicity
-          i_prime = (i_prime < 0) ? i_prime + _mesh.getElementsInDimension(0) : i_prime;
-          i_prime = (i_prime >= _mesh.getElementsInDimension(0))
-                        ? i_prime - _mesh.getElementsInDimension(0)
-                        : i_prime;
+          i_prime = (i_prime < 0) ? i_prime + _shape[0] : i_prime;
+          i_prime = (i_prime >= _shape[0]) ? i_prime - _shape[0] : i_prime;
 
-          j_prime = (j_prime < 0) ? j_prime + _mesh.getElementsInDimension(1) : j_prime;
-          j_prime = (j_prime >= _mesh.getElementsInDimension(1))
-                        ? j_prime - _mesh.getElementsInDimension(1)
-                        : j_prime;
+          j_prime = (j_prime < 0) ? j_prime + _shape[1] : j_prime;
+          j_prime = (j_prime >= _shape[1]) ? j_prime - _shape[1] : j_prime;
 
           //
           if (binary_mesh[i_prime][j_prime][k].item<int64_t>() == 0)

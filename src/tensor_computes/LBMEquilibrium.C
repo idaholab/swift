@@ -32,7 +32,7 @@ void
 LBMEquilibrium::computeBuffer()
 {
   // prepping
-  const unsigned int & dim = _mesh.getDim();
+  const unsigned int & dim = _domain.getDim();
 
   if (_rho.dim() < 3)
     _rho.unsqueeze_(2);
