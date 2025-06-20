@@ -36,7 +36,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
     _shape(_lb_problem.getGridSize()),
     _tau_0(_lb_problem.getConstant<Real>("tau")),
     _C_s(_lb_problem.getConstant<Real>("Cs")),
-    _delta_x(1.0), //_lb_problem.getConstant("dx")
+    _delta_x(1.0),
     _projection(getParam<bool>("projection"))
 {
   //
