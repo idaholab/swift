@@ -59,19 +59,19 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
   }
 
   // compute unit conversion constants (must happen before compute object::init)
-  const Real & dx = getConstant<Real>("dx");
-  const Real & nu_lu = 1.0 / 3.0 * getConstant<Real>("tau") - 0.5;
-  const Real & Ct = dx * dx * nu_lu / getConstant<Real>("nu");
-  const Real & Cm = getConstant<Real>("rho") * dx * dx * dx;
-  const Real & Cu = dx / Ct;
-  const Real & Crho = getConstant<Real>("rho");
-  declareConstant("C_t", Ct);
-  declareConstant("C_m", Cm);
-  declareConstant("C_Ux", Cu);
-  declareConstant("C_Uy", Cu);
-  declareConstant("C_Uz", Cu);
-  declareConstant("C_U", Cu);
-  declareConstant("C_rho", Crho);
+  // const Real & dx = getConstant<Real>("dx");
+  // const Real & nu_lu = 1.0 / 3.0 * getConstant<Real>("tau") - 0.5;
+  // const Real & Ct = dx * dx * nu_lu / getConstant<Real>("nu");
+  // const Real & Cm = getConstant<Real>("rho") * dx * dx * dx;
+  // const Real & Cu = dx / Ct;
+  // const Real & Crho = getConstant<Real>("rho");
+  // declareConstant("C_t", Ct);
+  // declareConstant("C_m", Cm);
+  // declareConstant("C_Ux", Cu);
+  // declareConstant("C_Uy", Cu);
+  // declareConstant("C_Uz", Cu);
+  // declareConstant("C_U", Cu);
+  // declareConstant("C_rho", Crho);
 }
 
 void

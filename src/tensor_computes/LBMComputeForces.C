@@ -22,7 +22,7 @@ LBMComputeForces::validParams()
   params.addRequiredParam<TensorInputBufferName>("velocity", "Macroscopic velocity");
   params.addRequiredParam<TensorInputBufferName>("rho", "Macroscopic density");
   params.addParam<bool>("enable_gravity", false, "Whether to consider gravity or not");
-
+  params.addParam<std::string>("gravity", "g", "Gravitational accelaration");
   params.addClassDescription("Compute object for LB forces");
   return params;
 }
@@ -32,8 +32,7 @@ LBMComputeForces::LBMComputeForces(const InputParameters & parameters)
     _velocity(getInputBuffer(getParam<TensorInputBufferName>("velocity"))),
     _density(getInputBuffer(getParam<TensorInputBufferName>("rho"))),
     _enable_gravity(getParam<bool>("enable_gravity")),
-    _g(-9.81 * _lb_problem.getConstant<Real>("C_t") * _lb_problem.getConstant<Real>("C_t") /
-       _lb_problem.getConstant<Real>("dx")),
+    _g(_lb_problem.getConstant<Real>("gravity")),
     _tau(_lb_problem.getConstant<Real>("tau"))
 {
   _source_term = torch::zeros_like(_u);

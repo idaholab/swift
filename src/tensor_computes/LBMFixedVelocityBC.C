@@ -42,7 +42,7 @@ LBMFixedVelocityBCTempl<dimension>::LBMFixedVelocityBCTempl(const InputParameter
   : LBMBoundaryCondition(parameters),
     _f(getInputBuffer("f")),
     _grid_size(_lb_problem.getGridSize()),
-    _velocity(_lb_problem.getConstant<Real>("Ux") / _lb_problem.getConstant<Real>("C_Ux")),
+    _velocity(_lb_problem.getConstant<Real>(getParam<std::string>("velocity"))),
     _perturb(getParam<bool>("perturb"))
 {
 }

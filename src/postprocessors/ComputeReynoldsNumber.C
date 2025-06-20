@@ -15,7 +15,7 @@ InputParameters
 ComputeReynoldsNumber::validParams()
 {
   InputParameters params = TensorPostprocessor::validParams();
-  params.addRequiredParam<std::string>("kinematic_viscosity", "Fluid viscosity");
+  params.addRequiredParam<std::string>("tau", "Fluid viscosity");
   params.addRequiredParam<std::string>("diameter", "Characteristic diamaeter");
   params.addClassDescription("Compute Reynolds number.");
   return params;
@@ -23,18 +23,17 @@ ComputeReynoldsNumber::validParams()
 
 ComputeReynoldsNumber::ComputeReynoldsNumber(const InputParameters & parameters)
   : TensorPostprocessor(parameters),
-    _kinematic_viscosity(
-        _tensor_problem.getConstant<Real>(getParam<std::string>("kinematic_viscosity"))),
-    _D(_tensor_problem.getConstant<Real>(getParam<std::string>("diameter"))),
-    _C_U(_tensor_problem.getConstant<Real>("C_U"))
+    _tau(_tensor_problem.getConstant<Real>(getParam<std::string>("tau"))),
+    _D(_tensor_problem.getConstant<Real>(getParam<std::string>("diameter")))
 {
 }
 
 void
 ComputeReynoldsNumber::execute()
 {
-  const auto avg_speed = _u.sum().cpu().item<double>() / torch::numel(_u) * _C_U;
-  _Reynolds_number = avg_speed * _D / _kinematic_viscosity;
+  const Real kinematic_viscosity = 1.0 / sqrt(3 / 0) * (_tau - 0.5);
+  const auto avg_speed = _u.sum().cpu().item<double>() / torch::numel(_u);
+  _Reynolds_number = avg_speed * _D / kinematic_viscosity;
 }
 
 PostprocessorValue

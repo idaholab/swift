@@ -11,21 +11,18 @@
 #include "LatticeBoltzmannOperator.h"
 
 /**
- * Compute object for macroscopic velocity reconstruction
+ * LBMConstantTensor object
  */
-class LBMComputeVelocity : public LatticeBoltzmannOperator
+class LBMTensorUnitConverter : public LatticeBoltzmannOperator
 {
 public:
   static InputParameters validParams();
 
-  LBMComputeVelocity(const InputParameters & parameters);
+  LBMTensorUnitConverter(const InputParameters & parameters);
 
-  void computeBuffer() override;
+  virtual void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _f;
-  const torch::Tensor & _rho;
-  const Real & _body_force_constant;
-  torch::Tensor _force_tensor;
-  bool _is_force_applied;
+  const torch::Tensor & _tensor_buffer;
+  const Real & _conversion_constant;
 };
