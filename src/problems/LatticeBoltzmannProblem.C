@@ -77,12 +77,6 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
 void
 LatticeBoltzmannProblem::init()
 {
-  // fix mesh if provided
-  if (_is_binary_media)
-    _binary_media = getBuffer(getParam<std::string>("binary_media"));
-  else
-    _binary_media = torch::ones(_shape, MooseTensor::intTensorOptions());
-
   //
   unsigned int n_threads = libMesh::n_threads();
   if (n_threads != 1)
@@ -155,6 +149,12 @@ LatticeBoltzmannProblem::init()
     variable_mapping += (std::get<bool>(tuple) ? "NODAL     " : "ELEMENTAL ") + buffer_name + '\n';
   if (!variable_mapping.empty())
     mooseInfo("Direct buffer to solution vector mappings:\n", variable_mapping);
+
+  // fix mesh if provided
+  if (_is_binary_media)
+    _binary_media = getBuffer(getParam<std::string>("binary_media"));
+  else
+    _binary_media = torch::ones(_shape, MooseTensor::intTensorOptions());
 }
 
 void
