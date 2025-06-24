@@ -25,10 +25,10 @@ public:
    * Conventions:
    * Left boundary is at x = 0
    * Right is at x = Nx
-   * Front is at y = 0
-   * Back is at y = Ny
-   * Bottom is at z = 0
-   * Top is at z = Nz
+   * Top is at y = 0
+   * Bottom is at y = Ny
+   * Front is at z = 0
+   * Back is at z = Nz
    *
    * Wall boundary refers to any obstacles in the domain
    * It is entirely possible to put an obstacle at left, right, front, back, top or
@@ -49,6 +49,8 @@ public:
   virtual void computeBuffer() override;
 
 protected:
+  const std::array<int64_t, 3> _grid_size;
+
   enum class Boundary
   {
     top,

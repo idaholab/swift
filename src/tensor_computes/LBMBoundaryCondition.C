@@ -23,6 +23,7 @@ LBMBoundaryCondition::validParams()
 
 LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
+    _grid_size(_lb_problem.getGridSize()),
     _boundary(getParam<MooseEnum>("boundary").getEnum<Boundary>())
 {
   /**
@@ -47,6 +48,8 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
   //   // MooseTensor::printField(new_mesh, 1, 0);
   //   _mesh.setBinaryMesh(new_mesh);
   // }
+
+  LBMBoundaryCondition::buildBoundaryIndices();
 }
 
 int64_t
@@ -223,4 +226,5 @@ LBMBoundaryCondition::computeBuffer()
     default:
       mooseError("Undefined boundary names");
   }
+  _lb_problem.maskedFillSolids(_u, 0);
 }
