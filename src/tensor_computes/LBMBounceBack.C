@@ -26,8 +26,7 @@ LBMBounceBack::validParams()
 
 LBMBounceBack::LBMBounceBack(const InputParameters & parameters)
   : LBMBoundaryCondition(parameters),
-    _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1)),
-    _grid_size(_lb_problem.getGridSize())
+    _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1))
 {
 }
 
@@ -100,13 +99,6 @@ LBMBounceBack::backBoundary()
 void
 LBMBounceBack::wallBoundary()
 {
-  // std::cout<<_boundary_indices<<std::endl;
-  // build boundary mask in the begining of simulation
-  if (_lb_problem.getTotalSteps() == 0)
-  {
-    LBMBoundaryCondition::buildBoundaryIndices();
-  }
-
   // bounce-back
   _u.index_put_(
       {_boundary_indices.index({Slice(), 0}),
