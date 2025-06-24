@@ -20,19 +20,12 @@ public:
 
   LBMComputeForces(const InputParameters & parameters);
 
-  void computeSourceTerm();
-  void computeBodyForce();
   void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _velocity;
-  const torch::Tensor & _density;
-
-  torch::Tensor _source_term;
-  torch::Tensor _body_force;
-
+  const torch::Tensor & _temperature;
+  const Real & _density;
+  const Real & _T0;
   const bool _enable_gravity;
   const Real _g; // gravitational acceleration
-  const Real _tau;
-  // const torch::Tensor & _f;
 };
