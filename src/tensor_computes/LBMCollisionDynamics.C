@@ -22,6 +22,8 @@ LBMCollisionDynamicsTempl<coll_dyn>::validParams()
   params.addRequiredParam<TensorInputBufferName>("f", "Input buffer distribution function");
   params.addRequiredParam<TensorInputBufferName>("feq",
                                                  "Input buffer equilibrium distribution function");
+  params.addRequiredParam<std::string>("tau0", "Relaxation parameter");
+  params.addParam<std::string>("Cs", "", "Relaxation parameter");
   params.addParam<bool>(
       "projection", false, "Whether or not to project non-equilibrium onto Hermite space.");
 
@@ -34,8 +36,8 @@ LBMCollisionDynamicsTempl<coll_dyn>::LBMCollisionDynamicsTempl(const InputParame
     _f(getInputBuffer("f")),
     _feq(getInputBuffer("feq")),
     _shape(_lb_problem.getGridSize()),
-    _tau_0(_lb_problem.getConstant<Real>("tau")),
-    _C_s(_lb_problem.getConstant<Real>("Cs")),
+    _tau_0(_lb_problem.getConstant<Real>(getParam<std::string>("tau0"))),
+    _C_s(_lb_problem.getConstant<Real>(getParam<std::string>("Cs"))),
     _delta_x(1.0),
     _projection(getParam<bool>("projection"))
 {
@@ -171,10 +173,6 @@ LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
   auto S = (-1.0 * eta + torch::sqrt(eta * eta + 4.0 * Q_mean)) / (2.0 * t_sgs);
 
   // relaxation parameter
-  // torch::Tensor tau_eff =
-  //     0.5 * (_tau_0 + torch::sqrt(Q_mean * 1.0 / (_mean_density * _lb_problem._cs4) * 2.0 *
-  //                                     sqrt(2.0) * _C_s * _delta_x * _delta_x +
-  //                                 _tau_0 * _tau_0));
   auto tau_eff = _tau_0 + _C_s * _delta_x * _delta_x * S / _lb_problem._cs2;
   tau_eff.unsqueeze_(3);
 

@@ -15,7 +15,8 @@ LBMEquilibrium::validParams()
 {
   InputParameters params = LatticeBoltzmannOperator::validParams();
   params.addClassDescription("Compute LB equilibrium distribution object.");
-  params.addRequiredParam<TensorInputBufferName>("rho", "LBM Density");
+  params.addRequiredParam<TensorInputBufferName>(
+      "bulk", "LBM bluk macroscpic parameter, e.g density or temperature");
   params.addRequiredParam<TensorInputBufferName>("velocity",
                                                  "LBM Velocty in x, y and z directions");
   return params;
