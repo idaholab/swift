@@ -29,6 +29,11 @@ protected:
   LatticeBoltzmannProblem & _lb_problem;
   const LatticeBoltzmannStencilBase & _stencil;
 
-  torch::Tensor & _u;
-  const std::vector<torch::Tensor> & _f_old;
+  struct Variable
+  {
+    torch::Tensor & _u;
+    const std::vector<torch::Tensor> & _f_old;
+  };
+
+  std::vector<Variable> _variables;
 };
