@@ -49,28 +49,28 @@ LBMFixedFirstOrderBCTempl<dimension>::LBMFixedFirstOrderBCTempl(const InputParam
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::topBoundary()
+LBMFixedFirstOrderBCTempl<2>::frontBoundary()
 {
-  // There is no top boundary in 2D
+  // There is no front boundary in 2D
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::topBoundary()
+LBMFixedFirstOrderBCTempl<3>::frontBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::bottomBoundary()
+LBMFixedFirstOrderBCTempl<2>::backBoundary()
 {
-  // There is no bottom boundary in 2D
+  // There is no back boundary in 2D
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::bottomBoundary()
+LBMFixedFirstOrderBCTempl<3>::backBoundary()
 {
   // TBD
 }
@@ -166,7 +166,7 @@ LBMFixedFirstOrderBCTempl<3>::rightBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::frontBoundary()
+LBMFixedFirstOrderBCTempl<2>::topBoundary()
 {
   torch::Tensor density =
       1.0 / (1.0 - _value) *
@@ -196,14 +196,14 @@ LBMFixedFirstOrderBCTempl<2>::frontBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::frontBoundary()
+LBMFixedFirstOrderBCTempl<3>::topBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::backBoundary()
+LBMFixedFirstOrderBCTempl<2>::bottomBoundary()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({Slice(), _grid_size[1] - 1, Slice(), 0}) +
@@ -234,7 +234,7 @@ LBMFixedFirstOrderBCTempl<2>::backBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::backBoundary()
+LBMFixedFirstOrderBCTempl<3>::bottomBoundary()
 {
   // TBD
 }

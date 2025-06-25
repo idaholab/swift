@@ -49,7 +49,8 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
   //   _mesh.setBinaryMesh(new_mesh);
   // }
 
-  LBMBoundaryCondition::buildBoundaryIndices();
+  if (_lb_problem.isBinaryMedia())
+    LBMBoundaryCondition::buildBoundaryIndices();
 }
 
 int64_t
