@@ -25,7 +25,7 @@ public:
 protected:
   const torch::Tensor & _f;
   const torch::Tensor & _rho;
+  const torch::Tensor & _force_tensor;
   const Real & _body_force_constant;
-  torch::Tensor _force_tensor;
   bool _is_force_applied;
 };

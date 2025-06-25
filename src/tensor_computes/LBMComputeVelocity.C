@@ -20,7 +20,7 @@ LBMComputeVelocity::validParams()
   InputParameters params = LatticeBoltzmannOperator::validParams();
   params.addRequiredParam<TensorInputBufferName>("f", "Distribution function");
   params.addRequiredParam<TensorInputBufferName>("rho", "Density");
-  params.addParam<TensorInputBufferName>("forces", "", "Force tensor");
+  params.addParam<TensorInputBufferName>("forces", "forces", "Force tensor");
   params.addParam<std::string>("body_force", "0.0", "Body force to be added in x-dir");
   params.addClassDescription("Compute object for macroscopic velocity reconstruction.");
   return params;
@@ -30,20 +30,9 @@ LBMComputeVelocity::LBMComputeVelocity(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
     _f(getInputBuffer("f")),
     _rho(getInputBuffer("rho")),
-    _body_force_constant(
-        _lb_problem.getConstant<Real>(getParam<TensorInputBufferName>("body_force")))
+    _force_tensor(getInputBuffer("forces")),
+    _body_force_constant(_lb_problem.getConstant<Real>(getParam<std::string>("body_force")))
 {
-  std::vector<int64_t> shape(_domain.getShape().begin(), _domain.getShape().end());
-  if (_domain.getDim() < 3)
-    shape.push_back(1);
-
-  shape.push_back(static_cast<int64_t>(_domain.getDim()));
-  _force_tensor = torch::zeros(shape, MooseTensor::floatTensorOptions());
-
-  if (_lb_problem.hasBuffer<torch::Tensor>("forces"))
-    _force_tensor = getInputBuffer("forces");
-  else
-    _force_tensor = _force_tensor + _body_force_constant;
 }
 
 void
@@ -65,6 +54,6 @@ LBMComputeVelocity::computeBuffer()
       mooseError("Unsupported dimension");
   }
   // include forces
-  _u = _u + _force_tensor / (2.0 * _rho.unsqueeze(3));
+  _u = _u + (_force_tensor + _body_force_constant) / (2.0 * _rho.unsqueeze(3));
   _lb_problem.maskedFillSolids(_u, 0);
 }
