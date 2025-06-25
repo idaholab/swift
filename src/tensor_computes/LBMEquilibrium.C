@@ -24,7 +24,7 @@ LBMEquilibrium::validParams()
 
 LBMEquilibrium::LBMEquilibrium(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters),
-    _rho(getInputBuffer("rho")),
+    _rho(getInputBuffer("bulk")),
     _velocity(getInputBuffer("velocity"))
 {
 }
