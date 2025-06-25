@@ -39,28 +39,28 @@ LBMFixedZerothOrderBCTempl<dimension>::LBMFixedZerothOrderBCTempl(
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::topBoundary()
+LBMFixedZerothOrderBCTempl<2>::frontBoundary()
 {
-  // There is not top boundary in 2D
+  // There is not front boundary in 2D
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::topBoundary()
+LBMFixedZerothOrderBCTempl<3>::frontBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::bottomBoundary()
+LBMFixedZerothOrderBCTempl<2>::backBoundary()
 {
-  // There is not bottom boundary in 2D
+  // There is not back boundary in 2D
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::bottomBoundary()
+LBMFixedZerothOrderBCTempl<3>::backBoundary()
 {
   // TBD
 }
@@ -142,7 +142,7 @@ LBMFixedZerothOrderBCTempl<3>::rightBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::frontBoundary()
+LBMFixedZerothOrderBCTempl<2>::topBoundary()
 {
   torch::Tensor velocity =
       1.0 - (_f.index({Slice(), 0, Slice(), 0}) + _f.index({Slice(), 0, Slice(), 1}) +
@@ -171,14 +171,14 @@ LBMFixedZerothOrderBCTempl<2>::frontBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::frontBoundary()
+LBMFixedZerothOrderBCTempl<3>::topBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::backBoundary()
+LBMFixedZerothOrderBCTempl<2>::bottomBoundary()
 {
   torch::Tensor velocity = (_f.index({Slice(), _grid_size[1] - 1, Slice(), 0}) +
                             _f.index({Slice(), _grid_size[1] - 1, Slice(), 1}) +
@@ -210,7 +210,7 @@ LBMFixedZerothOrderBCTempl<2>::backBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::backBoundary()
+LBMFixedZerothOrderBCTempl<3>::bottomBoundary()
 {
   // TBD
 }

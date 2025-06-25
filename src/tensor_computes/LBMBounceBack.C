@@ -31,7 +31,7 @@ LBMBounceBack::LBMBounceBack(const InputParameters & parameters)
 }
 
 void
-LBMBounceBack::topBoundary()
+LBMBounceBack::backBoundary()
 {
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
@@ -42,7 +42,7 @@ LBMBounceBack::topBoundary()
 }
 
 void
-LBMBounceBack::bottomBoundary()
+LBMBounceBack::frontBoundary()
 {
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
@@ -75,7 +75,7 @@ LBMBounceBack::rightBoundary()
 }
 
 void
-LBMBounceBack::frontBoundary()
+LBMBounceBack::topBoundary()
 {
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
@@ -86,7 +86,7 @@ LBMBounceBack::frontBoundary()
 }
 
 void
-LBMBounceBack::backBoundary()
+LBMBounceBack::bottomBoundary()
 {
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
