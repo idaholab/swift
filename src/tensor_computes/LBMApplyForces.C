@@ -29,9 +29,9 @@ LBMApplyForces::validParams()
 
 LBMApplyForces::LBMApplyForces(const InputParameters & parameters)
   : LatticeBoltzmannOperator(parameters), /*_f(getInputBuffer("f"))*/
-    _velocity(getInputBufferByName(getParam<TensorInputBufferName>("velocity"))),
-    _density(getInputBufferByName(getParam<TensorInputBufferName>("rho"))),
-    _forces(getInputBufferByName(getParam<TensorInputBufferName>("forces"))),
+    _velocity(getInputBuffer("velocity")),
+    _density(getInputBuffer("rho")),
+    _forces(getInputBuffer("forces")),
     _tau(_lb_problem.getConstant<Real>(getParam<std::string>("tau0")))
 {
 }
@@ -105,6 +105,7 @@ LBMApplyForces::computeSourceTerm()
 void
 LBMApplyForces::computeBuffer()
 {
+  // computeSourceTerm();
   _u = _u + (1.0 - 1.0 / (2.0 * _tau)) * _source_term;
   _lb_problem.maskedFillSolids(_u, 0);
 }
