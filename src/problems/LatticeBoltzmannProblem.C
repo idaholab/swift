@@ -32,7 +32,7 @@ LatticeBoltzmannProblem::validParams()
   // params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
   // params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
   params.addParam<unsigned int>("substeps", 1, "Number of LBM iterations for every MOOSE timestep");
-  params.addParam<Real>("tolerance", 0.0, "LBM convergence tolerance");
+  params.addParam<Real>("tolerance", 1.0e-15, "LBM convergence tolerance");
   params.addClassDescription("Problem object to enable solving lattice Boltzmann problems");
 
   return params;
@@ -98,21 +98,16 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 
   if (exec_type == EXEC_INITIAL)
   {
+    // check for constants
     // update time
     _sub_time = FEProblem::time();
+
     executeTensorInitialConditions();
+
     executeTensorOutputs(EXEC_INITIAL);
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN && timeStep() > 1)
-  {
-    if (dt() != dtOld())
-      for (auto & pair : _tensor_buffer)
-        pair.second->clearStates();
-
-    // update substepping dt
-    _sub_dt = dt() / _lbm_substeps;
-
     for (unsigned substep = 0; substep < _lbm_substeps; ++substep)
     {
       // create old state buffers
@@ -134,15 +129,10 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
       _t_total++;
     }
 
-    // run postprocessing before output
-    for (auto & pp : _pps)
-      pp->computeBuffer();
+  if (exec_type == EXEC_TIMESTEP_END)
+    executeTensorOutputs(EXEC_TIMESTEP_END);
 
-    // run outputs
-    executeTensorOutputs(EXEC_TIMESTEP_BEGIN);
-
-    // mapBuffersToAux();
-  }
+  // mapBuffersToAux();
   FEProblem::execute(exec_type);
 }
 
