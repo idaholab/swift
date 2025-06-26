@@ -21,6 +21,7 @@ LBMComputeVelocity::validParams()
   params.addRequiredParam<TensorInputBufferName>("f", "Distribution function");
   params.addRequiredParam<TensorInputBufferName>("rho", "Density");
   params.addParam<TensorInputBufferName>("forces", "forces", "Force tensor");
+  params.addParam<bool>("enable_forces", false, "Whether to enable forces or no");
   params.addParam<std::string>("body_force", "0.0", "Body force to be added in x-dir");
   params.addClassDescription("Compute object for macroscopic velocity reconstruction.");
   return params;
@@ -53,7 +54,10 @@ LBMComputeVelocity::computeBuffer()
     default:
       mooseError("Unsupported dimension");
   }
+
   // include forces
-  _u = _u + (_force_tensor + _body_force_constant) / (2.0 * _rho.unsqueeze(3));
+  if (getParam<bool>("enable_forces"))
+    _u = _u + (_force_tensor + _body_force_constant) / (2.0 * _rho.unsqueeze(3));
+
   _lb_problem.maskedFillSolids(_u, 0);
 }
