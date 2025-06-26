@@ -31,14 +31,14 @@ LBMMacroscopicNeumannBC::LBMMacroscopicNeumannBC(const InputParameters & paramet
 }
 
 void
-LBMMacroscopicNeumannBC::topBoundary()
+LBMMacroscopicNeumannBC::bottomBoundary()
 {
   // along y direction at y = 0
   _u.index_put_({Slice(), 0, Slice()}, _u.index({Slice(), 1, Slice()}) - _value);
 }
 
 void
-LBMMacroscopicNeumannBC::bottomBoundary()
+LBMMacroscopicNeumannBC::topBoundary()
 {
   // along y direction at y = N_y - 1
   _u.index_put_({Slice(), _grid_size[1] - 1, Slice()},

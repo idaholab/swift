@@ -30,14 +30,14 @@ LBMMacroscopicDirichletBC::LBMMacroscopicDirichletBC(const InputParameters & par
 }
 
 void
-LBMMacroscopicDirichletBC::topBoundary()
+LBMMacroscopicDirichletBC::bottomBoundary()
 {
   // along y direction at y = 0
   _u.index_put_({Slice(), 0, Slice()}, _value);
 }
 
 void
-LBMMacroscopicDirichletBC::bottomBoundary()
+LBMMacroscopicDirichletBC::topBoundary()
 {
   // along y direction at y = N_y - 1
   _u.index_put_({Slice(), _grid_size[1] - 1, Slice()}, _value);
