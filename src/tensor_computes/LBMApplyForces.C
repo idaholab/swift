@@ -73,8 +73,8 @@ LBMApplyForces::computeSourceTerm()
       mooseError("Unsupported dimensions for buffer _u");
   }
 
-  torch::Tensor Fxyz = torch::stack({Fx, Fy, Fz}, 3);
-  torch::Tensor Uxyz = torch::stack({ux, uy, uz}, 3);
+  torch::Tensor Fxyz = torch::stack({Fx, Fy, Fz}, 3).squeeze(-1);
+  torch::Tensor Uxyz = torch::stack({ux, uy, uz}, 3).squeeze(-1);
   torch::Tensor Fxyz_expanded = Fxyz.unsqueeze(-1);       // Shape: (Nx, Ny, Nz, 3, 1)
   torch::Tensor Uxyz_expanded = Uxyz.unsqueeze(-2);       // Shape: (Nx, Ny, Nz, 1, 3)
   torch::Tensor UF_outer = Fxyz_expanded * Uxyz_expanded; // Shape: (Nx, Ny, Nz, 3, 3)
@@ -83,10 +83,9 @@ LBMApplyForces::computeSourceTerm()
   for (int64_t ic = 0; ic < _stencil._q; ic++)
   {
     auto exyz_ic = e_xyz.index({Slice(), ic}).flatten(); // Shape (3)
-    torch::Tensor ccr_flat =
-        torch::outer(exyz_ic, exyz_ic) / _lb_problem._cs2 -
-        torch::eye(3, MooseTensor::floatTensorOptions()).flatten(); // Shape (9)
-
+    torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic) / _lb_problem._cs2 -
+                        torch::eye(3, MooseTensor::floatTensorOptions()); // Shape (9)
+    auto ccr_flat = ccr.flatten();
     torch::Tensor multiplied = UF_outer_flat * ccr_flat; // Shape: (Nx, Ny, Nz, 9)
 
     // sum along the last dimension
@@ -96,7 +95,7 @@ LBMApplyForces::computeSourceTerm()
     _source_term.index_put_(
         {Slice(), Slice(), Slice(), ic},
         _stencil._weights[ic] *
-            ((_stencil._ex[ic] * Fx + _stencil._ey[ic] * Fy + _stencil._ez[ic] * Fz) /
+            ((_stencil._ex[ic] * Fx + _stencil._ey[ic] * Fy + _stencil._ez[ic] * Fz).squeeze(-1) /
                  _lb_problem._cs2 +
              UFccr / 2.0 / _lb_problem._cs4));
   }
@@ -105,7 +104,7 @@ LBMApplyForces::computeSourceTerm()
 void
 LBMApplyForces::computeBuffer()
 {
-  // computeSourceTerm();
+  computeSourceTerm();
   _u = _u + (1.0 - 1.0 / (2.0 * _tau)) * _source_term;
   _lb_problem.maskedFillSolids(_u, 0);
 }
