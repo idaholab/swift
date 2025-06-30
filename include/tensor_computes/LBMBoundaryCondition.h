@@ -24,11 +24,11 @@ public:
   /**
    * Conventions:
    * Left boundary is at x = 0
-   * Right is at x = Nx
-   * Top is at y = 0
-   * Bottom is at y = Ny
+   * Right is at x = Nx - 1
+   * Bottom is at y = 0
+   * Top is at y = Ny - 1
    * Front is at z = 0
-   * Back is at z = Nz
+   * Back is at z = Nz - 1
    *
    * Wall boundary refers to any obstacles in the domain
    * It is entirely possible to put an obstacle at left, right, front, back, top or
