@@ -41,7 +41,7 @@ void
 LBMComputeForces::computeBuffer()
 {
   if (_enable_gravity)
-    _u.index_put_({Slice(), Slice(), Slice(), 1}, (-1.0 * _g * _density) * (_temperature - _T0));
+    _u.index_put_({Slice(), Slice(), Slice(), 1}, (_g * _density) * (_temperature - _T0));
   else
   {
     // TBD

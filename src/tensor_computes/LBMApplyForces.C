@@ -94,10 +94,9 @@ LBMApplyForces::computeSourceTerm()
     // compute source
     _source_term.index_put_(
         {Slice(), Slice(), Slice(), ic},
-        _stencil._weights[ic] *
+        _stencil._weights[ic] * rho_unsqueezed.squeeze(-1) *
             ((_stencil._ex[ic] * Fx + _stencil._ey[ic] * Fy + _stencil._ez[ic] * Fz).squeeze(-1) /
-                 _lb_problem._cs2 +
-             UFccr / 2.0 / _lb_problem._cs4));
+             _lb_problem._cs2 /* + UFccr / 2.0 / _lb_problem._cs4 */));
   }
 }
 
