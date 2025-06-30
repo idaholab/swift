@@ -67,6 +67,6 @@ LBMD2Q9::LBMD2Q9(const InputParameters & parameters) : LatticeBoltzmannStencilBa
    * the opposite faces can be determined using _op vector
    * E.g. the opposite of _top[0] is _bottom[0] = _op[top[0]]
    */
-  _left = torch::tensor({1, 5, 8}, MooseTensor::intTensorOptions());  //  x dir
-  _front = torch::tensor({2, 5, 6}, MooseTensor::intTensorOptions()); // y dir
+  _left = torch::tensor({1, 5, 8}, MooseTensor::intTensorOptions());   //  x dir;  x = 0
+  _bottom = torch::tensor({2, 5, 6}, MooseTensor::intTensorOptions()); // y dir; y = 0
 }

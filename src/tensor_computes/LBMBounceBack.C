@@ -33,21 +33,21 @@ LBMBounceBack::LBMBounceBack(const InputParameters & parameters)
 void
 LBMBounceBack::backBoundary()
 {
-  for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
+  for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
+    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
     _u.index_put_({Slice(), Slice(), _grid_size[2] - 1, opposite_dir},
-                  _f_old[0].index({Slice(), Slice(), _grid_size[2] - 1, _stencil._bottom[i]}));
+                  _f_old[0].index({Slice(), Slice(), _grid_size[2] - 1, _stencil._front[i]}));
   }
 }
 
 void
 LBMBounceBack::frontBoundary()
 {
-  for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
+  for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
-    _u.index_put_({Slice(), Slice(), 0, _stencil._bottom[i]},
+    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    _u.index_put_({Slice(), Slice(), 0, _stencil._front[i]},
                   _f_old[0].index({Slice(), Slice(), 0, opposite_dir}));
   }
 }
@@ -75,24 +75,24 @@ LBMBounceBack::rightBoundary()
 }
 
 void
-LBMBounceBack::topBoundary()
+LBMBounceBack::bottomBoundary()
 {
-  for (unsigned int i = 0; i < _stencil._front.size(0); i++)
+  for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
-    _u.index_put_({Slice(), 0, Slice(), _stencil._front[i]},
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
+    _u.index_put_({Slice(), 0, Slice(), _stencil._bottom[i]},
                   _f_old[0].index({Slice(), 0, Slice(), opposite_dir}));
   }
 }
 
 void
-LBMBounceBack::bottomBoundary()
+LBMBounceBack::topBoundary()
 {
-  for (unsigned int i = 0; i < _stencil._front.size(0); i++)
+  for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
     _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir},
-                  _f_old[0].index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[i]}));
+                  _f_old[0].index({Slice(), _grid_size[1] - 1, Slice(), _stencil._bottom[i]}));
   }
 }
 

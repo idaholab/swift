@@ -52,6 +52,7 @@ void
 LBMFixedFirstOrderBCTempl<2>::frontBoundary()
 {
   // There is no front boundary in 2D
+  mooseError("There is no front boundary in 2 dimensions.");
 }
 
 template <>
@@ -66,6 +67,7 @@ void
 LBMFixedFirstOrderBCTempl<2>::backBoundary()
 {
   // There is no back boundary in 2D
+  mooseError("There is no back boundary in 2 dimensions.");
 }
 
 template <>
@@ -173,22 +175,21 @@ LBMFixedFirstOrderBCTempl<2>::bottomBoundary()
       (_f.index({Slice(), 0, Slice(), 0}) + _f.index({Slice(), 0, Slice(), 1}) +
        _f.index({Slice(), 0, Slice(), 3}) +
        2 * (_f.index({Slice(), 0, Slice(), 4}) + _f.index({Slice(), 0, Slice(), 7}) +
-            _f.index({Slice(), 0, Slice(), 8}))) /
-      _value;
+            _f.index({Slice(), 0, Slice(), 8})));
 
   // axis aligned direction
-  const auto & opposite_dir = _stencil._op[_stencil._front[0]];
-  _u.index_put_({Slice(), 0, Slice(), _stencil._front[0]},
+  const auto & opposite_dir = _stencil._op[_stencil._bottom[0]];
+  _u.index_put_({Slice(), 0, Slice(), _stencil._bottom[0]},
                 _f.index({Slice(), 0, Slice(), opposite_dir}) + 2.0 / 3.0 * density * _value);
 
   // other directions
-  for (unsigned int i = 1; i < _stencil._front.size(0); i++)
+  for (unsigned int i = 1; i < _stencil._bottom.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
     _u.index_put_(
-        {Slice(), 0, Slice(), _stencil._front[i]},
+        {Slice(), 0, Slice(), _stencil._bottom[i]},
         _f.index({Slice(), 0, Slice(), opposite_dir}) -
-            0.5 * _stencil._ex[_stencil._front[i]] *
+            0.5 * _stencil._ex[_stencil._bottom[i]] *
                 (_f.index({Slice(), 0, Slice(), 1}) - _f.index({Slice(), 0, Slice(), 3})) +
             1.0 / 6.0 * density * _value);
   }
@@ -214,20 +215,20 @@ LBMFixedFirstOrderBCTempl<2>::topBoundary()
                                 _f.index({Slice(), _grid_size[1] - 1, Slice(), 6})));
 
   // axis aligned direction
-  const auto & opposite_dir = _stencil._op[_stencil._front[0]];
+  const auto & opposite_dir = _stencil._op[_stencil._bottom[0]];
   _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir},
-                _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[0]}) -
+                _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._bottom[0]}) -
                     2.0 / 3.0 * density * _value);
 
   // other directions
-  for (unsigned int i = 1; i < _stencil._front.size(0); i++)
+  for (unsigned int i = 1; i < _stencil._bottom.size(0); i++)
   {
-    const auto & opposite_dir = _stencil._op[_stencil._front[i]];
+    const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
     _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir},
-                  _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._front[i]}) +
-                      0.5 * _stencil._ey[opposite_dir] *
-                          (_f.index({Slice(), _grid_size[1] - 1, Slice(), 4}) -
-                           _f.index({Slice(), _grid_size[1] - 1, Slice(), 2})) -
+                  _f.index({Slice(), _grid_size[1] - 1, Slice(), _stencil._bottom[i]}) +
+                      0.5 * _stencil._ex[opposite_dir] *
+                          (_f.index({Slice(), _grid_size[1] - 1, Slice(), 3}) -
+                           _f.index({Slice(), _grid_size[1] - 1, Slice(), 1})) -
                       1.0 / 6.0 * density * _value);
   }
 }

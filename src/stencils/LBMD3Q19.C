@@ -90,7 +90,7 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
    * the opposite faces can be determined using _op vector
    * E.g. the opposite of _top[0] is _bottom[0] = _op[top[0]]
    */
-  _left = torch::tensor({5, 11, 12, 15, 16}, MooseTensor::intTensorOptions()); // x dir
-  _front = torch::tensor({3, 7, 8, 15, 17}, MooseTensor::intTensorOptions());  // y dir
-  _bottom = torch::tensor({1, 7, 9, 11, 13}, MooseTensor::intTensorOptions()); // z dir
+  _left = torch::tensor({5, 11, 12, 15, 16}, MooseTensor::intTensorOptions()); // x dir; x = 0
+  _bottom = torch::tensor({3, 7, 8, 15, 17}, MooseTensor::intTensorOptions()); // y dir; y = 0
+  _front = torch::tensor({1, 7, 9, 11, 13}, MooseTensor::intTensorOptions());  // z dir ; z = 0
 }
