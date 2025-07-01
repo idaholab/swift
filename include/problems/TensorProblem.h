@@ -402,6 +402,7 @@ TensorProblem::declareConstant(const std::string & name, const T & value)
   else
   {
     auto param = std::make_unique<Swift::Constant<T>>();
+    param->_value = value;
     _constants[name] = std::move(param);
   }
 }
