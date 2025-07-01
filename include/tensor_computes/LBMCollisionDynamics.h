@@ -21,11 +21,15 @@ public:
 
   LBMCollisionDynamicsTempl(const InputParameters & parameters);
 
+  void HermiteRegularization();
+  void computeRelaxationParameter();
+  void computeLocalRelaxationMatrix();
+  void computeGlobalRelaxationMatrix();
+
   void BGKDynamics();
   void MRTDynamics();
   void SmagorinskyDynamics();
-
-  void HermiteRegularization();
+  void SmagorinskyMRTDynamics();
 
   void computeBuffer() override;
 
@@ -33,6 +37,10 @@ protected:
   const torch::Tensor & _f;
   const torch::Tensor & _feq;
   torch::Tensor _fneq;
+  torch::Tensor _relaxation_parameter;
+  torch::Tensor _local_relaxation_matrix;
+  torch::Tensor _global_relaxation_matrix;
+
   const std::array<int64_t, 3> _shape;
 
   const Real _tau_0;
@@ -45,3 +53,4 @@ protected:
 typedef LBMCollisionDynamicsTempl<0> LBMBGKCollision;
 typedef LBMCollisionDynamicsTempl<1> LBMMRTCollision;
 typedef LBMCollisionDynamicsTempl<2> LBMSmagorinskyCollision;
+typedef LBMCollisionDynamicsTempl<3> LBMSmagorinskyMRTCollision;
