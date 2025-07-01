@@ -34,7 +34,7 @@ public:
   torch::Tensor _M;
   torch::Tensor _M_inv;
   torch::Tensor _S;
-  
+
   // incoming unknown distribution functions at every face
   torch::Tensor _top;
   torch::Tensor _bottom;
@@ -45,4 +45,7 @@ public:
 
   // indices of opposite directions
   torch::Tensor _op;
+
+  // indices of shear viscosity relaxation
+  torch::Tensor _id_kinematic_visc;
 };

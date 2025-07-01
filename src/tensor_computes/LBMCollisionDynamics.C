@@ -11,6 +11,7 @@
 registerMooseObject("SwiftApp", LBMBGKCollision);
 registerMooseObject("SwiftApp", LBMMRTCollision);
 registerMooseObject("SwiftApp", LBMSmagorinskyCollision);
+registerMooseObject("SwiftApp", LBMSmagorinskyMRTCollision);
 
 template <int coll_dyn>
 InputParameters
@@ -95,36 +96,9 @@ LBMCollisionDynamicsTempl<coll_dyn>::HermiteRegularization()
   _fneq = f_neq_hat.view({nx, ny, nz, _stencil._q});
 }
 
-template <>
+template <int coll_dyn>
 void
-LBMCollisionDynamicsTempl<0>::BGKDynamics()
-{
-  /* LBM BGK collision */
-  _u = _feq + _fneq - 1.0 / _tau_0 * _fneq;
-  _lb_problem.maskedFillSolids(_u, 0);
-}
-
-template <>
-void
-LBMCollisionDynamicsTempl<1>::MRTDynamics()
-{
-  /* LBM MRT collision */
-  const auto shape = _u.sizes();
-
-  // f = M^{-1} x S x M x (f - feq)
-  _u = _feq + _fneq -
-       torch::matmul(_stencil._M_inv,
-                     torch::matmul(_stencil._S,
-                                   torch::matmul(_stencil._M, (_fneq).view({-1, _stencil._q}).t())))
-           .t()
-           .view({shape});
-
-  _lb_problem.maskedFillSolids(_u, 0);
-}
-
-template <>
-void
-LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
+LBMCollisionDynamicsTempl<coll_dyn>::computeRelaxationParameter()
 {
   int64_t nx = _shape[0];
   int64_t ny = _shape[1];
@@ -173,13 +147,98 @@ LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
   auto S = (-1.0 * eta + torch::sqrt(eta * eta + 4.0 * Q_mean)) / (2.0 * t_sgs);
 
   // relaxation parameter
-  auto tau_eff = _tau_0 + _C_s * _delta_x * _delta_x * S / _lb_problem._cs2;
-  tau_eff.unsqueeze_(3);
+  _relaxation_parameter = _tau_0 + _C_s * _delta_x * _delta_x * S / _lb_problem._cs2;
+}
 
-  // BGK collision
-  _u = _feq + _fneq - 1.0 / tau_eff * _fneq;
+template <int coll_dyn>
+void
+LBMCollisionDynamicsTempl<coll_dyn>::computeLocalRelaxationMatrix()
+{
+  if (_lb_problem.getTotalSteps() == 0)
+  {
+    std::array<int64_t, 5> local_relaxation_mrt_shape = {
+        _shape[0], _shape[1], _shape[2], _stencil._q, _stencil._q};
+
+    _local_relaxation_matrix =
+        torch::zeros(local_relaxation_mrt_shape, MooseTensor::floatTensorOptions());
+    auto stencil_S_expanded = _stencil._S.unsqueeze(0).unsqueeze(0).unsqueeze(0);
+    _local_relaxation_matrix = stencil_S_expanded.expand(local_relaxation_mrt_shape);
+  }
+
+  for (int64_t sh_id = 0; sh_id < _stencil._id_kinematic_visc.size(0); sh_id++)
+    _local_relaxation_matrix.index_put_({Slice(),
+                                         Slice(),
+                                         Slice(),
+                                         _stencil._id_kinematic_visc[sh_id],
+                                         _stencil._id_kinematic_visc[sh_id]},
+                                        _relaxation_parameter);
+}
+
+template <int coll_dyn>
+void
+LBMCollisionDynamicsTempl<coll_dyn>::computeGlobalRelaxationMatrix()
+{
+  if (_lb_problem.getTotalSteps() == 0)
+    _global_relaxation_matrix = _stencil._S.clone();
+
+  for (int64_t sh_id = 0; sh_id < _stencil._id_kinematic_visc.size(0); sh_id++)
+    _global_relaxation_matrix.index_put_(
+        {_stencil._id_kinematic_visc[sh_id], _stencil._id_kinematic_visc[sh_id]}, _tau_0);
+}
+
+template <>
+void
+LBMCollisionDynamicsTempl<0>::BGKDynamics()
+{
+  /* LBM BGK collision */
+  _u = _feq + _fneq - 1.0 / _tau_0 * _fneq;
+  _lb_problem.maskedFillSolids(_u, 0);
+}
+
+template <>
+void
+LBMCollisionDynamicsTempl<1>::MRTDynamics()
+{
+  computeGlobalRelaxationMatrix();
+
+  /* LBM MRT collision */
+  // f = M^{-1} x S x M x (f - feq)
+  auto m_neq = torch::einsum("ab,ijkb->ijka", {_stencil._M, _fneq});
+  auto m_neq_relaxed = torch::einsum("ab,ijkb->ijka", {_global_relaxation_matrix, m_neq});
+  auto f = torch::einsum("ab,ijkb->ijka", {_stencil._M_inv, m_neq_relaxed});
+
+  _u = _feq + _fneq - f;
 
   _lb_problem.maskedFillSolids(_u, 0);
+}
+
+template <>
+void
+LBMCollisionDynamicsTempl<2>::SmagorinskyDynamics()
+{
+  computeRelaxationParameter();
+
+  // BGK collision
+  _u = _feq + _fneq - 1.0 / _relaxation_parameter * _fneq;
+
+  _lb_problem.maskedFillSolids(_u, 0);
+}
+
+template <>
+void
+LBMCollisionDynamicsTempl<3>::SmagorinskyMRTDynamics()
+{
+  computeLocalRelaxationMatrix();
+
+  /* LBM MRT collision */
+  const auto shape = _u.sizes();
+
+  auto m_neq = torch::einsum("ab,ijkb->ijka", {_stencil._M, _fneq});
+  auto m_neq_relaxed = torch::einsum("ijklm,ijkm->ijkl", {_local_relaxation_matrix, m_neq});
+  auto f = torch::einsum("ab,ijkb->ijka", {_stencil._M_inv, m_neq_relaxed});
+
+  // f = M^{-1} x S x M x (f - feq)
+  _u = _feq + _fneq - f;
 }
 
 template <int coll_dyn>
@@ -202,6 +261,9 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
     case 2:
       SmagorinskyDynamics();
       break;
+    case 3:
+      SmagorinskyMRTDynamics();
+      break;
     default:
       mooseError("Undefined template value");
   }
@@ -211,3 +273,4 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeBuffer()
 template class LBMCollisionDynamicsTempl<0>;
 template class LBMCollisionDynamicsTempl<1>;
 template class LBMCollisionDynamicsTempl<2>;
+template class LBMCollisionDynamicsTempl<3>;

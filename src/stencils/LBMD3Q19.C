@@ -85,6 +85,9 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
                                   1. / 1.98},
                                  MooseTensor::floatTensorOptions()));
 
+  // indices where relaxation parameter related to kinematic viscosity (i.e. shear stress) is
+  // located
+  _id_kinematic_visc = torch::tensor({9, 11, 13, 14, 15}, MooseTensor::intTensorOptions());
   /**
    * incoming unknown distribution functions at every face
    * the opposite faces can be determined using _op vector

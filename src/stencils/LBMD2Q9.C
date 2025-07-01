@@ -62,6 +62,10 @@ LBMD2Q9::LBMD2Q9(const InputParameters & parameters) : LatticeBoltzmannStencilBa
                                   1.0 / 1.0000,  // tau_s : shear viscosity
                                   1.0 / 1.0000}, // tau_s : shear viscosity
                                  MooseTensor::floatTensorOptions()));
+  // indices where relaxation parameter related to kinematic viscosity (i.e. shear stress) is
+  // located
+  _id_kinematic_visc = torch::tensor({7, 8}, MooseTensor::intTensorOptions());
+
   /**
    * incoming unknown distribution functions at every face
    * the opposite faces can be determined using _op vector
