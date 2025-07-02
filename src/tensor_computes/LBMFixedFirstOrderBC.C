@@ -22,8 +22,9 @@
 
 using namespace torch::indexing;
 
-registerMooseObject("SwiftApp", LBMFixedFirstOrderBC2D);
-registerMooseObject("SwiftApp", LBMFixedFirstOrderBC3D);
+registerMooseObject("SwiftApp", LBMFixedFirstOrderBC9Q);
+registerMooseObject("SwiftApp", LBMFixedFirstOrderBC19Q);
+registerMooseObject("SwiftApp", LBMFixedFirstOrderBC27Q);
 
 template <int dimension>
 InputParameters
@@ -49,7 +50,7 @@ LBMFixedFirstOrderBCTempl<dimension>::LBMFixedFirstOrderBCTempl(const InputParam
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::frontBoundary()
+LBMFixedFirstOrderBCTempl<9>::frontBoundary()
 {
   // There is no front boundary in 2D
   mooseError("There is no front boundary in 2 dimensions.");
@@ -57,14 +58,21 @@ LBMFixedFirstOrderBCTempl<2>::frontBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::frontBoundary()
+LBMFixedFirstOrderBCTempl<19>::frontBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::backBoundary()
+LBMFixedFirstOrderBCTempl<27>::frontBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<9>::backBoundary()
 {
   // There is no back boundary in 2D
   mooseError("There is no back boundary in 2 dimensions.");
@@ -72,14 +80,21 @@ LBMFixedFirstOrderBCTempl<2>::backBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::backBoundary()
+LBMFixedFirstOrderBCTempl<19>::backBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::leftBoundary()
+LBMFixedFirstOrderBCTempl<27>::backBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<9>::leftBoundary()
 {
   Real deltaU = 0.0;
   torch::Tensor u_x_perturbed = torch::zeros({_grid_size[1], 1}, MooseTensor::floatTensorOptions());
@@ -123,14 +138,46 @@ LBMFixedFirstOrderBCTempl<2>::leftBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::leftBoundary()
+LBMFixedFirstOrderBCTempl<19>::leftBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::rightBoundary()
+LBMFixedFirstOrderBCTempl<27>::leftBoundary()
+{
+  torch::Tensor density = 1.0 / (1.0 - _value) *
+                          (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
+                           2 * _f.index({0, Slice(), Slice(), _stencil._right}));
+
+  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
+                _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
+                    2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
+                        density);
+
+  for (unsigned int i = 1; i < _stencil._left.size(0); i++)
+  {
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+                          density -
+                      0.5 * _stencil._ey[_stencil._left[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
+                               .unsqueeze(-1)) -
+                      0.5 * _stencil._ez[_stencil._left[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
+                               .unsqueeze(-1)));
+  }
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<9>::rightBoundary()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({_grid_size[0] - 1, Slice(), Slice(), 0}) +
@@ -161,14 +208,46 @@ LBMFixedFirstOrderBCTempl<2>::rightBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::rightBoundary()
+LBMFixedFirstOrderBCTempl<19>::rightBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::bottomBoundary()
+LBMFixedFirstOrderBCTempl<27>::rightBoundary()
+{
+  torch::Tensor density = 1.0 / (1.0 + _value) *
+                          (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
+                           2 * _f.index({0, Slice(), Slice(), _stencil._right}));
+
+  _u.index_put_({0, Slice(), Slice(), _stencil._right[0]},
+                _f.index({0, Slice(), Slice(), _stencil._left[0]}) -
+                    2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
+                        density);
+
+  for (unsigned int i = 1; i < _stencil._right.size(0); i++)
+  {
+    _u.index_put_({0, Slice(), Slice(), _stencil._right[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._left[i]}) -
+                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+                          density +
+                      0.5 * _stencil._ey[_stencil._right[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
+                               .unsqueeze(-1)) +
+                      0.5 * _stencil._ez[_stencil._right[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
+                               .unsqueeze(-1)));
+  }
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<9>::bottomBoundary()
 {
   torch::Tensor density =
       1.0 / (1.0 - _value) *
@@ -197,14 +276,21 @@ LBMFixedFirstOrderBCTempl<2>::bottomBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::bottomBoundary()
+LBMFixedFirstOrderBCTempl<19>::bottomBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<2>::topBoundary()
+LBMFixedFirstOrderBCTempl<27>::bottomBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<9>::topBoundary()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({Slice(), _grid_size[1] - 1, Slice(), 0}) +
@@ -235,7 +321,14 @@ LBMFixedFirstOrderBCTempl<2>::topBoundary()
 
 template <>
 void
-LBMFixedFirstOrderBCTempl<3>::topBoundary()
+LBMFixedFirstOrderBCTempl<19>::topBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedFirstOrderBCTempl<27>::topBoundary()
 {
   // TBD
 }
@@ -274,5 +367,6 @@ LBMFixedFirstOrderBCTempl<dimension>::computeBuffer()
   _lb_problem.maskedFillSolids(_u, 0);
 }
 
-template class LBMFixedFirstOrderBCTempl<2>;
-template class LBMFixedFirstOrderBCTempl<3>;
+template class LBMFixedFirstOrderBCTempl<9>;
+template class LBMFixedFirstOrderBCTempl<19>;
+template class LBMFixedFirstOrderBCTempl<27>;

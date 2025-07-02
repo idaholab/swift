@@ -35,5 +35,6 @@ protected:
   const Real _value;
 };
 
-typedef LBMFixedZerothOrderBCTempl<2> LBMFixedZerothOrderBC2D;
-typedef LBMFixedZerothOrderBCTempl<3> LBMFixedZerothOrderBC3D;
+typedef LBMFixedZerothOrderBCTempl<9> LBMFixedZerothOrderBC9Q;
+typedef LBMFixedZerothOrderBCTempl<19> LBMFixedZerothOrderBC19Q;
+typedef LBMFixedZerothOrderBCTempl<27> LBMFixedZerothOrderBC27Q;

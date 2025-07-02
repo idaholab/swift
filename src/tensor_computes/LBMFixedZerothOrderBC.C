@@ -13,8 +13,9 @@
 
 using namespace torch::indexing;
 
-registerMooseObject("SwiftApp", LBMFixedZerothOrderBC2D);
-registerMooseObject("SwiftApp", LBMFixedZerothOrderBC3D);
+registerMooseObject("SwiftApp", LBMFixedZerothOrderBC9Q);
+registerMooseObject("SwiftApp", LBMFixedZerothOrderBC19Q);
+registerMooseObject("SwiftApp", LBMFixedZerothOrderBC27Q);
 
 template <int dimension>
 InputParameters
@@ -39,7 +40,7 @@ LBMFixedZerothOrderBCTempl<dimension>::LBMFixedZerothOrderBCTempl(
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::frontBoundary()
+LBMFixedZerothOrderBCTempl<9>::frontBoundary()
 {
   // There is no front boundary in 2D
   mooseError("There is no front boundary in 2 dimensions.");
@@ -47,14 +48,21 @@ LBMFixedZerothOrderBCTempl<2>::frontBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::frontBoundary()
+LBMFixedZerothOrderBCTempl<19>::frontBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::backBoundary()
+LBMFixedZerothOrderBCTempl<27>::frontBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<9>::backBoundary()
 {
   // There is no back boundary in 2D
   mooseError("There is no back boundary in 2 dimensions.");
@@ -62,14 +70,21 @@ LBMFixedZerothOrderBCTempl<2>::backBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::backBoundary()
+LBMFixedZerothOrderBCTempl<19>::backBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::leftBoundary()
+LBMFixedZerothOrderBCTempl<27>::backBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<9>::leftBoundary()
 {
   torch::Tensor velocity =
       1.0 - (_f.index({0, Slice(), Slice(), 0}) + _f.index({0, Slice(), Slice(), 2}) +
@@ -98,14 +113,46 @@ LBMFixedZerothOrderBCTempl<2>::leftBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::leftBoundary()
+LBMFixedZerothOrderBCTempl<19>::leftBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::rightBoundary()
+LBMFixedZerothOrderBCTempl<27>::leftBoundary()
+{
+  torch::Tensor velocity = 1.0 - (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
+                                  2 * _f.index({0, Slice(), Slice(), _stencil._right})) /
+                                     _value;
+
+  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
+                _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
+                    2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
+                        velocity);
+
+  for (unsigned int i = 1; i < _stencil._left.size(0); i++)
+  {
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+                          velocity -
+                      0.5 * _stencil._ey[_stencil._left[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
+                               .unsqueeze(-1)) -
+                      0.5 * _stencil._ez[_stencil._left[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
+                               .unsqueeze(-1)));
+  }
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<9>::rightBoundary()
 {
   torch::Tensor velocity = (_f.index({_grid_size[0] - 1, Slice(), Slice(), 0}) +
                             _f.index({_grid_size[0] - 1, Slice(), Slice(), 2}) +
@@ -137,14 +184,47 @@ LBMFixedZerothOrderBCTempl<2>::rightBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::rightBoundary()
+LBMFixedZerothOrderBCTempl<19>::rightBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::bottomBoundary()
+LBMFixedZerothOrderBCTempl<27>::rightBoundary()
+{
+  torch::Tensor velocity = (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
+                            2 * _f.index({0, Slice(), Slice(), _stencil._right})) /
+                               _value -
+                           1.0;
+
+  _u.index_put_({0, Slice(), Slice(), _stencil._right[0]},
+                _f.index({0, Slice(), Slice(), _stencil._left[0]}) -
+                    2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
+                        velocity);
+
+  for (unsigned int i = 1; i < _stencil._right.size(0); i++)
+  {
+    _u.index_put_({0, Slice(), Slice(), _stencil._right[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._left[i]}) -
+                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+                          velocity +
+                      0.5 * _stencil._ey[_stencil._right[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
+                               .unsqueeze(-1)) +
+                      0.5 * _stencil._ez[_stencil._right[i]] *
+                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
+                               .unsqueeze(-1) -
+                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
+                               .unsqueeze(-1)));
+  }
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<9>::bottomBoundary()
 {
   torch::Tensor velocity =
       1.0 - (_f.index({Slice(), 0, Slice(), 0}) + _f.index({Slice(), 0, Slice(), 1}) +
@@ -173,14 +253,21 @@ LBMFixedZerothOrderBCTempl<2>::bottomBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::bottomBoundary()
+LBMFixedZerothOrderBCTempl<19>::bottomBoundary()
 {
   // TBD
 }
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<2>::topBoundary()
+LBMFixedZerothOrderBCTempl<27>::bottomBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<9>::topBoundary()
 {
   torch::Tensor velocity = (_f.index({Slice(), _grid_size[1] - 1, Slice(), 0}) +
                             _f.index({Slice(), _grid_size[1] - 1, Slice(), 1}) +
@@ -212,7 +299,14 @@ LBMFixedZerothOrderBCTempl<2>::topBoundary()
 
 template <>
 void
-LBMFixedZerothOrderBCTempl<3>::topBoundary()
+LBMFixedZerothOrderBCTempl<19>::topBoundary()
+{
+  // TBD
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<27>::topBoundary()
 {
   // TBD
 }
@@ -250,5 +344,6 @@ LBMFixedZerothOrderBCTempl<dimension>::computeBuffer()
   _lb_problem.maskedFillSolids(_u, 0);
 }
 
-template class LBMFixedZerothOrderBCTempl<2>;
-template class LBMFixedZerothOrderBCTempl<3>;
+template class LBMFixedZerothOrderBCTempl<9>;
+template class LBMFixedZerothOrderBCTempl<19>;
+template class LBMFixedZerothOrderBCTempl<27>;

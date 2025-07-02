@@ -42,12 +42,11 @@ LBMD3Q27::LBMD3Q27(const InputParameters & parameters) : LatticeBoltzmannStencil
        1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0, 1.0 / 216.0},
       MooseTensor::floatTensorOptions());
 
-  _op = torch::tensor(
-      {0, 2, 1, 4, 3, 6, 5, 10, 9, 8, 7, 14, 13, 11, 18, 17, 15, 25, 26, 23, 24, 21, 22, 19, 20},
-      MooseTensor::intTensorOptions());
+  _op = torch::tensor({0,  2,  1,  4,  3,  6,  5,  10, 9,  8,  7,  14, 13, 12,
+                       11, 18, 17, 16, 15, 25, 26, 23, 24, 21, 22, 19, 20},
+                      MooseTensor::intTensorOptions());
 
   // transformation matrix
-
   _M = torch::tensor(
       {{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1},
@@ -127,8 +126,20 @@ LBMD3Q27::LBMD3Q27(const InputParameters & parameters) : LatticeBoltzmannStencil
    */
   _left = torch::tensor({1, 7, 8, 11, 12, 19, 20, 21, 22},
                         MooseTensor::intTensorOptions()); // x dir; x = 0
+  _right = _op.index({_left});                            // x dir; x = nx-1
+
   _bottom = torch::tensor({3, 7, 9, 15, 16, 19, 22, 23, 26},
                           MooseTensor::intTensorOptions()); // y dir; y = 0
+  _top = _op.index({_bottom});                              // y dir; x = ny-1
+
   _front = torch::tensor({5, 11, 13, 15, 17, 19, 20, 23, 24},
                          MooseTensor::intTensorOptions()); // z dir ; z = 0
+  _back = _op.index({_front});                             // z dir; z = nz-1
+
+  // further classify directions
+  _neutral_x = torch::tensor({0, 3, 4, 5, 6, 15, 16, 17, 18}, MooseTensor::intTensorOptions());
+  _neutral_x_pos_y = torch::tensor({3, 15, 16}, MooseTensor::intTensorOptions());
+  _neutral_x_neg_y = _op.index({_neutral_x_pos_y});
+  _neutral_x_pos_z = torch::tensor({5, 15, 17}, MooseTensor::intTensorOptions());
+  _neutral_x_neg_z = _op.index({_neutral_x_pos_z});
 }
