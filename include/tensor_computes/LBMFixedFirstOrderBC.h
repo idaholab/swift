@@ -38,5 +38,6 @@ protected:
   const bool _perturb;
 };
 
-typedef LBMFixedFirstOrderBCTempl<2> LBMFixedFirstOrderBC2D;
-typedef LBMFixedFirstOrderBCTempl<3> LBMFixedFirstOrderBC3D;
+typedef LBMFixedFirstOrderBCTempl<9> LBMFixedFirstOrderBC9Q;
+typedef LBMFixedFirstOrderBCTempl<19> LBMFixedFirstOrderBC19Q;
+typedef LBMFixedFirstOrderBCTempl<27> LBMFixedFirstOrderBC27Q;

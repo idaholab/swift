@@ -46,6 +46,16 @@ public:
   // indices of opposite directions
   torch::Tensor _op;
 
+  // further elaborate boundaries
+  torch::Tensor _neutral_x;       // the ones with ex = 0
+  torch::Tensor _neutral_x_pos_y; // the ones with ex = 0 and +ey
+  torch::Tensor _neutral_x_neg_y; // the ones with ex = 0 and -ey
+  torch::Tensor _neutral_x_pos_z; // the ones with ex = 0 and +ez
+  torch::Tensor _neutral_x_neg_z; // the ones with ex = 0 and -ez
+
+  torch::Tensor _neutral_y; // the ones with ey = 0
+  torch::Tensor _neutral_z; // // the ones with ez = 0
+
   // indices of shear viscosity relaxation
   torch::Tensor _id_kinematic_visc;
 };
