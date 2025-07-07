@@ -161,8 +161,10 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeLocalRelaxationMatrix()
 
     _local_relaxation_matrix =
         torch::zeros(local_relaxation_mrt_shape, MooseTensor::floatTensorOptions());
-    auto stencil_S_expanded = _stencil._S.unsqueeze(0).unsqueeze(0).unsqueeze(0);
-    _local_relaxation_matrix = stencil_S_expanded.expand(local_relaxation_mrt_shape);
+    torch::Tensor stencil_S_expanded = _stencil._S.clone();
+
+    stencil_S_expanded = stencil_S_expanded.unsqueeze(0).unsqueeze(0).unsqueeze(0);
+    _local_relaxation_matrix = stencil_S_expanded.expand(local_relaxation_mrt_shape).clone();
   }
 
   for (int64_t sh_id = 0; sh_id < _stencil._id_kinematic_visc.size(0); sh_id++)
@@ -171,7 +173,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeLocalRelaxationMatrix()
                                          Slice(),
                                          _stencil._id_kinematic_visc[sh_id],
                                          _stencil._id_kinematic_visc[sh_id]},
-                                        _relaxation_parameter);
+                                        1.0 / _relaxation_parameter);
 }
 
 template <int coll_dyn>
@@ -179,11 +181,12 @@ void
 LBMCollisionDynamicsTempl<coll_dyn>::computeGlobalRelaxationMatrix()
 {
   if (_lb_problem.getTotalSteps() == 0)
+  {
     _global_relaxation_matrix = _stencil._S.clone();
 
-  for (int64_t sh_id = 0; sh_id < _stencil._id_kinematic_visc.size(0); sh_id++)
-    _global_relaxation_matrix.index_put_(
-        {_stencil._id_kinematic_visc[sh_id], _stencil._id_kinematic_visc[sh_id]}, _tau_0);
+    _global_relaxation_matrix.index_put_({_stencil._id_kinematic_visc, _stencil._id_kinematic_visc},
+                                         1.0 / _tau_0);
+  }
 }
 
 template <>
@@ -228,10 +231,10 @@ template <>
 void
 LBMCollisionDynamicsTempl<3>::SmagorinskyMRTDynamics()
 {
+  computeRelaxationParameter();
   computeLocalRelaxationMatrix();
 
   /* LBM MRT collision */
-  const auto shape = _u.sizes();
 
   auto m_neq = torch::einsum("ab,ijkb->ijka", {_stencil._M, _fneq});
   auto m_neq_relaxed = torch::einsum("ijklm,ijkm->ijkl", {_local_relaxation_matrix, m_neq});
