@@ -31,7 +31,7 @@ ComputeReynoldsNumber::ComputeReynoldsNumber(const InputParameters & parameters)
 void
 ComputeReynoldsNumber::execute()
 {
-  const Real kinematic_viscosity = 1.0 / sqrt(3 / 0) * (_tau - 0.5);
+  const Real kinematic_viscosity = 1.0 / sqrt(3.0) * (_tau - 0.5);
   const auto avg_speed = _u.sum().cpu().item<double>() / torch::numel(_u);
   _Reynolds_number = avg_speed * _D / kinematic_viscosity;
 }
