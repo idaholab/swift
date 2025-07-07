@@ -133,20 +133,16 @@ LBMFixedZerothOrderBCTempl<27>::leftBoundary()
 
   for (unsigned int i = 1; i < _stencil._left.size(0); i++)
   {
-    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
-                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
-                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
-                          velocity -
-                      0.5 * _stencil._ey[_stencil._left[i]] *
-                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
-                               .unsqueeze(-1) -
-                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
-                               .unsqueeze(-1)) -
-                      0.5 * _stencil._ez[_stencil._left[i]] *
-                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
-                               .unsqueeze(-1) -
-                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
-                               .unsqueeze(-1)));
+    _u.index_put_(
+        {0, Slice(), Slice(), _stencil._left[i]},
+        _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+            2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value * velocity -
+            0.5 * _stencil._ey[_stencil._left[i]] *
+                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3) -
+                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)) -
+            0.5 * _stencil._ez[_stencil._left[i]] *
+                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3) -
+                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)));
   }
 }
 
@@ -205,20 +201,16 @@ LBMFixedZerothOrderBCTempl<27>::rightBoundary()
 
   for (unsigned int i = 1; i < _stencil._right.size(0); i++)
   {
-    _u.index_put_({0, Slice(), Slice(), _stencil._right[i]},
-                  _f.index({0, Slice(), Slice(), _stencil._left[i]}) -
-                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
-                          velocity +
-                      0.5 * _stencil._ey[_stencil._right[i]] *
-                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3)
-                               .unsqueeze(-1) -
-                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)
-                               .unsqueeze(-1)) +
-                      0.5 * _stencil._ez[_stencil._right[i]] *
-                          (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3)
-                               .unsqueeze(-1) -
-                           torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)
-                               .unsqueeze(-1)));
+    _u.index_put_(
+        {0, Slice(), Slice(), _stencil._right[i]},
+        _f.index({0, Slice(), Slice(), _stencil._left[i]}) -
+            2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value * velocity +
+            0.5 * _stencil._ey[_stencil._right[i]] *
+                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3) -
+                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)) +
+            0.5 * _stencil._ez[_stencil._right[i]] *
+                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3) -
+                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)));
   }
 }
 
