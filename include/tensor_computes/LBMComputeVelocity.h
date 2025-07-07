@@ -26,6 +26,10 @@ protected:
   const torch::Tensor & _f;
   const torch::Tensor & _rho;
   const torch::Tensor & _force_tensor;
-  const Real & _body_force_constant;
+  const Real & _body_force_constant_x;
+  const Real & _body_force_constant_y;
+  const Real & _body_force_constant_z;
   bool _is_force_applied;
+
+  torch::Tensor _body_forces;
 };
