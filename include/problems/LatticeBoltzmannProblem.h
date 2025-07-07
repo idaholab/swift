@@ -98,7 +98,7 @@ protected:
   unsigned int _stencil_counter = 0;
 
   /// convergence residual
-  Real _convergence_residual = 100;
+  Real _convergence_residual = 1;
 
   /// total number of time steps taken
   int _t_total = 0;
