@@ -94,6 +94,23 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
    * E.g. the opposite of _top[0] is _bottom[0] = _op[top[0]]
    */
   _left = torch::tensor({5, 11, 12, 15, 16}, MooseTensor::intTensorOptions()); // x dir; x = 0
+  _right = _op.index({_left});                                                 // x dir; x = nx-1
   _bottom = torch::tensor({3, 7, 8, 15, 17}, MooseTensor::intTensorOptions()); // y dir; y = 0
+  _top = _op.index({_bottom});                                                 // y dir; x = ny-1
   _front = torch::tensor({1, 7, 9, 11, 13}, MooseTensor::intTensorOptions());  // z dir ; z = 0
+  _back = _op.index({_front});                                                 // z dir; z = nz-1
+
+  _neutral_x = torch::tensor(
+      {
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          8,
+          9,
+          10,
+      },
+      MooseTensor::intTensorOptions());
 }

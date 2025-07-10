@@ -21,13 +21,52 @@ LBMBounceBack::validParams()
   InputParameters params = LBMBoundaryCondition::validParams();
   params.addClassDescription("LBMBounceBack object");
   params.addRequiredParam<TensorInputBufferName>("f_old", "Old state distribution function");
+  params.addParam<bool>(
+      "exclude_corners_x",
+      false,
+      "Whether or not apply bounceback in the corners of the domain along x axis");
+  params.addParam<bool>(
+      "exclude_corners_y",
+      false,
+      "Whether or not apply bounceback in the corners of the domain along y axis");
+  params.addParam<bool>(
+      "exclude_corners_z",
+      false,
+      "Whether or not apply bounceback in the corners of the domain along z axis");
   return params;
 }
 
 LBMBounceBack::LBMBounceBack(const InputParameters & parameters)
   : LBMBoundaryCondition(parameters),
-    _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1))
+    _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1)),
+    _exclude_corners_x(getParam<bool>("exclude_corners_x")),
+    _exclude_corners_y(getParam<bool>("exclude_corners_y")),
+    _exclude_corners_z(getParam<bool>("exclude_corners_z"))
 {
+  if (_exclude_corners_x)
+    _x_indices = torch::arange(1, _grid_size[0] - 1, MooseTensor::intTensorOptions());
+  else
+    _x_indices = torch::arange(_grid_size[0], MooseTensor::intTensorOptions());
+
+  if (_exclude_corners_y)
+    _y_indices = torch::arange(1, _grid_size[1] - 1, MooseTensor::intTensorOptions());
+  else
+    _y_indices = torch::arange(_grid_size[1], MooseTensor::intTensorOptions());
+
+  if (_exclude_corners_z)
+    _z_indices = torch::arange(1, _grid_size[2] - 1, MooseTensor::intTensorOptions());
+  else
+    _z_indices = torch::arange(_grid_size[2], MooseTensor::intTensorOptions());
+
+  std::vector<torch::Tensor> xyz_mesh = torch::meshgrid({_x_indices, _y_indices, _z_indices});
+
+  torch::Tensor flat_x_indices = xyz_mesh[0].reshape(-1);
+  torch::Tensor flat_y_indices = xyz_mesh[1].reshape(-1);
+  torch::Tensor flat_z_indices = xyz_mesh[2].reshape(-1);
+
+  _x_indices = flat_x_indices.clone();
+  _y_indices = flat_y_indices.clone();
+  _z_indices = flat_z_indices.clone();
 }
 
 void
@@ -36,8 +75,8 @@ LBMBounceBack::backBoundary()
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._front[i]];
-    _u.index_put_({Slice(), Slice(), _grid_size[2] - 1, opposite_dir},
-                  _f_old[0].index({Slice(), Slice(), _grid_size[2] - 1, _stencil._front[i]}));
+    _u.index_put_({_x_indices, _y_indices, _grid_size[2] - 1, opposite_dir},
+                  _f_old[0].index({_x_indices, _y_indices, _grid_size[2] - 1, _stencil._front[i]}));
   }
 }
 
@@ -47,8 +86,8 @@ LBMBounceBack::frontBoundary()
   for (unsigned int i = 0; i < _stencil._front.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._front[i]];
-    _u.index_put_({Slice(), Slice(), 0, _stencil._front[i]},
-                  _f_old[0].index({Slice(), Slice(), 0, opposite_dir}));
+    _u.index_put_({_x_indices, _y_indices, 0, _stencil._front[i]},
+                  _f_old[0].index({_x_indices, _y_indices, 0, opposite_dir}));
   }
 }
 
@@ -58,8 +97,8 @@ LBMBounceBack::leftBoundary()
   for (unsigned int i = 0; i < _stencil._left.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._left[i]];
-    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
-                  _f_old[0].index({0, Slice(), Slice(), opposite_dir}));
+    _u.index_put_({0, _y_indices, _z_indices, _stencil._left[i]},
+                  _f_old[0].index({0, _y_indices, _z_indices, opposite_dir}));
   }
 }
 
@@ -69,8 +108,8 @@ LBMBounceBack::rightBoundary()
   for (unsigned int i = 0; i < _stencil._left.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._left[i]];
-    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), opposite_dir},
-                  _f_old[0].index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}));
+    _u.index_put_({_grid_size[0] - 1, _y_indices, _z_indices, opposite_dir},
+                  _f_old[0].index({_grid_size[0] - 1, _y_indices, _z_indices, _stencil._left[i]}));
   }
 }
 
@@ -80,8 +119,8 @@ LBMBounceBack::bottomBoundary()
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
-    _u.index_put_({Slice(), 0, Slice(), _stencil._bottom[i]},
-                  _f_old[0].index({Slice(), 0, Slice(), opposite_dir}));
+    _u.index_put_({_x_indices, 0, _z_indices, _stencil._bottom[i]},
+                  _f_old[0].index({_x_indices, 0, _z_indices, opposite_dir}));
   }
 }
 
@@ -91,8 +130,9 @@ LBMBounceBack::topBoundary()
   for (unsigned int i = 0; i < _stencil._bottom.size(0); i++)
   {
     const auto & opposite_dir = _stencil._op[_stencil._bottom[i]];
-    _u.index_put_({Slice(), _grid_size[1] - 1, Slice(), opposite_dir},
-                  _f_old[0].index({Slice(), _grid_size[1] - 1, Slice(), _stencil._bottom[i]}));
+    _u.index_put_(
+        {_x_indices, _grid_size[1] - 1, _z_indices, opposite_dir},
+        _f_old[0].index({_x_indices, _grid_size[1] - 1, _z_indices, _stencil._bottom[i]}));
   }
 }
 

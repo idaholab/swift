@@ -45,11 +45,12 @@ LBMComputeVelocity::LBMComputeVelocity(const InputParameters & parameters)
     _body_forces = torch::zeros(shape, MooseTensor::floatTensorOptions());
 
     auto force_constants =
-        torch::tensor({_body_force_constant_x, _body_force_constant_y, _body_force_constant_z});
+        torch::tensor({_body_force_constant_x, _body_force_constant_y, _body_force_constant_z},
+                      MooseTensor::floatTensorOptions());
 
     for (int64_t d = 0; d < _domain.getDim(); d++)
     {
-      auto t_index = torch::tensor({d});
+      auto t_index = torch::tensor({d}, MooseTensor::intTensorOptions());
       _body_forces.index_fill_(-1, t_index, force_constants[d]);
     }
   }
