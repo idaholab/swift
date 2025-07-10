@@ -115,16 +115,10 @@ template <>
 void
 LBMFixedZerothOrderBCTempl<19>::leftBoundary()
 {
-  // TBD
-}
-
-template <>
-void
-LBMFixedZerothOrderBCTempl<27>::leftBoundary()
-{
-  torch::Tensor velocity = 1.0 - (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
-                                  2 * _f.index({0, Slice(), Slice(), _stencil._right})) /
-                                     _value;
+  torch::Tensor velocity =
+      1.0 - (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+             2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1)) /
+                _value;
 
   _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
                 _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
@@ -133,16 +127,41 @@ LBMFixedZerothOrderBCTempl<27>::leftBoundary()
 
   for (unsigned int i = 1; i < _stencil._left.size(0); i++)
   {
-    _u.index_put_(
-        {0, Slice(), Slice(), _stencil._left[i]},
-        _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
-            2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value * velocity -
-            0.5 * _stencil._ey[_stencil._left[i]] *
-                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3) -
-                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)) -
-            0.5 * _stencil._ez[_stencil._left[i]] *
-                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3) -
-                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)));
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+                          velocity);
+  }
+}
+
+template <>
+void
+LBMFixedZerothOrderBCTempl<27>::leftBoundary()
+{
+  torch::Tensor velocity =
+      1.0 - (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+             2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1)) /
+                _value;
+
+  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
+                _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
+                    2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
+                        velocity);
+
+  for (unsigned int i = 1; i < _stencil._left.size(0); i++)
+  {
+    // auto n1 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), -1);
+    // auto n2 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), -1);
+    // auto n3 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), -1);
+    // auto n4 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), -1);
+
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
+                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+                          velocity);
+    /*-
+                      0.5 * _stencil._ey[_stencil._left[i]] * (n1 - n2) -
+                      0.5 * _stencil._ez[_stencil._left[i]] * (n3 - n4)*/
   }
 }
 
@@ -182,35 +201,64 @@ template <>
 void
 LBMFixedZerothOrderBCTempl<19>::rightBoundary()
 {
-  // TBD
+  torch::Tensor velocity =
+      (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+       2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1)) /
+          _value -
+      1.0;
+
+  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
+                _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
+                    2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
+                        velocity);
+
+  for (unsigned int i = 1; i < _stencil._right.size(0); i++)
+  {
+    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[i]},
+                  _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) -
+                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+                          velocity);
+  }
 }
 
 template <>
 void
 LBMFixedZerothOrderBCTempl<27>::rightBoundary()
 {
-  torch::Tensor velocity = (_f.index({0, Slice(), Slice(), -_stencil._neutral_x}) +
-                            2 * _f.index({0, Slice(), Slice(), _stencil._right})) /
-                               _value -
-                           1.0;
+  torch::Tensor velocity =
+      (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+       2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1)) /
+          _value -
+      1.0;
 
-  _u.index_put_({0, Slice(), Slice(), _stencil._right[0]},
-                _f.index({0, Slice(), Slice(), _stencil._left[0]}) -
+  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
+                _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
                     2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
                         velocity);
 
   for (unsigned int i = 1; i < _stencil._right.size(0); i++)
   {
-    _u.index_put_(
-        {0, Slice(), Slice(), _stencil._right[i]},
-        _f.index({0, Slice(), Slice(), _stencil._left[i]}) -
-            2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value * velocity +
-            0.5 * _stencil._ey[_stencil._right[i]] *
-                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), 3) -
-                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), 3)) +
-            0.5 * _stencil._ez[_stencil._right[i]] *
-                (torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), 3) -
-                 torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), 3)));
+    // auto n1 =
+    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_pos_y}),
+    //     -1);
+    // auto n2 =
+    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_neg_y}),
+    //     -1);
+
+    // auto n3 =
+    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_pos_z}),
+    //     -1);
+    // auto n4 =
+    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_neg_z}),
+    //     -1);
+
+    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[i]},
+                  _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) -
+                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+                          velocity);
+    /*+
+                      0.5 * _stencil._ey[_stencil._right[i]] * (n1 - n2) +
+                      0.5 * _stencil._ez[_stencil._right[i]] * (n3 - n4)*/
   }
 }
 

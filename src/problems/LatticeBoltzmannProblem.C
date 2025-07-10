@@ -108,13 +108,14 @@ LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
   }
 
   if (exec_type == EXEC_TIMESTEP_BEGIN && timeStep() > 1)
-    for (unsigned substep = 0; substep < _lbm_substeps; ++substep)
+    for (unsigned substep = 0; substep < _lbm_substeps; substep++)
     {
       // create old state buffers
       advanceState();
 
       // run solver for streaming
-      _solver->computeBuffer();
+      if (_solver)
+        _solver->computeBuffer();
 
       // run bcs
       for (auto & bc : _bcs)

@@ -24,7 +24,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::validParams()
   params.addRequiredParam<TensorInputBufferName>("feq",
                                                  "Input buffer equilibrium distribution function");
   params.addRequiredParam<std::string>("tau0", "Relaxation parameter");
-  params.addParam<std::string>("Cs", "", "Relaxation parameter");
+  params.addParam<std::string>("Cs", "0.1", "Relaxation parameter");
   params.addParam<bool>(
       "projection", false, "Whether or not to project non-equilibrium onto Hermite space.");
 
@@ -67,25 +67,24 @@ LBMCollisionDynamicsTempl<coll_dyn>::HermiteRegularization()
   auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q});
 
   torch::Tensor fneq = f_flat - feq_flat;
-  torch::Tensor fneqtimescc =
-      torch::zeros({nx * ny * nz, _stencil._q}, MooseTensor::floatTensorOptions());
+  torch::Tensor fneqtimescc = torch::zeros({nx * ny * nz, 9}, MooseTensor::floatTensorOptions());
   torch::Tensor e_xyz = torch::stack({_stencil._ex, _stencil._ey, _stencil._ez}, 0);
 
   for (int ic = 0; ic < _stencil._q; ic++)
   {
     auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
     torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic).flatten();
-    fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, _stencil._q}));
+    fneqtimescc += (fneq.select(1, ic).view({nx * ny * nz, 1}) * ccr.view({1, 9}));
   }
 
   // Compute Hermite tensor
-  torch::Tensor H2 = torch::zeros({1, _stencil._q}, MooseTensor::floatTensorOptions());
+  torch::Tensor H2 = torch::zeros({1, 9}, MooseTensor::floatTensorOptions());
   for (int ic = 0; ic < _stencil._q; ic++)
   {
     auto exyz_ic = e_xyz.index({Slice(), ic}).flatten();
     torch::Tensor ccr = torch::outer(exyz_ic, exyz_ic) / _lb_problem._cs2 -
                         torch::eye(3, MooseTensor::floatTensorOptions());
-    H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, _stencil._q});
+    H2 = ccr.flatten().unsqueeze(0).expand({nx * ny * nz, 9});
 
     // Compute regularized non-equilibrium distribution
     f_neq_hat.index_put_(
@@ -148,6 +147,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeRelaxationParameter()
 
   // relaxation parameter
   _relaxation_parameter = _tau_0 + _C_s * _delta_x * _delta_x * S / _lb_problem._cs2;
+  _relaxation_parameter = _relaxation_parameter.view({nx, ny, nz, 1});
 }
 
 template <int coll_dyn>
@@ -161,7 +161,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeLocalRelaxationMatrix()
 
     _local_relaxation_matrix =
         torch::zeros(local_relaxation_mrt_shape, MooseTensor::floatTensorOptions());
-    torch::Tensor stencil_S_expanded = _stencil._S.clone();
+    torch::Tensor stencil_S_expanded = _stencil._S.view({_stencil._q, _stencil._q}).clone();
 
     stencil_S_expanded = stencil_S_expanded.unsqueeze(0).unsqueeze(0).unsqueeze(0);
     _local_relaxation_matrix = stencil_S_expanded.expand(local_relaxation_mrt_shape).clone();
@@ -173,7 +173,7 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeLocalRelaxationMatrix()
                                          Slice(),
                                          _stencil._id_kinematic_visc[sh_id],
                                          _stencil._id_kinematic_visc[sh_id]},
-                                        1.0 / _relaxation_parameter);
+                                        1.0 / _relaxation_parameter.squeeze(-1));
 }
 
 template <int coll_dyn>

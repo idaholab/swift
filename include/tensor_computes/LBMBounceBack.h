@@ -31,4 +31,13 @@ public:
 
 protected:
   const std::vector<torch::Tensor> & _f_old;
+
+  // whether or not apply bounce back in the corners
+  const bool _exclude_corners_x;
+  const bool _exclude_corners_y;
+  const bool _exclude_corners_z;
+
+  torch::Tensor _x_indices;
+  torch::Tensor _y_indices;
+  torch::Tensor _z_indices;
 };
