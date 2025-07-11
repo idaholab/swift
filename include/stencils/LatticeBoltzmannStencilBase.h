@@ -58,4 +58,7 @@ public:
 
   // indices of shear viscosity relaxation
   torch::Tensor _id_kinematic_visc;
+
+  // reorder indices to cosntruct square/cube
+  torch::Tensor _reorder_indices;
 };
