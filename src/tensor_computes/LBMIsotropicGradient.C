@@ -7,8 +7,6 @@
 /**********************************************************************/
 
 #include "LBMIsotropicGradient.h"
-#include "SwiftUtils.h"
-#include <ATen/ops/tensor.h>
 
 using namespace torch::indexing;
 
@@ -18,7 +16,7 @@ InputParameters
 LBMIsotropicGradient::validParams()
 {
   InputParameters params = LatticeBoltzmannOperator::validParams();
-  params.addClassDescription("Compute LB equilibrium distribution object.");
+  params.addClassDescription("Compute isotropic gradient object.");
   params.addRequiredParam<TensorInputBufferName>("scalar_field",
                                                  "Scalar field to compute the gradient of");
 
@@ -52,9 +50,6 @@ LBMIsotropicGradient::LBMIsotropicGradient(const InputParameters & parameters)
 
       _kernel.index_put_({Slice(), Slice(), 0}, kernel_of_kernel * ex3x3);
       _kernel.index_put_({Slice(), Slice(), 1}, kernel_of_kernel * ey3x3);
-
-      std::cout << _kernel.index({Slice(), Slice(), 0}) << std::endl;
-      std::cout << _kernel.index({Slice(), Slice(), 1}) << std::endl;
 
       _conv_options.bias(torch::Tensor()).stride({1, 1}).padding(0);
       break;
@@ -116,7 +111,7 @@ LBMIsotropicGradient::computeBuffer()
                     isotropic_gradient.index({0, Slice(), Slice()}).unsqueeze(-1));
       _u.index_put_({Slice(), Slice(), Slice(), 1},
                     isotropic_gradient.index({1, Slice(), Slice()}).unsqueeze(-1));
-
+      _u = _u / _lb_problem._cs2;
       break;
     }
   }
