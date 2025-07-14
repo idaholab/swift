@@ -8,7 +8,6 @@
 
 #include "LBMBounceBack.h"
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
 using namespace torch::indexing;
@@ -67,6 +66,23 @@ LBMBounceBack::LBMBounceBack(const InputParameters & parameters)
   _x_indices = flat_x_indices.clone();
   _y_indices = flat_y_indices.clone();
   _z_indices = flat_z_indices.clone();
+
+  // for 3D, binary media
+  if (_lb_problem.isBinaryMedia())
+  {
+    const torch::Tensor & binary_mesh = _lb_problem.getBinaryMedia();
+    _binary_mesh = binary_mesh.clone();
+
+    for (int64_t ic = 1; ic < _stencil._q; ic++)
+    {
+      int64_t ex = _stencil._ex[ic].item<int64_t>();
+      int64_t ey = _stencil._ey[ic].item<int64_t>();
+      int64_t ez = _stencil._ez[ic].item<int64_t>();
+      torch::Tensor shifted_mesh = torch::roll(binary_mesh, {ez, ey, ex}, {0, 1, 2});
+      torch::Tensor adjacent_to_boundary = (shifted_mesh == 0) & (binary_mesh == 1);
+      _binary_mesh.masked_fill_(adjacent_to_boundary, 2);
+    }
+  }
 }
 
 void
@@ -139,17 +155,39 @@ LBMBounceBack::topBoundary()
 void
 LBMBounceBack::wallBoundary()
 {
-  // bounce-back
-  _u.index_put_(
-      {_boundary_indices.index({Slice(), 0}),
-       _boundary_indices.index({Slice(), 1}),
-       _boundary_indices.index({Slice(), 2}),
-       _boundary_indices.index({Slice(), 3})},
+  if (_domain.getDim() == 3)
+    wallBoundary3D(); // temporary solution to generalization problem
+  else
+    // bounce-back
+    _u.index_put_(
+        {_boundary_indices.index({Slice(), 0}),
+         _boundary_indices.index({Slice(), 1}),
+         _boundary_indices.index({Slice(), 2}),
+         _boundary_indices.index({Slice(), 3})},
 
-      _f_old[0].index({_boundary_indices.index({Slice(), 0}),
-                       _boundary_indices.index({Slice(), 1}),
-                       _boundary_indices.index({Slice(), 2}),
-                       _stencil._op.index_select(0, _boundary_indices.index({Slice(), 3}))}));
+        _f_old[0].index({_boundary_indices.index({Slice(), 0}),
+                         _boundary_indices.index({Slice(), 1}),
+                         _boundary_indices.index({Slice(), 2}),
+                         _stencil._op.index_select(0, _boundary_indices.index({Slice(), 3}))}));
+}
+
+void
+LBMBounceBack::wallBoundary3D()
+{
+  _boundary_mask = (_binary_mesh.unsqueeze(-1).expand_as(_u) == 2) & (_u == 0);
+  _boundary_mask = _boundary_mask.to(torch::kBool);
+
+  torch::Tensor f_bounce_back = torch::zeros_like(_u);
+
+  for (/* do not use unsigned int */ int ic = 1; ic < _stencil._q; ic++)
+  {
+    int64_t index = _stencil._op[ic].item<int64_t>();
+    auto lattice_slice = _f_old[0].index({Slice(), Slice(), Slice(), index});
+    auto bounce_back_slice = f_bounce_back.index({Slice(), Slice(), Slice(), ic});
+    bounce_back_slice.copy_(lattice_slice);
+  }
+
+  _u.index_put_({_boundary_mask}, f_bounce_back.index({_boundary_mask}));
 }
 
 void
