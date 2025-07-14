@@ -24,6 +24,7 @@ LBMTensorBuffer::validParams()
   params.addParam<bool>("read_from_file", false, "Should the tensor buffer be read from file");
   params.addParam<std::string>("file", "", "Full path of the file to read");
 
+  params.addParam<bool>("is_integer", false, "Whether to specify integer dtype");
   params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
   params.addClassDescription("Tensor wrapper form LBM tensors");
 
@@ -59,7 +60,10 @@ LBMTensorBuffer::init()
   if (dimension > 0)
     shape.push_back(static_cast<int64_t>(dimension));
 
-  _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
+  if (getParam<bool>("is_integer"))
+    _u = torch::zeros(shape, MooseTensor::intTensorOptions());
+  else
+    _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
 
   if (getParam<bool>("read_from_file"))
     readTensorFromFile(shape);

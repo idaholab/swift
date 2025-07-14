@@ -27,6 +27,7 @@ public:
   void frontBoundary() override;
   void backBoundary() override;
   void wallBoundary() override;
+  void wallBoundary3D();
   void computeBuffer() override;
 
 protected:
@@ -40,4 +41,7 @@ protected:
   torch::Tensor _x_indices;
   torch::Tensor _y_indices;
   torch::Tensor _z_indices;
+
+  torch::Tensor _binary_mesh;
+  torch::Tensor _boundary_mask;
 };
