@@ -56,10 +56,17 @@ LBMEquilibrium::computeBuffer()
   }
 
   // compute equilibrium
-  _u = _w * rho_unsqueezed *
-       (1.0 + (_ex * ux + _ey * uy + _ez * uz) / _lb_problem._cs2 +
-        0.5 * ((_ex * ux + _ey * uy + _ez * uz) * (_ex * ux + _ey * uy + _ez * uz)) /
-            _lb_problem._cs4 -
-        0.5 * (ux * ux + uy * uy + uz * uz) / _lb_problem._cs2);
+  torch::Tensor second_order;
+  torch::Tensor third_order;
+
+  {
+    auto edotu = _ex * ux + _ey * uy + _ez * uz;
+    auto edotu_sqr = edotu * edotu;
+    auto usqr = ux * ux + uy * uy + uz * uz;
+    second_order = edotu / _lb_problem._cs2 + 0.5 * edotu_sqr / _lb_problem._cs4;
+    third_order = 0.5 * usqr / _lb_problem._cs2;
+  }
+
+  _u = _w * rho_unsqueezed * (1.0 + second_order - third_order);
   _lb_problem.maskedFillSolids(_u, 0);
 }
