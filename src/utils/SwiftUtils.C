@@ -20,7 +20,7 @@ struct TorchDeviceSingleton
   {
     try
     {
-      auto tensor = torch::rand({1}, torch::dtype(dtype).device(device));
+      auto tensor = torch::zeros({1}, torch::dtype(dtype).device(device));
       return true;
     }
     catch (const std::exception &)
