@@ -66,6 +66,7 @@ DomainAction::validParams()
   params.addParam<std::vector<std::string>>("device_names", {}, "Compute devices to run on.");
   params.addParam<std::vector<unsigned int>>(
       "device_weights", {}, "Device weights (or speeds) to influence the partitioning.");
+  params.addParam<std::string>("floating_precision", "", "Floating point precision.");
   params.addParam<bool>(
       "debug",
       false,
@@ -77,6 +78,7 @@ DomainAction::DomainAction(const InputParameters & parameters)
   : Action(parameters),
     _device_names(getParam<std::vector<std::string>>("device_names")),
     _device_weights(getParam<std::vector<unsigned int>>("device_weights")),
+    _floating_precision(getParam<std::string>("floating_precision")),
     _parallel_mode(getParam<MooseEnum>("parallel_mode").getEnum<ParallelMode>()),
     _dim(getParam<MooseEnum>("dim")),
     _n_global(
@@ -151,6 +153,7 @@ DomainAction::DomainAction(const InputParameters & parameters)
     if (!swift_app)
       mooseError("This action requires a SwftApp object to be present.");
     swift_app->setTorchDevice(_device_names[_local_ranks[_rank] % _device_names.size()], {});
+    swift_app->setTorchPrecision(_floating_precision, {});
   }
 
   // domain partitioning

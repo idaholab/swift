@@ -29,12 +29,19 @@ static struct SwiftGlobalSettings
       _torch_device = "";
   }
   std::string _torch_device;
+  std::string _floating_precision;
 } swift_global_settings;
 
 std::string
 torchDevice()
 {
   return swift_global_settings._torch_device;
+}
+
+std::string
+precision()
+{
+  return swift_global_settings._floating_precision;
 }
 }
 
@@ -66,6 +73,12 @@ void
 SwiftApp::setTorchDeviceStatic(std::string device, const MooseTensor::Key<SwiftInit> &)
 {
   MooseTensor::swift_global_settings._torch_device = device;
+}
+
+void
+SwiftApp::setTorchPrecision(std::string precision, const MooseTensor::Key<DomainAction> &)
+{
+  MooseTensor::swift_global_settings._floating_precision = precision;
 }
 
 void
