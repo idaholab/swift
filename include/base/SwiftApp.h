@@ -14,6 +14,7 @@
 namespace MooseTensor
 {
 std::string torchDevice();
+std::string precision();
 }
 
 class DomainAction;
@@ -34,4 +35,6 @@ public:
   void setTorchDevice(std::string device, const MooseTensor::Key<DomainAction> &);
   /// called from the unit test app
   static void setTorchDeviceStatic(std::string device, const MooseTensor::Key<SwiftInit> &);
+  /// called from the Domain action
+  void setTorchPrecision(std::string precision, const MooseTensor::Key<DomainAction> &);
 };
