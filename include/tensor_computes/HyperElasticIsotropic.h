@@ -8,8 +8,6 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "TensorOperator.h"
 #include "neml2/tensors/Vec.h"
 
@@ -39,5 +37,3 @@ protected:
   const torch::Tensor & _tK;
   torch::Tensor & _tK4;
 };
-
-#endif
