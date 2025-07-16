@@ -105,45 +105,85 @@ LBMCollisionDynamicsTempl<coll_dyn>::computeRelaxationParameter()
 
   auto f_neq_hat = _fneq.view({nx * ny * nz, _stencil._q, 1, 1, 1});
 
-  auto zeros = torch::zeros({_stencil._q}, MooseTensor::intTensorOptions());
-  auto ones = torch::ones({_stencil._q}, MooseTensor::intTensorOptions());
-
-  auto ex_2d = torch::stack({_stencil._ex, zeros, zeros});
-  auto ey_2d = torch::stack({zeros, _stencil._ey, zeros});
-  auto ez_2d = torch::stack({zeros, zeros, _stencil._ez});
-
-  if (nz == 1)
-    ez_2d = torch::stack({ones, zeros, _stencil._ez});
-
-  // outer product
-  // expected shape: _q, 3, 3, 3
-  auto outer_products = torch::zeros({_stencil._q, 3, 3, 3}, MooseTensor::intTensorOptions());
-
-  for (int i = 0; i < _stencil._q; i++)
+  torch::Tensor S;
   {
-    auto ex_col = ex_2d.index({Slice(), i});
-    auto ey_col = ey_2d.index({Slice(), i});
-    auto ez_col = ez_2d.index({Slice(), i});
-    auto outer_product = torch::einsum("i,j,k->kij", {ex_col, ey_col, ez_col});
-    outer_products[i] = outer_product;
-  }
-  outer_products = outer_products.view({1, _stencil._q, 3, 3, 3});
+    torch::Tensor outer_products;
+    {
+      torch::Tensor ex_2d;
+      torch::Tensor ey_2d;
+      torch::Tensor ez_2d;
 
-  // momentum flux
-  auto Q = torch::sum(f_neq_hat * outer_products, 1).view({nx, ny, nz, 3, 3, 3});
+      {
+        auto zeros = torch::zeros({_stencil._q}, MooseTensor::intTensorOptions());
+        auto ones = torch::ones({_stencil._q}, MooseTensor::intTensorOptions());
 
-  // mean density
-  _mean_density = torch::mean(torch::sum(_f, 3)).item<double>();
+        ex_2d = torch::stack({_stencil._ex, zeros, zeros});
+        ey_2d = torch::stack({zeros, _stencil._ey, zeros});
+        ez_2d = torch::stack({zeros, zeros, _stencil._ez});
 
-  // Frobenius norm
-  auto Q_mean = torch::norm(Q, 2, {3, 4, 5}) / (_mean_density * _lb_problem._cs2);
+        if (nz == 1)
+          ez_2d = torch::stack({ones, zeros, _stencil._ez});
+      } // zeros and ones are out of scope
 
-  // subgrid time scale factor
-  auto t_sgs = sqrt(_C_s) * _delta_x / _lb_problem._cs;
-  auto eta = _tau_0 / t_sgs;
+      // outer product
+      // expected shape: _q, 3, 3, 3
+      outer_products = torch::zeros({_stencil._q, 3, 3, 3}, MooseTensor::floatTensorOptions());
 
-  // mean strain rate
-  auto S = (-1.0 * eta + torch::sqrt(eta * eta + 4.0 * Q_mean)) / (2.0 * t_sgs);
+      for (int i = 0; i < _stencil._q; i++)
+      {
+        auto ex_col = ex_2d.index({Slice(), i});
+        auto ey_col = ey_2d.index({Slice(), i});
+        auto ez_col = ez_2d.index({Slice(), i});
+        auto outer_product = torch::einsum("i,j,k->kij", {ex_col, ey_col, ez_col});
+        outer_products[i] = outer_product;
+      }
+      outer_products = outer_products.view({1, _stencil._q, 3, 3, 3});
+    } // ex_2d ey_2d ez_2d are out of scope
+
+    torch::Tensor Q_mean;
+    {
+      // momentum flux
+      torch::Tensor Q;
+      {
+        // auto f_neq_outer_prod = torch::einsum("anijk,mnxyz->mijk", {outer_products, f_neq_hat});
+        // until we figure out a better way to optimzie memory consumption of above commented line
+        // we will do this in smaller batches
+        // this will take slightly longer .... ??
+
+        const int64_t M = nx * ny * nz;
+        const int64_t batch_size = M / 20; // just pulled out of my ***
+        torch::Tensor f_neq_outer_prod_batched =
+            torch::zeros({M, 3, 3, 3}, MooseTensor::floatTensorOptions());
+
+        for (int64_t i = 0; i < M; i += batch_size)
+        {
+          int64_t current_batch_size = std::min(batch_size, M - i);
+          torch::Tensor f_neq_hat_batch = f_neq_hat.slice(0, i, i + current_batch_size);
+
+          torch::Tensor batch_result =
+              torch::einsum("anijk,mnxyz->mijk", {outer_products, f_neq_hat_batch});
+
+          f_neq_outer_prod_batched.slice(0, i, i + current_batch_size).copy_(batch_result);
+        }
+        Q = f_neq_outer_prod_batched.view({nx, ny, nz, 3, 3, 3});
+      }
+
+      // mean density
+      _mean_density = torch::mean(torch::sum(_f, 3)).item<double>();
+
+      // Frobenius norm
+      Q_mean = torch::norm(Q, 2, {3, 4, 5}) / (_mean_density * _lb_problem._cs2);
+    } //  auto Q goes of scopoe
+
+    // subgrid time scale factor
+    auto t_sgs = sqrt(_C_s) * _delta_x / _lb_problem._cs;
+    auto eta = _tau_0 / t_sgs;
+
+    // mean strain rate
+    auto Q_mean_sqrt = torch::sqrt(eta * eta + 4.0 * Q_mean);
+    auto eta_Q_mean_sqrt = (-1.0 * eta + Q_mean_sqrt);
+    S = eta_Q_mean_sqrt / (2.0 * t_sgs);
+  } // outer_products is out of scope
 
   // relaxation parameter
   _relaxation_parameter = _tau_0 + _C_s * _delta_x * _delta_x * S / _lb_problem._cs2;
