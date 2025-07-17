@@ -9,7 +9,6 @@
 #pragma once
 
 #include "TensorOperator.h"
-#include "neml2/tensors/Vec.h"
 
 /**
  * Hyperelastic isotropic material model

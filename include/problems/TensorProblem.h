@@ -41,6 +41,7 @@ namespace Swift
 {
 struct ConstantBase
 {
+  virtual ~ConstantBase() = default;
   virtual std::string getType() = 0;
 };
 
@@ -185,6 +186,7 @@ protected:
   /// substepping timestep
   Real _sub_dt;
   Real _sub_time;
+  unsigned int _substep;
 
   /// simulation time for the currently running output thread
   Real _output_time;

@@ -33,7 +33,7 @@ HyperElasticIsotropic::HyperElasticIsotropic(const InputParameters & parameters)
     _tI4s((_tI4 + _tI4rt) / 2.0),
     _tII(MooseTensor::dyad22(_tI, _tI)),
     _tF(getInputBuffer("F")),
-    _pFstar(isParamValid("Fstar") ? &getInputBuffer("F") : nullptr),
+    _pFstar(isParamValid("Fstar") ? &getInputBuffer("Fstar") : nullptr),
     _tmu(getInputBuffer("mu")),
     _tK(getInputBuffer("K")),
     _tK4(getOutputBuffer("tangent_operator"))
@@ -60,8 +60,10 @@ HyperElasticIsotropic::computeBuffer()
   // First Piola-Kirchhoff stress: P = F_e * S
   _u = dot22(F_e, S);
 
+  _tK4 = dot24(S, _tI4) + ddot44(ddot44(_tI4rt, dot42(dot24(F_e, C4), trans2(F_e))), _tI4rt);
+
   // Consistent tangent: K_ijkl = F^e_{im} C_{jlmn} F^e_{kn} + delta_{ik} S_{jl}
-  const auto K_geo = torch::einsum("...im,...jlmn,...kn->...ijkl", F_e, C4, F_e);
-  const auto K_stress = torch::einsum("ik,jl,...jl->...ijkl", _ti, _ti, S);
-  _tK4 = K_geo + K_stress;
+  // const auto K_geo = torch::einsum("...im,...jlmn,...kn->...ijkl", {F_e, C4, F_e});
+  // const auto K_stress = torch::einsum("ik,jl,...jl->...ijkl", {_ti, _ti, S});
+  // _tK4 = K_geo + K_stress;
 }

@@ -58,9 +58,8 @@ NEML2TensorCompute::NEML2TensorCompute(const InputParameters & params)
           const auto fname = getParam<DataFileName>("neml2_input_file");
           const auto cli_args = getParam<std::vector<std::string>>("cli_args");
           const auto model_name = getParam<std::string>("neml2_model");
-          neml2::load_input(std::string(fname), neml2::utils::join(cli_args, " "));
-          return std::ref(
-              NEML2Utils::getModel(model_name, MooseTensor::floatTensorOptions().device()));
+          auto factory = neml2::load_input(std::string(fname), neml2::utils::join(cli_args, " "));
+          return NEML2Utils::getModel(*factory, model_name);
         }())
 #endif
 {
@@ -90,7 +89,7 @@ void
 NEML2TensorCompute::init()
 {
 #ifdef NEML2_ENABLED
-  neml2::diagnose(_model);
+  neml2::diagnose(*_model);
 #endif
 }
 
@@ -113,7 +112,7 @@ NEML2TensorCompute::computeBuffer()
       mooseError("Unsupported tensor dimension");
   }
 
-  auto out = _model.value(in);
+  auto out = _model->value(in);
 
   for (const auto & [label, tensor_ptr] : _output_mapping)
     *tensor_ptr = out.at(label);
