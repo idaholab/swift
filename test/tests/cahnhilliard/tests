@@ -7,7 +7,7 @@
     issues = '#6'
     requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector in 2d'
     design = 'TensorProblem.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
   [map_to_aux_3d]
     type = Exodiff
@@ -17,7 +17,7 @@
     issues = '#6'
     requirement = 'The system shall be able to map a tensor directly to an aux variable solution vector in 3d'
     design = 'TensorProblem.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
   [project_tensor]
     type = Exodiff
@@ -27,7 +27,7 @@
     issues = '#6'
     requirement = 'The system shall be able to project a tensor onto an aux variable using an aux kernel'
     design = 'ProjectTensorAux.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
   [xdmf_output_xml]
     type = XMLDiff
@@ -37,7 +37,7 @@
     issues = '#6'
     requirement = 'The system shall be able to output a tensor in XDMF format'
     design = 'XDMFTensorOutput.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
   [xdmf_output_hdf5]
     type = HDF5Diff
@@ -48,7 +48,7 @@
     issues = '#6'
     requirement = 'The system shall be able to output a tensor in XDMF format using a HDF5 data file'
     design = 'XDMFTensorOutput.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 
   [xdmf_output_hdf5_threading_error]
@@ -71,6 +71,6 @@
     issues = '#29'
     requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation, and map a tensor directly to an aux variable solution vector in 2d for verification of the solve.'
     design = 'ForwardEulerSolver.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 []
