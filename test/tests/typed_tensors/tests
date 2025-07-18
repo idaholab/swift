@@ -7,6 +7,6 @@
     issues = '#20'
     requirement = 'The system shall be able to output a vector valued tensor to XDMF'
     design = 'XDMFTensorOutput.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 []
