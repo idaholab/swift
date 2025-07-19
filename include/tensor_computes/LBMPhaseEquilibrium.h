@@ -11,18 +11,20 @@
 #include "LatticeBoltzmannOperator.h"
 
 /**
- * Compute LB equilibrium distribution
+ * Compute LB equilibrium distribution for phase field
  */
-class LBMEquilibrium : public LatticeBoltzmannOperator
+class LBMPhaseEquilibrium : public LatticeBoltzmannOperator
 {
 public:
   static InputParameters validParams();
 
-  LBMEquilibrium(const InputParameters & parameters);
+  LBMPhaseEquilibrium(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
 protected:
-  const torch::Tensor & _rho;
-  const torch::Tensor & _velocity;
+  const torch::Tensor & _phi;
+  const torch::Tensor & _grad_phi;
+  const Real _tau_phi;
+  const Real _D;
 };

@@ -85,8 +85,8 @@ LBMIsotropicGradient::computeBuffer()
     mooseError("Output buffer must have the same number of dimensions as the domain.");
 
   const unsigned int & dim = _domain.getDim();
-  _kernel = _kernel.permute({2, 0, 1});
-  _kernel = _kernel.unsqueeze(1);
+  torch::Tensor kernel = _kernel.permute({2, 0, 1});
+  kernel = kernel.unsqueeze(1);
 
   switch (dim)
   {
@@ -103,7 +103,7 @@ LBMIsotropicGradient::computeBuffer()
       input_field = input_field.unsqueeze(0).unsqueeze(0);
 
       torch::Tensor isotropic_gradient =
-          torch::nn::functional::conv2d(input_field, _kernel, _conv_options);
+          torch::nn::functional::conv2d(input_field, kernel, _conv_options);
 
       isotropic_gradient = isotropic_gradient.squeeze(0);
 
