@@ -49,8 +49,6 @@ LBMIsotropicLaplacian::LBMIsotropicLaplacian(const InputParameters & parameters)
       break;
     }
   }
-
-  std::cout << "laplacian kernel\n" << _kernel << std::endl;
 }
 
 void

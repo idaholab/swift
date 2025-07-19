@@ -78,22 +78,26 @@ LBMTensorBuffer::readTensorFromFile(const std::vector<int64_t> & shape)
   if (!file.is_open())
     mooseError("Cannot open file " + tensor_file);
 
-  // read mesh into standart vector
-  std::vector<int> fileData(shape[0] * shape[1] * shape[2]);
+  // read file into standart vector
+  std::vector<Real> fileData(shape[0] * shape[1] * shape[2]);
+
   for (int i = 0; i < fileData.size(); i++)
-  {
     if (!(file >> fileData[i]))
-    {
-      mooseError("Insufficient data in the mesh file");
-    }
-  }
+      mooseError("Insufficient data in the file");
+
   file.close();
 
   // reshape and write into torch tensor
   for (int64_t k = 0; k < shape[2]; k++)
     for (int64_t j = 0; j < shape[1]; j++)
       for (int64_t i = 0; i < shape[0]; i++)
-        _u.index_put_({i, j, k}, fileData[k * shape[1] * shape[0] + j * shape[0] + i]);
+      {
+        if (getParam<bool>("is_integer"))
+          _u.index_put_({i, j, k},
+                        static_cast<int>(fileData[k * shape[1] * shape[0] + j * shape[0] + i]));
+        else
+          _u.index_put_({i, j, k}, fileData[k * shape[1] * shape[0] + j * shape[0] + i]);
+      }
 }
 
 void
