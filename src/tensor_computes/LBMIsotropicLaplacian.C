@@ -55,7 +55,7 @@ void
 LBMIsotropicLaplacian::computeBuffer()
 {
   const unsigned int & dim = _domain.getDim();
-  _kernel = _kernel.view({1, 1, 3, 3});
+  torch::Tensor kernel = _kernel.view({1, 1, 3, 3});
 
   switch (dim)
   {
@@ -72,7 +72,7 @@ LBMIsotropicLaplacian::computeBuffer()
       input_field = input_field.unsqueeze(0).unsqueeze(0);
 
       torch::Tensor isotropic_Laplacian_1 =
-          torch::nn::functional::conv2d(input_field, _kernel, _conv_options);
+          torch::nn::functional::conv2d(input_field, kernel, _conv_options);
 
       isotropic_Laplacian_1 = 2.0 * isotropic_Laplacian_1.squeeze(0).squeeze(0);
 
@@ -80,7 +80,8 @@ LBMIsotropicLaplacian::computeBuffer()
           2.0 *
           torch::sum(_scalar_field.unsqueeze(-1) * _stencil._weights.unsqueeze(0).unsqueeze(0), -1);
 
-      _u = (isotropic_Laplacian_1 - isotropic_Laplacian_2) / _lb_problem._cs2;
+      _u = (isotropic_Laplacian_1.unsqueeze(-1) - isotropic_Laplacian_2.unsqueeze(-1)) /
+           _lb_problem._cs2;
       break;
     }
   }
