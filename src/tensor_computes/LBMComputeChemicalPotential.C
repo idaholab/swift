@@ -35,5 +35,8 @@ LBMComputeChemicalPotential::LBMComputeChemicalPotential(const InputParameters &
 void
 LBMComputeChemicalPotential::computeBuffer()
 {
-  _u = 48.0 * _sigma / _D * _phi * (_phi - 1) * (_phi - 0.5) - 3.0 * _D * _sigma * _laplacian_phi;
+  const auto part_1 = _sigma / _D * _phi * (_phi - 1.0);
+  const auto part_2 = _D * _sigma * _laplacian_phi;
+
+  _u = part_1.unsqueeze(-1) - part_2;
 }

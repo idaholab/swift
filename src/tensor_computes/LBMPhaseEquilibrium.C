@@ -60,8 +60,12 @@ LBMPhaseEquilibrium::computeBuffer()
         torch::Tensor e_dot_n;
         {
           auto mag = torch::norm(_grad_phi, 2, -1);
+          // _lb_problem.printBuffer(mag, 10, 0);
+
           auto unit_normal = _grad_phi / (mag.unsqueeze(-1) + 1.0e-16);
           unit_normal.unsqueeze_(3);
+          // _lb_problem.printBuffer(unit_normal, 10, 0);
+
           auto e_xyz = torch::stack(
                            {
                                _ex,
@@ -70,11 +74,13 @@ LBMPhaseEquilibrium::computeBuffer()
                            -1)
                            .to(MooseTensor::floatTensorOptions());
           e_dot_n = torch::einsum("ijklm,abcdm->abcl", {e_xyz, unit_normal});
+          // _lb_problem.printBuffer(e_dot_n, 10, 1);
           phase_eq = 4.0 / _D * _phi_unsqueezed * (1.0 - _phi_unsqueezed) * e_dot_n;
         }
-        phase_eq_2 = _w * _tau_phi * phase_eq;
+        phase_eq_2 = _w * (_tau_phi)*phase_eq;
       }
-      _u = gamma_eq + phase_eq_2;
+      _u = gamma_eq; // + phase_eq_2;
+      // _lb_problem.printBuffer(_u, 10, 1);
       break;
     }
     default:
