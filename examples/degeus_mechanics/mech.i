@@ -11,6 +11,11 @@
 
 [TensorComputes]
   [Initialize]
+    [Finit]
+      type = RankTwoIdentity
+      buffer = F
+    []
+
     [phase]
       type = PhaseMechanicsTest
       buffer = phase
@@ -74,6 +79,16 @@
       buffer = sV
     []
   []
+[]
+
+[TensorSolver]
+  # no variables are integrated by this solver (FFTMechanics performs a steady state mechanics solve)
+  type = ForwardEulerSolver
+  root_compute = root
+  # deformation tensor is just forwarded Fnew -> F
+  forward_buffer = F
+  forward_buffer_new = Fnew
+  substeps = 10
 []
 
 [TensorOutputs]

@@ -15,8 +15,6 @@
 #include <ATen/ops/unsqueeze_ops.h>
 #include <util/Optional.h>
 
-#ifdef NEML2_ENABLED
-
 registerMooseObject("SwiftApp", FFTMechanics);
 
 InputParameters
@@ -163,5 +161,3 @@ FFTMechanics::computeBuffer()
                  "Exceeded the maximum number of nonlinear iterations without converging.");
   }
 }
-
-#endif
