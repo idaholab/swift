@@ -219,4 +219,100 @@ printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsig
   }
 }
 
+// Diagonal estimation with Hutchinson's method
+torch::Tensor
+estimateJacobiPreconditioner(const std::function<torch::Tensor(const torch::Tensor &)> & A,
+                             const torch::Tensor & template_vec,
+                             int num_samples)
+{
+  torch::Tensor diag_est = torch::zeros_like(template_vec);
+
+  for (int i = 0; i < num_samples; ++i)
+  {
+    torch::Tensor v = torch::randint(0, 2, template_vec.sizes(), template_vec.options()) * 2 - 1;
+    torch::Tensor Av = A(v);
+    diag_est += v * Av;
+  }
+
+  diag_est /= num_samples;
+
+  // Avoid division by zero
+  const torch::Tensor eps = torch::tensor(1e-10, diag_est.options());
+  return torch::where(torch::abs(diag_est) < eps, eps, diag_est);
+}
+
+std::tuple<torch::Tensor, unsigned int, double>
+conjugateGradientSolve(const std::function<torch::Tensor(const torch::Tensor &)> & A,
+                       torch::Tensor b,
+                       torch::Tensor x0,
+                       double tol,
+                       int64_t maxiter,
+                       const std::function<torch::Tensor(const torch::Tensor &)> & M)
+{
+  // initialize solution guess
+  torch::Tensor x = x0.defined() ? x0.clone() : torch::zeros_like(b);
+
+  // norm of b (for relative tolerance)
+  const double b_norm = torch::norm(b).cpu().template item<double>();
+  if (b_norm == 0.0)
+    // solution is zero if b is zero
+    return {x, 0u, 0.0};
+
+  // default max iterations
+  if (!maxiter)
+    maxiter = b.numel();
+
+  // initial residual
+  torch::Tensor r = b - A(x);
+
+  // Apply preconditioner (or identity)
+  torch::Tensor z = M(r); // z = M^{-1} r
+
+  // initial search direction p
+  torch::Tensor p = z.clone();
+
+  // dot product (r, z)
+  double rz_old = torch::sum(r * z).cpu().template item<double>();
+
+  // CG iteration
+  double res_norm;
+  for (const auto k : libMesh::make_range(maxiter))
+  {
+    // compute matrix-vector product
+    const auto Ap = A(p);
+
+    // step size alpha
+    double alpha = rz_old / torch::sum(p * Ap).cpu().template item<double>();
+
+    // update solution
+    x = x + alpha * p;
+
+    // update residual
+    r = r - alpha * Ap;
+    res_norm = torch::norm(r).cpu().template item<double>(); // ||r||
+
+    // std::cout << res_norm << '\n';
+
+    // Converged to desired tolerance
+    if (res_norm <= tol * b_norm)
+      return {x, k + 1, res_norm};
+
+    // apply preconditioner to new residual
+    z = M(r);
+    const auto rz_new = torch::sum(r * z).cpu().template item<double>();
+
+    // update scalar beta
+    double beta = rz_new / rz_old;
+
+    // update search direction
+    p = z + beta * p;
+
+    // prepare for next iteration
+    rz_old = rz_new;
+  }
+
+  // Reached max iterations without full convergence
+  return {x, maxiter, res_norm};
+}
+
 } // namespace MooseTensor

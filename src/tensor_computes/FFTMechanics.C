@@ -126,6 +126,11 @@ FFTMechanics::computeBuffer()
   unsigned int iiter = 0;
   auto dFm = torch::zeros_like(b);
 
+  const auto diag_precond = estimateJacobiPreconditioner(G_K_dF, b, 6);
+  const auto M_inv = [&](const torch::Tensor &x) {
+    return x / diag_precond;
+  };
+
   // iterate as long as the iterative update does not vanish
   while (true)
   {
