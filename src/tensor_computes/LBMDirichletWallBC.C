@@ -67,25 +67,27 @@ LBMDirichletWallBC::computeBoundaryNormals()
     /* normal vectors are computed by summing up microscopic velocity vectors e_i at boundaries
      * where these vectors are pointing away from the boundary */
 
-    boolean_travelling_tensor = 1 - boolean_travelling_tensor;
-    boolean_travelling_tensor.unsqueeze_(-1);
-    torch::Tensor e_xyz = torch::stack({_ex, _ey, _ez}).permute({1, 2, 3, 4, 0});
+    // boolean_travelling_tensor = 1 - boolean_travelling_tensor;
+    // boolean_travelling_tensor.unsqueeze_(-1);
+    // torch::Tensor e_xyz = torch::stack({_ex, _ey, _ez}).permute({1, 2, 3, 4, 0});
 
-    torch::Tensor normals = torch::einsum("abcqm,ijkqn->abcn", {boolean_travelling_tensor, e_xyz})
-                                .to(MooseTensor::floatTensorOptions());
+    // torch::Tensor normals = torch::einsum("abcqm,ijkqn->abcn", {boolean_travelling_tensor,
+    // e_xyz})
+    //                             .to(MooseTensor::floatTensorOptions());
 
-    _boundary_normals = normals / torch::norm(normals, 2, -1).unsqueeze(-1);
-    _boundary_normals = torch::where(
-        torch::isnan(_boundary_normals), torch::zeros_like(_boundary_normals), _boundary_normals);
+    // _boundary_normals = normals / torch::norm(normals, 2, -1).unsqueeze(-1);
+    // _boundary_normals = torch::where(
+    //     torch::isnan(_boundary_normals), torch::zeros_like(_boundary_normals),
+    //     _boundary_normals);
 
-    /* tangent vectors simply t_i = e_i - (e_i dot n) * n where n is unit normal vector to the
-     * boundary */
+    // /* tangent vectors simply t_i = e_i - (e_i dot n) * n where n is unit normal vector to the
+    //  * boundary */
 
-    _e_xyz = e_xyz.to(MooseTensor::floatTensorOptions());
-    _boundary_tangent_vectors =
-        _e_xyz - torch::einsum("ijkqm,abcdm->abcq", {_e_xyz, _boundary_normals.unsqueeze(-2)})
-                         .unsqueeze(-1) *
-                     _boundary_normals.unsqueeze(-2);
+    // _e_xyz = e_xyz.to(MooseTensor::floatTensorOptions());
+    // _boundary_tangent_vectors =
+    //     _e_xyz - torch::einsum("ijkqm,abcdm->abcq", {_e_xyz, _boundary_normals.unsqueeze(-2)})
+    //                      .unsqueeze(-1) *
+    //                  _boundary_normals.unsqueeze(-2);
   }
   else
     mooseError("Binary media must be avialble to use DirichletWall boundary condition.");
