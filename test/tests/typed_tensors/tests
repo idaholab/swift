@@ -5,8 +5,9 @@
     hdf5diff = gradient.h5
     abs_tol = 1e-13
     issues = '#20'
+    capabilities = neml2
     requirement = 'The system shall be able to output a vector valued tensor to XDMF'
     design = 'XDMFTensorOutput.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 []

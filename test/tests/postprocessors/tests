@@ -7,7 +7,7 @@
     requirement = 'The system shall be able to determine the minimum and maximum item value in a tensor.'
     issues = '#6'
     design = 'TensorExtremeValuePostprocessor.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 
   [average]
@@ -18,7 +18,7 @@
     requirement = 'The system shall be able to determine the average value in a tensor.'
     issues = '#6'
     design = 'TensorAveragePostprocessor.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 
   [integral]
@@ -29,7 +29,7 @@
     requirement = 'The system shall be able to compute the integral over a simulation cell tensor.'
     issues = '#6'
     design = 'TensorIntegralPostprocessor.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
   [reciprocal_integral]
     type = CSVDiff
@@ -39,7 +39,7 @@
     requirement = 'The system shall be able to compute the integral over a simulation cell tensor using the zero k vector in reciprocal space.'
     issues = '#6'
     design = 'ReciprocalIntegral.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
   []
 
   [interface_velocity]
@@ -49,6 +49,6 @@
     requirement = 'The system shall be able to measure the maximum interfacial velocity for a given tensor.'
     issues = '#6'
     design = 'TensorInterfaceVelocityPostprocessor.md'
-    libtorch_devices = 'cpu cuda mps'
+    devices = 'cpu cuda mps'
  []
 []

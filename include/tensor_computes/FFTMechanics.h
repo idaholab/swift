@@ -9,11 +9,7 @@
 #pragma once
 
 #include <ATen/core/TensorBody.h>
-#ifdef NEML2_ENABLED
-
 #include "TensorOperator.h"
-#include "neml2/tensors/SR2.h"
-#include "neml2/tensors/SSR4.h"
 
 /**
  * Constant Tensor
@@ -73,5 +69,3 @@ protected:
   using TensorOperatorBase::_dim;
   using TensorOperatorBase::_domain;
 };
-
-#endif

@@ -8,11 +8,7 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "TensorBuffer.h"
-#include "neml2/tensors/Vec.h"
-#include "neml2/tensors/SR2.h"
 
 /**
  * Tensor wrapper arbitrary tensor value dimensions
@@ -33,10 +29,20 @@ public:
   using TensorBuffer<T>::_cpu_copy_requested;
 };
 
+#ifdef NEML2_ENABLED
+#include "neml2/tensors/Vec.h"
+#include "neml2/tensors/SR2.h"
+
 using VectorTensor = NEML2TensorBuffer<neml2::Vec>;
 registerTensorType(VectorTensor, neml2::Vec);
 
 using SR2Tensor = NEML2TensorBuffer<neml2::SR2>;
 registerTensorType(SR2Tensor, neml2::SR2);
+
+#else
+
+// placeholder class
+using VectorTensor = NEML2TensorBuffer<torch::Tensor>;
+using SR2Tensor = NEML2TensorBuffer<torch::Tensor>;
 
 #endif
