@@ -37,6 +37,8 @@ protected:
 
   const Real _g; // gravitational acceleration
 
+  const int64_t _gravity_direction; // direction of gravitational acceleration
+
   const torch::Tensor & _density_tensor;
   const torch::Tensor & _temperature;
 };

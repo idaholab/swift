@@ -24,6 +24,7 @@ LBMComputeForces::validParams()
   params.addParam<std::string>("rho0", "1.0", "Reference density");
   params.addParam<std::string>("T0", "1.0", "Reference temperature");
   params.addParam<std::string>("gravity", "0.001", "Gravitational accelaration");
+  params.addParam<Real>("gravity_direction", 1, "Gravitational accelaration direction");
 
   params.addParam<bool>("enable_gravity", false, "Whether to consider gravity");
   params.addParam<bool>("enable_buoyancy", false, "Whether to consider buoyancy");
@@ -42,6 +43,7 @@ LBMComputeForces::LBMComputeForces(const InputParameters & parameters)
     _enable_buoyancy(getParam<bool>("enable_buoyancy")),
     _enable_surface_forces(getParam<bool>("enable_surface_forces")),
     _g(_lb_problem.getConstant<Real>(getParam<std::string>("gravity"))),
+    _gravity_direction(static_cast<int64_t>(getParam<Real>("gravity_direction"))),
     _density_tensor(getInputBufferByName(getParam<TensorInputBufferName>("rho"))),
     _temperature(getInputBufferByName(getParam<TensorInputBufferName>("temperature")))
 {
@@ -50,15 +52,15 @@ LBMComputeForces::LBMComputeForces(const InputParameters & parameters)
 void
 LBMComputeForces::computeGravity()
 {
-  _u = _u + _u.index_put_({Slice(), Slice(), Slice(), 1}, _g * _density_tensor);
+  _u = _u + _u.index_put_({Slice(), Slice(), Slice(), _gravity_direction}, _g * _density_tensor);
 }
 
 void
 LBMComputeForces::computeBuoyancy()
 {
-  // Boussinesq approximation of buoyancy
-  _u = _u + _u.index_put_({Slice(), Slice(), Slice(), 1},
-                          (_g * _reference_density) * (_temperature - _reference_temperature));
+
+  _u + _u.index_put_({Slice(), Slice(), Slice(), _gravity_direction},
+                     (_g * _reference_density) * (_temperature - _reference_temperature));
 }
 
 void
