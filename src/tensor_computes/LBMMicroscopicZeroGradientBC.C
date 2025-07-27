@@ -31,7 +31,7 @@ LBMMicroscopicZeroGradientBC::LBMMicroscopicZeroGradientBC(const InputParameters
 void
 LBMMicroscopicZeroGradientBC::leftBoundary()
 {
-  _u.index_put_({1, Slice(), Slice(), Slice()}, _u.index({0, Slice(), Slice(), Slice()}));
+  _u.index_put_({0, Slice(), Slice(), Slice()}, _u.index({1, Slice(), Slice(), Slice()}));
 }
 
 void
