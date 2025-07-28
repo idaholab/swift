@@ -358,7 +358,9 @@ ParsedJITTensor::setupTensors()
         --sp;
         s[sp] = _graph->insert(aten::div, {s[sp], s[sp + 1]});
         break;
-
+      case cInv:
+        s[sp] = _graph->insert(aten::reciprocal, {s[sp]});
+        break;
       case cMod:
         --sp;
         s[sp] = _graph->insert(aten::fmod, {s[sp], s[sp + 1]});

@@ -41,6 +41,7 @@ namespace Swift
 {
 struct ConstantBase
 {
+  virtual ~ConstantBase() = default;
   virtual std::string getType() = 0;
 };
 

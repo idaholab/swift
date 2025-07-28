@@ -25,7 +25,7 @@ class SwiftApp : public MooseApp
 public:
   static InputParameters validParams();
 
-  SwiftApp(InputParameters parameters);
+  SwiftApp(const InputParameters & parameters);
   virtual ~SwiftApp();
 
   static void registerApps();

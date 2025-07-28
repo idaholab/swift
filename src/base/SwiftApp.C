@@ -54,7 +54,7 @@ SwiftApp::validParams()
   return params;
 }
 
-SwiftApp::SwiftApp(InputParameters parameters) : MooseApp(parameters)
+SwiftApp::SwiftApp(const InputParameters & parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
   MooseTensor::swift_global_settings._torch_device =
