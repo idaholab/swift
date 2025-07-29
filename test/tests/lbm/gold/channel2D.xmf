@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">
+	<Domain>
+		<Topology TopologyType="2DCoRectMesh" Dimensions="11 11" />
+		<Geometry Type="ORIGIN_DXDY">
+			<DataItem Format="XML" Dimensions="2">0 0</DataItem>
+			<DataItem Format="XML" Dimensions="2">0.1 0.1</DataItem>
+		</Geometry>
+		<Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
+			<Grid Name="T0" GridType="Uniform">
+				<Time Value="0" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="velocity_x" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_x.0</DataItem>
+				</Attribute>
+				<Attribute Name="velocity_y" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_y.0</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T1" GridType="Uniform">
+				<Time Value="1" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="velocity_x" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_x.1</DataItem>
+				</Attribute>
+				<Attribute Name="velocity_y" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_y.1</DataItem>
+				</Attribute>
+			</Grid>
+			<Grid Name="T2" GridType="Uniform">
+				<Time Value="2" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Topology)" />
+				<xi:include xpointer="xpointer(//Xdmf/Domain/Geometry)" />
+				<Attribute Name="velocity_x" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_x.2</DataItem>
+				</Attribute>
+				<Attribute Name="velocity_y" Center="Cell">
+					<DataItem DataType="Float" Dimensions="10 10" Format="HDF">channel2D.h5:/velocity_y.2</DataItem>
+				</Attribute>
+			</Grid>
+		</Grid>
+	</Domain>
+</Xdmf>
