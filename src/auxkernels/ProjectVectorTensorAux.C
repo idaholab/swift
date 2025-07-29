@@ -45,8 +45,8 @@ ProjectVectorTensorAux::computeValue()
     switch (_dim)
     {
       case 1:
-        return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0]),
-                                  TensorIndex(component)});
+        return _cpu_buffer.index(
+            {TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0]), TensorIndex(component)});
 
       case 2:
         return _cpu_buffer.index({TensorIndex(int64_t(p(0) / _grid_spacing(0)) % _n[0]),
@@ -62,7 +62,7 @@ ProjectVectorTensorAux::computeValue()
 
     mooseError("Internal error (invalid dimension)");
   };
-  
+
   RealEigenVector v(_var.count());
 
   for (unsigned int i = 0; i < _var.count(); ++i)
@@ -74,6 +74,6 @@ ProjectVectorTensorAux::computeValue()
       v(i) = element.item<double>();
     else
       mooseError("Unsupported output type");
-  }  
+  }
   return v;
 }
