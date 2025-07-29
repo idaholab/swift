@@ -24,13 +24,13 @@ public:
   void buildMesh() override;
 
   void loadMeshFromDatFile();
-  void loadMeshFromVTKFile(const std::string&, torch::Tensor&, torch::Tensor&, torch::Tensor&);
-  const torch::Tensor & getBinaryMesh() const {return _binary_mesh;};
-  const torch::Tensor & getKn() const {return _Knudsen_number;};
-  const torch::Tensor & getPoreSize() const {return _local_pore_size;};
-  const bool & isMeshDatFile() const {return _load_mesh_from_dat;};
-  const bool & isMeshVTKFile() const {return _load_mesh_from_vtk;};
-  void setBinaryMesh(torch::Tensor & new_mesh) {_binary_mesh = new_mesh.clone();};
+  void loadMeshFromVTKFile(const std::string &, torch::Tensor &, torch::Tensor &, torch::Tensor &);
+  const torch::Tensor & getBinaryMesh() const { return _binary_mesh; };
+  const torch::Tensor & getKn() const { return _Knudsen_number; };
+  const torch::Tensor & getPoreSize() const { return _local_pore_size; };
+  const bool & isMeshDatFile() const { return _load_mesh_from_dat; };
+  const bool & isMeshVTKFile() const { return _load_mesh_from_vtk; };
+  void setBinaryMesh(torch::Tensor & new_mesh) { _binary_mesh = new_mesh.clone(); };
 
 protected:
   torch::Tensor _binary_mesh;

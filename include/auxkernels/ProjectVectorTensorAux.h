@@ -19,7 +19,9 @@ class TensorProblem;
  * Map a vectorial TensorBuffer to an AuxVariable
  * In the future this can be combined with ProjectTensorAux
  */
-class ProjectVectorTensorAux : public ArrayAuxKernel, public TensorProblemInterface, public DomainInterface
+class ProjectVectorTensorAux : public ArrayAuxKernel,
+                               public TensorProblemInterface,
+                               public DomainInterface
 {
 public:
   static InputParameters validParams();
