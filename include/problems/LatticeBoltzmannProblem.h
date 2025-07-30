@@ -11,8 +11,6 @@
 #include "TensorProblem.h"
 
 class LatticeBoltzmannStencilBase;
-class LatticeBoltzmannMesh;
-
 /**
  * Problem object for solving lattice Boltzmann problems
  */

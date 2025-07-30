@@ -7,7 +7,6 @@
 /**********************************************************************/
 
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
 #include "TensorSolver.h"
