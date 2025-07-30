@@ -174,8 +174,11 @@ LBMBounceBack::wallBoundary()
 void
 LBMBounceBack::wallBoundary3D()
 {
-  _boundary_mask = (_binary_mesh.unsqueeze(-1).expand_as(_u) == 2) & (_u == 0);
-  _boundary_mask = _boundary_mask.to(torch::kBool);
+  if (_lb_problem.getTotalSteps() == 0)
+  {
+    _boundary_mask = (_binary_mesh.unsqueeze(-1).expand_as(_u) == 2) & (_u == 0);
+    _boundary_mask = _boundary_mask.to(torch::kBool);
+  }
 
   torch::Tensor f_bounce_back = torch::zeros_like(_u);
 

@@ -96,43 +96,13 @@ LBMDirichletWallBC::computeBoundaryNormals()
 void
 LBMDirichletWallBC::wallBoundary()
 {
-  // const unsigned int & dim = _domain.getDim();
 
-  // torch::Tensor ux = _velocity.select(3, 0).unsqueeze(3);
-  // torch::Tensor uy = _velocity.select(3, 1).unsqueeze(3);
-  // torch::Tensor uz;
-
-  // switch (dim)
-  // {
-  //   case 3:
-  //     uz = _velocity.select(3, 2).unsqueeze(3);
-  //     break;
-  //   case 2:
-  //     uz = torch::zeros_like(ux, MooseTensor::floatTensorOptions());
-  //     break;
-  //   default:
-  //     mooseError("Unsupported dimensions for buffer _u");
-  // }
-
-  // auto edotu = _ex * ux + _ey * uy + _ez * uz;
-  // auto u_stacked = torch::stack({ux, uy, uz}).permute({1, 2, 3, 4, 0});
-  // auto tdotu = torch::einsum("abcqd,ijkld->ijkq", {_boundary_tangent_vectors, u_stacked});
-
-  _boundary_mask = (_binary_mesh.unsqueeze(-1).expand_as(_u) == 2);
-  _boundary_mask = _boundary_mask.to(torch::kBool);
+  if (_lb_problem.getTotalSteps() == 0)
+  {
+    _boundary_mask = (_binary_mesh.unsqueeze(-1).expand_as(_u) == 2);
+    _boundary_mask = _boundary_mask.to(torch::kBool);
+  }
 
   torch::Tensor f_bounce_back = torch::ones_like(_u) * _w * _value;
-
-  /*
-  for (int ic = 0; ic < _stencil._q; ic++)
-  {
-    int64_t index = _stencil._op[ic].item<int64_t>();
-    f_bounce_back.index_put_({Slice(), Slice(), Slice(), ic},
-                             _f_old[0].index({Slice(), Slice(), Slice(), index}) -
-                                 2.0 * _value * _stencil._weights[index] / _lb_problem._cs2 *
-                                     edotu.index({Slice(), Slice(), Slice(), index}) -
-                                 _value / 3.0 * tdotu.index({Slice(), Slice(), Slice(), index}));
-  } */
-
   _u.index_put_({_boundary_mask}, f_bounce_back.index({_boundary_mask}));
 }

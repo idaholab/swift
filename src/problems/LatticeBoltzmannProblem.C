@@ -51,26 +51,11 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
   if (_domain.getDim() < 3)
     shape.push_back(1);
 
-  for (unsigned int i = 0; i < shape.size(); i++)
+  for (const auto i : index_range(shape))
   {
     _shape_extended.push_back(shape[i]);
     _shape_extended_to_q.push_back(shape[i]);
   }
-
-  // compute unit conversion constants (must happen before compute object::init)
-  // const Real & dx = getConstant<Real>("dx");
-  // const Real & nu_lu = 1.0 / 3.0 * getConstant<Real>("tau") - 0.5;
-  // const Real & Ct = dx * dx * nu_lu / getConstant<Real>("nu");
-  // const Real & Cm = getConstant<Real>("rho") * dx * dx * dx;
-  // const Real & Cu = dx / Ct;
-  // const Real & Crho = getConstant<Real>("rho");
-  // declareConstant("C_t", Ct);
-  // declareConstant("C_m", Cm);
-  // declareConstant("C_Ux", Cu);
-  // declareConstant("C_Uy", Cu);
-  // declareConstant("C_Uz", Cu);
-  // declareConstant("C_U", Cu);
-  // declareConstant("C_rho", Crho);
 }
 
 void
