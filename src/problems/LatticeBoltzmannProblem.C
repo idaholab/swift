@@ -51,7 +51,7 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
   if (_domain.getDim() < 3)
     shape.push_back(1);
 
-  for (int64_t i = 0; i < shape.size(); i++)
+  for (unsigned int i = 0; i < shape.size(); i++)
   {
     _shape_extended.push_back(shape[i]);
     _shape_extended_to_q.push_back(shape[i]);
