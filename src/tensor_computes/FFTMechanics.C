@@ -41,10 +41,6 @@ FFTMechanics::validParams()
   params.addParam<TensorInputBufferName>("applied_macroscopic_strain",
                                          "Applied macroscopic strain");
   params.addParam<TensorInputBufferName>("F", "F", "Deformation gradient tensor.");
-  params.addParam<unsigned int>("hutchinson_steps",
-                                0,
-                                "Steps for diagonal estimation with Hutchinson's method used in "
-                                "Jacobi preconditioning. 0 skips preconditioning.");
   params.addParam<bool>("verbose", false, "Print non-linear residuals.");
   return params;
 }
@@ -73,7 +69,6 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _applied_macroscopic_strain(isParamValid("applied_macroscopic_strain")
                                     ? &getInputBuffer("applied_macroscopic_strain")
                                     : nullptr),
-    _hutchinson_steps(getParam<unsigned int>("hutchinson_steps")),
     _verbose(getParam<bool>("verbose"))
 {
   // Build projection tensor once
@@ -134,14 +129,8 @@ FFTMechanics::computeBuffer()
   // iterate as long as the iterative update does not vanish
   for (const auto iiter : make_range(_nl_max_its))
   {
-    const auto diag_precond =
-        _hutchinson_steps ? torch::abs(estimateJacobiPreconditioner(G_K_dF, b, _hutchinson_steps))
-                          : torch::ones_like(b);
-    const auto M_inv = [&diag_precond](const torch::Tensor & x) { return x / diag_precond; };
-
     const auto [dFm_new, iterations, lnorm] =
-        _hutchinson_steps ? conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its, M_inv)
-                          : conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
+        conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
     dFm = dFm_new;
 
     // update DOFs (array -> tens.grid)

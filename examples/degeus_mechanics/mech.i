@@ -72,7 +72,6 @@
         constitutive_model = hyper_elasticity
         stress = stress
         applied_macroscopic_strain = applied_strain
-        hutchinson_steps = 6
         verbose = true
       []
     []

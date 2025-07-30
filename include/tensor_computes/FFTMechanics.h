@@ -64,9 +64,6 @@ protected:
   /// applied macroscopic (affine) strain
   const torch::Tensor * const _applied_macroscopic_strain;
 
-  /// steps for diagonal estimation
-  const unsigned int _hutchinson_steps;
-
   /// add diagnostic output for iterations
   const bool _verbose;
 
