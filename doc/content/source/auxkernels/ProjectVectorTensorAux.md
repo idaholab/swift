@@ -1,6 +1,6 @@
 # ProjectVectorTensorAux
 
-!syntax description /AuxVariables/AuxKernel/ProjectVectorTensorAux
+!syntax description /AuxKernels/ProjectVectorTensorAux
 
 The ProjectVectorTensorAux works in the same manner as ProjectTensorAux, but on vectorial tensors.
 
@@ -12,8 +12,8 @@ The ProjectVectorTensorAux works in the same manner as ProjectTensorAux, but on 
 
 !! Describe and include an example of how to use the ProjectVectorTensorAux object.
 
-!syntax parameters /AuxVariables/AuxKernel/ProjectVectorTensorAux
+!syntax parameters /AuxKernels/ProjectVectorTensorAux
 
-!syntax inputs /AuxVariables/AuxKernel/ProjectVectorTensorAux
+!syntax inputs /AuxKernels/ProjectVectorTensorAux
 
-!syntax children /AuxVariables/AuxKernel/ProjectVectorTensorAux
+!syntax children /AuxKernels/ProjectVectorTensorAux
