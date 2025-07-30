@@ -123,18 +123,17 @@ FFTMechanics::computeBuffer()
   const auto Fn =
       at::linalg_norm(_u, c10::nullopt, c10::nullopt, false, c10::nullopt).cpu().item<double>();
 
-  unsigned int iiter = 0;
   auto dFm = torch::zeros_like(b);
 
   // iterate as long as the iterative update does not vanish
-  while (true)
+  for (const auto iiter : make_range(_nl_max_its))
   {
     const auto [dFm_new, iterations, lnorm] =
         conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
     dFm = dFm_new;
 
     // update DOFs (array -> tens.grid)
-    _u = _u + dFm.reshape(_r2_shape);
+    _u += dFm.reshape(_r2_shape);
 
     // new residual stress and tangent
     _constitutive_model.computeBuffer();
@@ -148,16 +147,13 @@ FFTMechanics::computeBuffer()
 
     // print nonlinear residual to the screen
     if (_verbose)
-      _console << "|R|=" << anorm << "\t|R/R0|=" << rnorm << '\n';
+      Moose::out << iiter << " |R|=" << anorm << "\t|R/R0|=" << rnorm << std::endl;
 
     // check convergence
-    if ((rnorm < _nl_rel_tol || anorm < _nl_abs_tol) && iiter > 0)
-      break;
-
-    iiter++;
-
-    if (iiter > _nl_max_its)
-      paramError("nl_max_its",
-                 "Exceeded the maximum number of nonlinear iterations without converging.");
+    if (rnorm < _nl_rel_tol || anorm < _nl_abs_tol)
+      return;
   }
+
+  paramError("nl_max_its",
+             "Exceeded the maximum number of nonlinear iterations without converging.");
 }

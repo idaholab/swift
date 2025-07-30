@@ -64,6 +64,7 @@ protected:
   /// applied macroscopic (affine) strain
   const torch::Tensor * const _applied_macroscopic_strain;
 
+  /// add diagnostic output for iterations
   const bool _verbose;
 
   using TensorOperatorBase::_dim;
