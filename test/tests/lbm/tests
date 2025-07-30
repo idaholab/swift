@@ -6,6 +6,7 @@
     requirement = 'The system shall be able to solve a 2D channel flow problem.'
     design = 'LBMStream.md'
     abs_tol = 1e-10
+    devices = 'cpu cuda mps'
   []
   [channel_flow_3d]
     type = HDF5Diff
@@ -14,6 +15,7 @@
     requirement = 'The system shall be able to solve a 3D channel flow problem.'
     design = 'LBMD3Q19.md'
     abs_tol = 1e-10
+    devices = 'cpu cuda mps'
   []
   [isotropic_mrt]
     type = HDF5Diff
@@ -22,5 +24,6 @@
     requirement = 'The system shall be able to solve a 3D channel flow problem with D3Q27 stencil and MRT collision.'
     design = 'LBMD3Q27.md'
     abs_tol = 1e-10
+    devices = 'cpu cuda mps'
   []
 []
