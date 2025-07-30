@@ -40,8 +40,11 @@ void
 LBMConstantTensor::computeBuffer()
 {
   if (_u.dim() > 3)
-    for (int64_t i = 0; i < _values.size(); i++)
-      _u.index({torch::indexing::Slice(), torch::indexing::Slice(), torch::indexing::Slice(), i})
+    for (const auto i : index_range(_values))
+      _u.index({torch::indexing::Slice(),
+                torch::indexing::Slice(),
+                torch::indexing::Slice(),
+                static_cast<int64_t>(i)})
           .fill_(_values[i]);
   else
     _u.fill_(_values[0]);
