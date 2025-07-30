@@ -7,13 +7,20 @@
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
   mesh_mode = DUMMY
+  device_names = cuda
 []
 
 [TensorComputes]
   [Initialize]
     [Finit]
-      type = RankTwoIdentity
+      type = RankTwoDiagonalTensor
       buffer = F
+      value = 1
+    []
+    [Stressinit]
+      type = RankTwoDiagonalTensor
+      buffer = stress
+      value = 0
     []
 
     [phase]
@@ -58,12 +65,15 @@
         F = F
         K = K
         mu = mu
-        l_tol = 1e-2
-        nl_rel_tol = 2e-2
+        l_tol = 1e-3
+        l_max_its = 200
+        nl_rel_tol = 2e-3
         nl_abs_tol = 2e-2
         constitutive_model = hyper_elasticity
         stress = stress
         applied_macroscopic_strain = applied_strain
+        hutchinson_steps = 6
+        verbose = true
       []
     []
   []
@@ -104,4 +114,8 @@
   type = Transient
   num_steps = 100
   dt = 0.01
+[]
+
+[Outputs]
+  perf_graph = true
 []
