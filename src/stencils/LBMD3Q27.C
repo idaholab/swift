@@ -104,7 +104,7 @@ LBMD3Q27::LBMD3Q27(const InputParameters & parameters) : LatticeBoltzmannStencil
         0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 0.0}},
       MooseTensor::floatTensorOptions());
 
-  _M_inv = torch::linalg::inv(_M);
+  _M_inv = at::linalg_inv(_M);
 
   // relaxation matrix
   _S = torch::diag(torch::tensor(

@@ -15,4 +15,12 @@
     design = 'LBMD3Q19.md'
     abs_tol = 1e-10
   []
+  [isotropic_mrt]
+    type = HDF5Diff
+    input = isotropic_stencil_mrt.i
+    hdf5diff = isotropic_stencil_mrt.h5
+    requirement = 'The system shall be able to solve a 3D channel flow problem with D3Q27 stencil and MRT collision.'
+    design = 'LBMD3Q27.md'
+    abs_tol = 1e-10
+  []
 []
