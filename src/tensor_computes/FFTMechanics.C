@@ -128,7 +128,6 @@ FFTMechanics::computeBuffer()
   const auto Fn =
       at::linalg_norm(_u, c10::nullopt, c10::nullopt, false, c10::nullopt).cpu().item<double>();
 
-  unsigned int iiter = 0;
   auto dFm = torch::zeros_like(b);
 
   // iterate as long as the iterative update does not vanish
@@ -145,7 +144,7 @@ FFTMechanics::computeBuffer()
     dFm = dFm_new;
 
     // update DOFs (array -> tens.grid)
-    _u = _u + dFm.reshape(_r2_shape);
+    _u += dFm.reshape(_r2_shape);
 
     // new residual stress and tangent
     _constitutive_model.computeBuffer();
@@ -159,13 +158,10 @@ FFTMechanics::computeBuffer()
 
     // print nonlinear residual to the screen
     if (_verbose)
-      _console << "|R|=" << anorm << "\t|R/R0|=" << rnorm << '\n';
-    std::cout << iiter << " |R|=" << anorm << " vs " << _nl_abs_tol << "\t|R/R0|=" << rnorm
-              << " vs " << _nl_rel_tol << '\n';
+      Moose::out << iiter << " |R|=" << anorm << "\t|R/R0|=" << rnorm << std::endl;
 
     // check convergence
     if (rnorm < _nl_rel_tol || anorm < _nl_abs_tol)
-      // if ((rnorm < _nl_rel_tol || anorm < _nl_abs_tol) && iiter > 0)
       return;
   }
 
