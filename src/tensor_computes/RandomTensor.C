@@ -38,8 +38,9 @@ RandomTensor::computeBuffer()
 {
   const auto min = getParam<Real>("min");
   const auto max = getParam<Real>("max");
-  if (isParamValid("seed"))
-    torch::manual_seed(getParam<int>("seed"));
+
+  if (const auto seed = queryParam<int>("seed"))
+    torch::manual_seed(*seed);
 
   if (_generate_on_cpu)
   {

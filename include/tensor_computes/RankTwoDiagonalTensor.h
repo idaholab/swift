@@ -13,15 +13,18 @@
 /**
  * Identity rank two tensor Tensor
  */
-class RankTwoIdentity : public TensorOperator<>
+class RankTwoDiagonalTensor : public TensorOperator<>
 {
 public:
   static InputParameters validParams();
 
-  RankTwoIdentity(const InputParameters & parameters);
+  RankTwoDiagonalTensor(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
   /// mesh dimension
   const unsigned int & _dim;
+
+  /// value on the diagonal
+  const Real & _value;
 };

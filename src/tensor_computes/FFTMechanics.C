@@ -41,6 +41,10 @@ FFTMechanics::validParams()
   params.addParam<TensorInputBufferName>("applied_macroscopic_strain",
                                          "Applied macroscopic strain");
   params.addParam<TensorInputBufferName>("F", "F", "Deformation gradient tensor.");
+  params.addParam<unsigned int>("hutchinson_steps",
+                                0,
+                                "Steps for diagonal estimation with Hutchinson's method used in "
+                                "Jacobi preconditioning. 0 skips preconditioning.");
   params.addParam<bool>("verbose", false, "Print non-linear residuals.");
   return params;
 }
@@ -69,6 +73,7 @@ FFTMechanics::FFTMechanics(const InputParameters & parameters)
     _applied_macroscopic_strain(isParamValid("applied_macroscopic_strain")
                                     ? &getInputBuffer("applied_macroscopic_strain")
                                     : nullptr),
+    _hutchinson_steps(getParam<unsigned int>("hutchinson_steps")),
     _verbose(getParam<bool>("verbose"))
 {
   // Build projection tensor once
@@ -126,16 +131,17 @@ FFTMechanics::computeBuffer()
   unsigned int iiter = 0;
   auto dFm = torch::zeros_like(b);
 
-  const auto diag_precond = estimateJacobiPreconditioner(G_K_dF, b, 6);
-  const auto M_inv = [&](const torch::Tensor &x) {
-    return x / diag_precond;
-  };
-
   // iterate as long as the iterative update does not vanish
-  while (true)
+  for (const auto iiter : make_range(_nl_max_its))
   {
+    const auto diag_precond =
+        _hutchinson_steps ? torch::abs(estimateJacobiPreconditioner(G_K_dF, b, _hutchinson_steps))
+                          : torch::ones_like(b);
+    const auto M_inv = [&diag_precond](const torch::Tensor & x) { return x / diag_precond; };
+
     const auto [dFm_new, iterations, lnorm] =
-        conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
+        _hutchinson_steps ? conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its, M_inv)
+                          : conjugateGradientSolve(G_K_dF, b, dFm, _l_tol, _l_max_its);
     dFm = dFm_new;
 
     // update DOFs (array -> tens.grid)
@@ -154,15 +160,15 @@ FFTMechanics::computeBuffer()
     // print nonlinear residual to the screen
     if (_verbose)
       _console << "|R|=" << anorm << "\t|R/R0|=" << rnorm << '\n';
+    std::cout << iiter << " |R|=" << anorm << " vs " << _nl_abs_tol << "\t|R/R0|=" << rnorm
+              << " vs " << _nl_rel_tol << '\n';
 
     // check convergence
-    if ((rnorm < _nl_rel_tol || anorm < _nl_abs_tol) && iiter > 0)
-      break;
-
-    iiter++;
-
-    if (iiter > _nl_max_its)
-      paramError("nl_max_its",
-                 "Exceeded the maximum number of nonlinear iterations without converging.");
+    if (rnorm < _nl_rel_tol || anorm < _nl_abs_tol)
+      // if ((rnorm < _nl_rel_tol || anorm < _nl_abs_tol) && iiter > 0)
+      return;
   }
+
+  paramError("nl_max_its",
+             "Exceeded the maximum number of nonlinear iterations without converging.");
 }

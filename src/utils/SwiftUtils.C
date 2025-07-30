@@ -291,7 +291,7 @@ conjugateGradientSolve(const std::function<torch::Tensor(const torch::Tensor &)>
     r = r - alpha * Ap;
     res_norm = torch::norm(r).cpu().template item<double>(); // ||r||
 
-    // std::cout << res_norm << '\n';
+    // std::cout << k << ' '<< res_norm << '\n';
 
     // Converged to desired tolerance
     if (res_norm <= tol * b_norm)
