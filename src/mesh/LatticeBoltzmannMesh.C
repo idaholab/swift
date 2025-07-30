@@ -67,32 +67,32 @@ LatticeBoltzmannMesh::buildMesh()
 void
 LatticeBoltzmannMesh::loadMeshFromDatFile()
 {
-  auto dummy = getParam<bool>("dummy_mesh");
-  if (dummy)
-    mooseError("Cannot load mesh from file when dummy mesh is enabled");
+  // auto dummy = getParam<bool>("dummy_mesh");
+  // if (dummy)
+  //   mooseError("Cannot load mesh from file when dummy mesh is enabled");
 
-  _console << COLOR_WHITE << "Loading Binary Mesh From Dat File\n";
+  // _console << COLOR_WHITE << "Loading Binary Mesh From Dat File\n";
 
-  std::ifstream file(_mesh_file);
-  if (!file.is_open())
-    mooseError("Cannot open file " + _mesh_file);
+  // std::ifstream file(_mesh_file);
+  // if (!file.is_open())
+  //   mooseError("Cannot open file " + _mesh_file);
 
-  // read mesh into standart vector
-  std::vector<int> fileData(_nx * _ny * _nz);
-  for (int i = 0; i < fileData.size(); i++)
-  {
-    if (!(file >> fileData[i]))
-    {
-      mooseError("Insufficient data in the mesh file");
-    }
-  }
-  file.close();
+  // // read mesh into standart vector
+  // std::vector<int> fileData(_nx * _ny * _nz);
+  // for (int i = 0; i < fileData.size(); i++)
+  // {
+  //   if (!(file >> fileData[i]))
+  //   {
+  //     mooseError("Insufficient data in the mesh file");
+  //   }
+  // }
+  // file.close();
 
-  // reshape and write into torch tensor
-  for (int64_t k = 0; k < _nz; k++)
-    for (int64_t j = 0; j < _ny; j++)
-      for (int64_t i = 0; i < _nx; i++)
-        _binary_mesh.index_put_({i, j, k}, fileData[k * _ny * _nx + j * _nx + i]);
+  // // reshape and write into torch tensor
+  // for (int64_t k = 0; k < _nz; k++)
+  //   for (int64_t j = 0; j < _ny; j++)
+  //     for (int64_t i = 0; i < _nx; i++)
+  //       _binary_mesh.index_put_({i, j, k}, fileData[k * _ny * _nx + j * _nx + i]);
 }
 
 void
