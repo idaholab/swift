@@ -9,7 +9,6 @@
 #include "LBMSpecularReflectionBoundary.h"
 #include "LBMBoundaryCondition.h"
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 
 using namespace torch::indexing;
 

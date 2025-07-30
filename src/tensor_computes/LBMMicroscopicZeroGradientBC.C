@@ -8,7 +8,6 @@
 
 #include "LBMMicroscopicZeroGradientBC.h"
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
 using namespace torch::indexing;

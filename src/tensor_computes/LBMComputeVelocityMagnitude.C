@@ -8,7 +8,6 @@
 
 #include "LBMComputeVelocityMagnitude.h"
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 
 registerMooseObject("SwiftApp", LBMComputeVelocityMagnitude);
 

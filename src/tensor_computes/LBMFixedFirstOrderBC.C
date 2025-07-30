@@ -15,7 +15,6 @@
 
 #include "LBMFixedFirstOrderBC.h"
 #include "LatticeBoltzmannProblem.h"
-#include "LatticeBoltzmannMesh.h"
 #include "LatticeBoltzmannStencilBase.h"
 
 #include <cstdlib>
