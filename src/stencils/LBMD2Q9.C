@@ -49,7 +49,7 @@ LBMD2Q9::LBMD2Q9(const InputParameters & parameters) : LatticeBoltzmannStencilBa
                       {0.0, 1.0, -1.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0},
                       {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 1.0, -1.0}},
                      MooseTensor::floatTensorOptions());
-  _M_inv = torch::linalg::inv(_M);
+  _M_inv = at::linalg_inv(_M);
 
   // relaxation matrix
   _S = torch::diag(torch::tensor({1.0 / 1.0,     // tau_rho : mass

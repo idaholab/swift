@@ -61,7 +61,7 @@ LBMD3Q19::LBMD3Q19(const InputParameters & parameters) : LatticeBoltzmannStencil
        {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 1., -1., -1., -1., -1., 1., 1.}},
       MooseTensor::floatTensorOptions());
 
-  _M_inv = torch::linalg::inv(_M);
+  _M_inv = at::linalg_inv(_M);
 
   // relaxation matrix
   _S = torch::diag(torch::tensor({1. / 1.,
