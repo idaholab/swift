@@ -81,7 +81,7 @@ LBMTensorBuffer::readTensorFromFile(const std::vector<int64_t> & shape)
   // read file into standart vector
   std::vector<Real> fileData(shape[0] * shape[1] * shape[2]);
 
-  for (int i = 0; i < fileData.size(); i++)
+  for (unsigned int i = 0; i < fileData.size(); i++)
     if (!(file >> fileData[i]))
       mooseError("Insufficient data in the file");
 
