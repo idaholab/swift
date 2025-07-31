@@ -1,0 +1,29 @@
+[Tests]
+  [channel_flow_2d]
+    type = HDF5Diff
+    input = channel2D.i
+    hdf5diff = channel2D.h5
+    requirement = 'The system shall be able to solve a 2D channel flow problem.'
+    design = 'LBMStream.md'
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
+  [channel_flow_3d]
+    type = HDF5Diff
+    input = channel3D.i
+    hdf5diff = channel3D.h5
+    requirement = 'The system shall be able to solve a 3D channel flow problem.'
+    design = 'LBMD3Q19.md'
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
+  [isotropic_mrt]
+    type = HDF5Diff
+    input = isotropic_stencil_mrt.i
+    hdf5diff = isotropic_stencil_mrt.h5
+    requirement = 'The system shall be able to solve a 3D channel flow problem with D3Q27 stencil and MRT collision.'
+    design = 'LBMD3Q27.md'
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
+[]

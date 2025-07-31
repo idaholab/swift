@@ -479,7 +479,7 @@ TensorProblem::addTensorBuffer(const std::string & buffer_type,
     mooseError("TensorBuffer '", buffer_name, "' already exists in the system");
 
   // Add a pointer to the TensorProblem and the Domain
-  // parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
   // parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
@@ -529,6 +529,14 @@ TensorProblem::addTensorComputeInitialize(const std::string & compute_type,
                                           InputParameters & parameters)
 {
   addTensorCompute(compute_type, compute_name, parameters, _ics);
+}
+
+void
+TensorProblem::addTensorBoundaryCondition(const std::string & compute_name,
+                                          const std::string & name,
+                                          InputParameters & parameters)
+{
+  addTensorCompute(compute_name, name, parameters, _bcs);
 }
 
 void

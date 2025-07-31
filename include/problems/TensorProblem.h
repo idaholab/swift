@@ -216,7 +216,12 @@ protected:
   /// postprocessing objects
   TensorComputeList _pps;
 
-  /// tensor outputs
+  /// on demand objects that are explicitly triggered by other objects
+  TensorComputeList _on_demand;
+
+  ///  time integrator objects
+  std::vector<std::shared_ptr<TensorTimeIntegrator<>>> _time_integrators;
+
   std::vector<std::shared_ptr<TensorOutput>> _outputs;
 
   /// map from buffer name to variable name

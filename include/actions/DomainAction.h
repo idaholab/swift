@@ -102,6 +102,9 @@ protected:
   /// device weights to be used on the nodes
   std::vector<unsigned int> _device_weights;
 
+  /// device names to be used on the nodes
+  const std::string _floating_precision;
+
   /// parallelization mode
   const enum class ParallelMode { NONE, FFT_SLAB, FFT_PENCIL } _parallel_mode;
 

@@ -313,6 +313,10 @@ XDMFTensorOutput::output()
         else if (buffer.dtype() == torch::kFloat64)
           addDataToHDF5(
               _hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_DOUBLE);
+        else if (buffer.dtype() == torch::kInt32)
+          addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_INT32);
+        else if (buffer.dtype() == torch::kInt64)
+          addDataToHDF5(_hdf5_file_id, setname, raw_ptr, _ndata[is_cell ? 0 : 1], H5T_NATIVE_INT64);
         else
           mooseError("Unsupported output type");
 
@@ -332,6 +336,11 @@ XDMFTensorOutput::output()
         {
           data.append_attribute("Precision") = "8";
           raw_size *= 8;
+        }
+        else if (buffer.dtype() == torch::kInt32 || buffer.dtype() == torch::kInt64)
+        {
+          data.append_attribute("Precision") = "1";
+          raw_size *= 1;
         }
         else
           mooseError("Unsupported output type");

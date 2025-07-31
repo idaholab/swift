@@ -8,6 +8,7 @@
 
 #include "TensorBufferBase.h"
 #include "DomainAction.h"
+#include "TensorProblem.h"
 
 InputParameters
 TensorBufferBase::validParams()
@@ -21,6 +22,9 @@ TensorBufferBase::validParams()
       "map_to_aux_variable", {}, "Sync the given AuxVariable to the buffer contents");
   params.addParam<std::vector<AuxVariableName>>(
       "map_from_aux_variable", {}, "Sync the given AuxVariable to the buffer contents");
+
+  params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
+
   return params;
 }
 
