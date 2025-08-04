@@ -27,6 +27,7 @@ public:
   virtual void makeCPUCopy() override;
 
   void readTensorFromFile(const std::vector<int64_t> &);
+  void readTensorFromHdf5();
 
 protected:
   const std::string _buffer_type;

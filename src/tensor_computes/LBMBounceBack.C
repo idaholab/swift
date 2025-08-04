@@ -223,7 +223,7 @@ LBMBounceBack::computeBuffer()
         backBoundary();
         break;
       case Boundary::wall:
-        wallBoundary();
+        wallBoundary3D();
         break;
       default:
         mooseError("Undefined boundary names");

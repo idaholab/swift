@@ -100,7 +100,7 @@ LBMFixedFirstOrderBCTempl<9>::leftBoundary()
 
   if (_perturb)
   {
-    deltaU = 1.0e-4 * _value;
+    deltaU = 1.0e-6 * _value;
     Real phi = 0.0; // static_cast<Real>(rand()) / static_cast<float>(RAND_MAX) * 2.0 * M_PI;
     torch::Tensor y_coords =
         torch::arange(0, _grid_size[1], MooseTensor::floatTensorOptions()).unsqueeze(1);

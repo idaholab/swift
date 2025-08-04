@@ -75,5 +75,5 @@ AddTensorComputeAction::act()
     tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
 
   if (_current_task == "add_tensor_bc")
-    tensor_problem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);
+    lb_poblem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);
 }

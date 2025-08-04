@@ -11,7 +11,6 @@
 
 #include "TensorSolver.h"
 #include "TensorOperatorBase.h"
-#include "TensorTimeIntegrator.h"
 #include "TensorOutput.h"
 #include "DomainAction.h"
 
@@ -61,28 +60,40 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
 void
 LatticeBoltzmannProblem::init()
 {
+  // init computes (must happen before dependency update)
+  for (auto & initializer : _ics)
+    initializer->init();
+
   TensorProblem::init();
 
-  // fix mesh if provided
+  // dependency resolution of boundary conditions
+  DependencyResolverInterface::sort(_bcs);
+
+  // binary mesh if provided
   if (_is_binary_media)
     _binary_media = getBuffer(getParam<std::string>("binary_media"));
   else
     _binary_media = torch::ones(_shape, MooseTensor::intTensorOptions());
-
-  // dependency resolution of boundary conditions
-  DependencyResolverInterface::sort(_bcs);
 }
 
 void
 LatticeBoltzmannProblem::execute(const ExecFlagType & exec_type)
 {
-  // convergence check
   if (_convergence_residual < _tolerance)
     return;
 
   if (exec_type == EXEC_INITIAL)
   {
     // check for constants
+    if (_fetched_constants.size() == 1)
+      mooseError(
+          "Constant ", Moose::stringify(_fetched_constants), " was requested but never declared.");
+    if (_fetched_constants.size() > 1)
+      mooseError("Constants ",
+                 Moose::stringify(_fetched_constants),
+                 " were requested but never declared.");
+    _can_fetch_constants = false;
+
     // update time
     _sub_time = FEProblem::time();
 

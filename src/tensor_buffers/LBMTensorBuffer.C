@@ -11,6 +11,10 @@
 #include "LatticeBoltzmannStencilBase.h"
 #include "LatticeBoltzmannProblem.h"
 
+#ifdef LIBMESH_HAVE_HDF5
+#include "hdf5.h"
+#endif
+
 registerMooseObject("SwiftApp", LBMTensorBuffer);
 
 InputParameters
@@ -19,7 +23,7 @@ LBMTensorBuffer::validParams()
   InputParameters params = TensorBuffer<torch::Tensor>::validParams();
   params.addRequiredParam<std::string>("buffer_type",
                                        "The buffer type can be either distribution function (df), "
-                                       "macroscopic scaler (ms) or macroscopic vectorial (mv)");
+                                       "macroscopic scalar (ms) or macroscopic vectorial (mv)");
 
   params.addParam<bool>("read_from_file", false, "Should the tensor buffer be read from file");
   params.addParam<std::string>("file", "", "Full path of the file to read");
@@ -66,12 +70,15 @@ LBMTensorBuffer::init()
     _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
 
   if (getParam<bool>("read_from_file"))
-    readTensorFromFile(shape);
+    readTensorFromHdf5();
 }
 
 void
 LBMTensorBuffer::readTensorFromFile(const std::vector<int64_t> & shape)
 {
+
+  mooseDeprecated("readTensorFromFile is deprecated, use h5 reader readTensorFromHdf5 instead");
+
   const std::string tensor_file = getParam<std::string>("file");
   mooseInfo("Loading tensor(s) from file \n" + tensor_file);
   std::ifstream file(tensor_file);
@@ -98,6 +105,65 @@ LBMTensorBuffer::readTensorFromFile(const std::vector<int64_t> & shape)
         else
           _u.index_put_({i, j, k}, fileData[k * shape[1] * shape[0] + j * shape[0] + i]);
       }
+}
+
+void
+LBMTensorBuffer::readTensorFromHdf5()
+{
+#ifdef LIBMESH_HAVE_HDF5
+  const std::string tensor_file_name = getParam<std::string>("file");
+
+  std::string dataset_name = tensor_file_name.substr(0, tensor_file_name.size() - 3);
+  auto tensor_file_char = tensor_file_name.c_str();
+  auto dataset_name_char = dataset_name.c_str();
+
+  // open file
+  hid_t file_id = H5Fopen(tensor_file_char, H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (file_id < 0)
+    mooseError("Failed to open h5 file");
+
+  // open dataset
+  hid_t dataset_id = H5Dopen2(file_id, dataset_name_char, H5P_DEFAULT);
+  if (dataset_id < 0)
+    mooseError("Failed to obtain dataset from h5 file");
+
+  // get dataspace
+  hid_t dataspace_id = H5Dget_space(dataset_id);
+  if (dataspace_id < 0)
+    mooseError("Failed to obtain dataspace from h5 dataset");
+
+  // get the dimensions of the dataspace
+  const hsize_t rank = H5Sget_simple_extent_ndims(dataspace_id);
+  std::vector<hsize_t> dims(rank);
+  H5Sget_simple_extent_dims(dataspace_id, dims.data(), NULL);
+
+  // get memory type id
+  hid_t datatype_id = H5Dget_type(dataset_id);
+
+  // total number of elements in the buffer
+  int64_t total_number_of_elements = 1;
+  for (auto i : index_range(dims))
+  {
+    total_number_of_elements *= dims[i];
+  }
+
+  // create read buffer
+  std::vector<int64_t> buffer(total_number_of_elements);
+  // read data
+  H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
+
+  // make tensor
+  std::vector<int64_t> torch_dims(dims.begin(), dims.end());
+  _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::intTensorOptions()).clone();
+
+  while (_u.dim() < 3)
+    _u.unsqueeze_(-1);
+
+  // close everything
+  H5Fclose(file_id);
+  H5Dclose(dataset_id);
+  H5Sclose(dataspace_id);
+#endif
 }
 
 void

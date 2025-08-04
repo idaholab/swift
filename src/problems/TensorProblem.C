@@ -532,14 +532,6 @@ TensorProblem::addTensorComputeInitialize(const std::string & compute_type,
 }
 
 void
-TensorProblem::addTensorBoundaryCondition(const std::string & compute_name,
-                                          const std::string & name,
-                                          InputParameters & parameters)
-{
-  addTensorCompute(compute_name, name, parameters, _bcs);
-}
-
-void
 TensorProblem::addTensorComputePostprocess(const std::string & compute_name,
                                            const std::string & name,
                                            InputParameters & parameters)

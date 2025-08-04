@@ -11,6 +11,7 @@
 #include "TensorProblem.h"
 
 class LatticeBoltzmannStencilBase;
+
 /**
  * Problem object for solving lattice Boltzmann problems
  */
@@ -21,17 +22,15 @@ public:
 
   LatticeBoltzmannProblem(const InputParameters & parameters);
 
-  void init() override;
-
-  void execute(const ExecFlagType & exec_type) override;
-
-  void advanceState() override;
-
-  void addTensorBuffer(const std::string & buffer_name, InputParameters & parameters) override;
-
   void addTensorBoundaryCondition(const std::string & compute_name,
                                   const std::string & name,
                                   InputParameters & parameters);
+
+  // setup stuff
+  void init() override;
+
+  // main loop
+  void execute(const ExecFlagType & exec_type) override;
 
   void addStencil(const std::string & stencil_name,
                   const std::string & name,
