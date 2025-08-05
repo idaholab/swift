@@ -2,9 +2,6 @@
   dim = 2
   nx = 11
   ny = 11
-  xmax = 1
-  ymax = 1
-  device_names='cpu'
   mesh_mode=DUMMY
 []
 

@@ -35,4 +35,22 @@
     abs_tol = 1e-10
     devices = 'cpu cuda mps'
   []
+  [phase-field]
+    type = HDF5Diff
+    input = phase.i
+    hdf5diff = phase.h5
+    requirement = 'The system shall be able to solve Cahn-Hillard equation for phase evolution from random initial condition using LBM.'
+    design = 'LBMComputeChemicalPotential.md'
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
+  [mass_heat_advan_bc]
+    type = HDF5Diff
+    input = advan_bc.i
+    hdf5diff = advan_bc.h5
+    requirement = 'The system shall be able to solve coupled heat and mass transfer with advanced boundary conditions using LBM.'
+    design = 'LBMDirichletWallBC.md'
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
 []

@@ -147,15 +147,27 @@ LBMTensorBuffer::readTensorFromHdf5()
     total_number_of_elements *= dims[i];
   }
 
-  // create read buffer
-  std::vector<int64_t> buffer(total_number_of_elements);
-  // read data
-  H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
-
   // make tensor
   std::vector<int64_t> torch_dims(dims.begin(), dims.end());
-  _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::intTensorOptions()).clone();
 
+  if (getParam<bool>("is_integer"))
+  {
+    // create read buffer
+    std::vector<int64_t> buffer(total_number_of_elements);
+    // read data
+    H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
+
+    _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::intTensorOptions()).clone();
+  }
+  else
+  {
+    // create read buffer
+    std::vector<double> buffer(total_number_of_elements);
+    // read data
+    H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
+
+    _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::floatTensorOptions()).clone();
+  }
   while (_u.dim() < 3)
     _u.unsqueeze_(-1);
 
