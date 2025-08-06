@@ -22,6 +22,10 @@ SecantSolver::validParams()
   params.addParam<Real>("relative_tolerance", 1e-9, "Convergence tolerance.");
   params.addParam<Real>("absolute_tolerance", 1e-9, "Convergence tolerance.");
   params.addParam<Real>("damping", 1.0, "Damping factor for the update step.");
+  params.addParam<Real>("trust_radius", 1e20, "Maximum update norm.");
+  params.addParam<bool>("adaptive_damping", true, "Update damping factor based on convergence.");
+  params.addParam<Real>("adaptive_damping_cutback_factor", 0.5, "Multiply damping by this factor when the residual grows.");
+  params.addParam<Real>("adaptive_damping_growth_factor", 1.2, "Multiply damping by this factor when the residual shrinks.");
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
   params.set<unsigned int>("substeps") = 1;
@@ -37,7 +41,13 @@ SecantSolver::SecantSolver(const InputParameters & parameters)
     _relative_tolerance(getParam<Real>("relative_tolerance")),
     _absolute_tolerance(getParam<Real>("absolute_tolerance")),
     _verbose(getParam<bool>("verbose")),
-    _damping(getParam<Real>("damping"))
+    _damping(getParam<Real>("damping")),
+    _trust_radius(getParam<Real>("trust_radius")),
+    _adaptive_damping(getParam<bool>("adaptive_damping")),
+    _adaptive_damping_cutback_factor(getParam<Real>("adaptive_damping_cutback_factor")),
+    _adaptive_damping_growth_factor(getParam<Real>("adaptive_damping_growth_factor")),
+    _dt_epsilon(getParam<Real>("dt_epsilon")),
+    _total_iterations(0)
 {
   // no history required
   getVariables(0);
@@ -49,6 +59,12 @@ SecantSolver::SecantSolver(const InputParameters & parameters)
                  "for solves with multiple coupled variables.");
 }
 
+SecantSolver::~SecantSolver()
+{
+  if (_verbose)
+    mooseInfo(_total_iterations, " total iterations.");
+}
+
 void
 SecantSolver::computeBuffer()
 {
@@ -56,8 +72,7 @@ SecantSolver::computeBuffer()
     secantSolve();
 }
 
-void
-SecantSolver::secantSolve()
+void SecantSolver::secantSolve()
 {
   const auto n = _variables.size();
   const auto dt = _dt / _substeps;
@@ -65,11 +80,12 @@ SecantSolver::secantSolve()
   std::vector<torch::Tensor> Rprev(n);
   std::vector<torch::Tensor> uprev(n);
   std::vector<Real> R0norm(n);
+  std::vector<Real> damping_factors(n, _damping); // Per-variable damping
 
   if (_verbose)
     _console << "Substep " << _substep << '\n';
 
-  // initial guess computed using semi-implicit Euler
+  // initial guess using semi-implicit Euler
   _compute->computeBuffer();
   forwardBuffers();
 
@@ -81,25 +97,19 @@ SecantSolver::secantSolve()
     const auto * L = _variables[i]._linear_reciprocal;
 
     if (L)
-      Rprev[i] = (N + *L * u) * dt; // u = u_old at this point!
+      Rprev[i] = (N + *L * u) * dt;
     else
-      Rprev[i] = N * dt; // u = u_old at this point!
-    uprev[i] = u;
+      Rprev[i] = N * dt;
 
+    uprev[i] = u;
     R0norm[i] = torch::norm(Rprev[i]).item<double>();
 
-    // previous timestep solution
-    if (_variables[i]._reciprocal_buffer.defined())
-      u_old[i] = _variables[i]._reciprocal_buffer;
-    else
-      u_old[i] = _domain.fft(_variables[i]._buffer);
+    u_old[i] = u.defined() ? u : _domain.fft(_variables[i]._buffer);
 
-    // now modify u_out
-    const auto dt_epsilon = getParam<Real>("dt_epsilon");
     if (L)
-      u_out = _domain.ifft((u + dt_epsilon * N) / (1.0 - dt_epsilon * *L));
+      u_out = _domain.ifft((u + _dt_epsilon * N) / (1.0 - _dt_epsilon * *L));
     else
-      u_out = _domain.ifft(u + dt_epsilon * N);
+      u_out = _domain.ifft(u + _dt_epsilon * N);
 
     if (_verbose)
       _console << "|R0|=" << R0norm[i] << std::endl;
@@ -108,9 +118,6 @@ SecantSolver::secantSolve()
   // forward predict (on solver outputs)
   applyPredictors();
 
-  // Jacobian
-  torch::Tensor J;
-  // Residual
   torch::Tensor R;
 
   // secant iterations
@@ -140,37 +147,59 @@ SecantSolver::secantSolve()
       // avoid NaN
       const auto dx = u - uprev[i];
       const auto dy = R - Rprev[i];
-      auto du = torch::where(dy != 0, -R * dx / dy, 0.0);
+      const Real epsilon = 1e-9;
+      auto du = torch::where(torch::abs(dy) > epsilon, -R * dx / dy, 0.0);
 
       uprev[i] = u;
+      auto Rnorm = torch::norm(R).item<double>();
+
+      // Adaptive damping update
+      if (_adaptive_damping && _iterations > 0)
+      {
+        const auto RprevNorm = torch::norm(Rprev[i]).item<double>();
+        if (Rnorm > RprevNorm)
+          damping_factors[i] *= _adaptive_damping_cutback_factor;
+        else
+          damping_factors[i] = std::min(1.0, damping_factors[i] * _adaptive_damping_growth_factor);
+
+        damping_factors[i] = std::max(1e-3, damping_factors[i]);
+      }
+
+      Real unorm = 0.0;
+      if (_verbose || _trust_radius < 1e20)
+        unorm = torch::norm(du).item<double>();
+
+      if (_trust_radius < 1e20 && unorm > _trust_radius)
+      {
+        du *= _trust_radius / unorm;
+        unorm = _trust_radius;
+      }
+
       Rprev[i] = R;
-
-      if (_damping == 1.0)
-        u_out = _domain.ifft(u + du);
+      if (damping_factors[i] != 1.0)
+        u_out = _domain.ifft(u + damping_factors[i] * du);
       else
-        u_out = _domain.ifft(u + du * _damping);
-
-      const auto Rnorm = torch::norm(R).item<double>();
+        u_out = _domain.ifft(u + du);
 
       if (_verbose)
       {
-        const auto unorm = torch::norm(du).item<double>();
-        _console << _iterations << " |du| = " << unorm << " |R|=" << Rnorm << std::endl;
+        _console << _iterations << " |du|=" << unorm << " |R|=" << Rnorm
+                 << " damping=" << damping_factors[i] << std::endl;
       }
 
-      // nan check
-      if (std::isnan(Rnorm))
+      if (!std::isfinite(Rnorm))
       {
         all_converged = false;
         _iterations = _max_iterations;
-        _console << "NaN detected, aborting solve.\n";
+        _console << "NaN or Inf detected, aborting solve.\n";
         break;
       }
 
-      // relative convergence check
-      all_converged =
-          all_converged && (Rnorm < _absolute_tolerance || Rnorm / R0norm[i] < _relative_tolerance);
+      all_converged = all_converged &&
+                      (Rnorm < _absolute_tolerance || Rnorm / R0norm[i] < _relative_tolerance);
     }
+
+    _total_iterations++;
 
     if (all_converged)
     {
@@ -192,3 +221,4 @@ SecantSolver::secantSolve()
     _is_converged = false;
   }
 }
+

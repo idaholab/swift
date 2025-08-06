@@ -90,10 +90,15 @@ crystal = '-(sin(sin(a)*y/2+cos(a)*x/2)^2 + sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*
 [TensorSolver]
   type = SecantSolver
   buffer = psi
-  substeps = 3
+  substeps = 1
+  absolute_tolerance = 1e-06
+  relative_tolerance = 1e-05
   reciprocal_buffer = psibar
   linear_reciprocal = linear
   nonlinear_reciprocal = psi3bar
+  adaptive_damping = true
+  adaptive_damping_cutback_factor = 0.9
+  adaptive_damping_growth_factor= 1.3
 []
 
 [Problem]
@@ -124,3 +129,5 @@ crystal = '-(sin(sin(a)*y/2+cos(a)*x/2)^2 + sin(sin(a+1/3*pi)*y/2+cos(a+1/3*pi)*
     transpose = false
   []
 []
+
+# for cut in 0.5 0.6 0.7 0.8 0.9; do for grow in 1.1 1.2 1.3 1.4 1.5; do echo $cut $grow $(../../../swift-opt -i rotating_grain_secant.i TensorSolver/verbose=true TensorSolver/adaptive_damping=true TensorSolver/adaptive_damping_cutback_factor=$cut TensorSolver/adaptive_damping_growth_factor=$grow |tail -n1 |cut -d' ' -f1) >> log; done; done

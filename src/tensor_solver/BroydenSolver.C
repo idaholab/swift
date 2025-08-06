@@ -25,7 +25,7 @@ BroydenSolver::validParams()
   params.addParam<Real>(
       "initial_jacobian_guess", 1.0, "Factor for the initial inverse jacobian guess.");
   params.addParam<Real>(
-      "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap secant solve.");
+      "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap broyden solve.");
   params.set<unsigned int>("substeps") = 0;
   params.addParam<bool>("verbose", false, "Show convergence history.");
   return params;
@@ -119,8 +119,8 @@ BroydenSolver::broydenSolve()
     const auto Rnorm = torch::norm(R).item<double>();
 
     // NaN check
-    if (std::isnan(Rnorm))
-      mooseError("NAN!");
+    if (!std::isfinite(Rnorm))
+      mooseError("NAN or inf!");
 
     // residual divergence check
     if (_iterations > 4 && Rnorm * 10.0 / _iterations > R0norm)
@@ -141,7 +141,7 @@ BroydenSolver::broydenSolve()
     const auto skT = sk.squeeze(-1).unsqueeze(-2);      // row vector
 
     // update u
-    const auto u_out_v = torch::unbind(u + sk.squeeze(-1) * 0.5, -1);
+    const auto u_out_v = torch::unbind(u + sk.squeeze(-1) * _damping, -1);
     for (const auto i : make_range(n))
     {
       // look at min max here and maybe apply bounds?
