@@ -8,6 +8,8 @@
 
 #include "LBMTensorUnitConverter.h"
 
+#if 0
+
 registerMooseObject("SwiftApp", LBMTensorUnitConverter);
 
 InputParameters
@@ -27,6 +29,7 @@ LBMTensorUnitConverter::LBMTensorUnitConverter(const InputParameters & parameter
     _tensor_buffer(getInputBuffer(getParam<TensorInputBufferName>("tensor_buffer"))),
     _conversion_constant(_lb_problem.getConstant<Real>(getParam<TensorInputBufferName>("constant")))
 {
+mooseWarning("Unit converter is under development and not tested.")
 }
 
 void
@@ -34,3 +37,5 @@ LBMTensorUnitConverter::computeBuffer()
 {
   _u = _tensor_buffer * _conversion_constant;
 }
+
+#endif

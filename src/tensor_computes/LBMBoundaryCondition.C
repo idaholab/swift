@@ -53,6 +53,7 @@ LBMBoundaryCondition::LBMBoundaryCondition(const InputParameters & parameters)
   //   LBMBoundaryCondition::buildBoundaryIndices();
 }
 
+#if 0
 int64_t
 LBMBoundaryCondition::countNumberofBoundaries()
 {
@@ -197,6 +198,7 @@ LBMBoundaryCondition::determineBoundaryTypes()
       }
     }
 }
+#endif
 
 void
 LBMBoundaryCondition::computeBuffer()

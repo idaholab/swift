@@ -74,8 +74,6 @@ LBMMacroscopicDirichletBC::backBoundary()
 void
 LBMMacroscopicDirichletBC::wallBoundary()
 {
-  _u.index_put_({_boundary_indices.index({Slice(), 0}),
-                 _boundary_indices.index({Slice(), 1}),
-                 _boundary_indices.index({Slice(), 2})},
-                _value);
+  // TBD
+  mooseError("LBMMacroscopicDirichletBC::wallBoundary() is not implemented.");
 }

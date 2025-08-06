@@ -10,6 +10,8 @@
 
 #include "LBMBoundaryCondition.h"
 
+#if 0
+
 /**
  * LBM combination of bounce-back and specular reflection boundary condition
  */
@@ -36,3 +38,5 @@ protected:
   torch::Tensor _specular_reflection_indices;
   const Real _r; // combination coefficient
 };
+
+#endif

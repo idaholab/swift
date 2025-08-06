@@ -10,6 +10,8 @@
 #include "LBMBoundaryCondition.h"
 #include "LatticeBoltzmannProblem.h"
 
+#if 0
+
 using namespace torch::indexing;
 
 registerMooseObject("SwiftApp", LBMSpecularReflectionBoundary);
@@ -30,6 +32,7 @@ LBMSpecularReflectionBoundary::LBMSpecularReflectionBoundary(const InputParamete
     _f_old(_lb_problem.getBufferOld(getParam<TensorInputBufferName>("f_old"), 1)),
     _r(getParam<Real>("r"))
 {
+  mooseWarning("Specular reflection boundary condition is under development and not tested.")
 }
 
 void
@@ -113,3 +116,5 @@ LBMSpecularReflectionBoundary::computeBuffer()
     wallBoundary();
   _lb_problem.maskedFillSolids(_u, 0);
 }
+
+#endif

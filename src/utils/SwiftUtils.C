@@ -35,8 +35,8 @@ struct TorchDeviceSingleton
                                                   : (torch::mps::is_available() ? "mps" : "cpu"))
                                            : torchDevice()),
       _device(_device_string),
-      _floating_precision(precision().empty() ? "double" : precision()),
-      _float_dtype(_floating_precision == "double"
+      _floating_precision(precision().empty() ? "DEVICE_DEFAULT" : precision()),
+      _float_dtype(_floating_precision == "DEVICE_DEFAULT" || _floating_precision == "DOUBLE"
                        ? (isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32)
                        : torch::kFloat32),
       _complex_float_dtype(isSupported(torch::kComplexDouble, _device) ? torch::kComplexDouble

@@ -43,9 +43,12 @@ public:
   virtual void backBoundary() = 0;
   virtual void wallBoundary() {};
 
+#if 0
   virtual int64_t countNumberofBoundaries();
   virtual void determineBoundaryTypes();
   virtual void buildBoundaryIndices();
+#endif
+
   virtual void computeBuffer() override;
 
 protected:

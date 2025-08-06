@@ -62,10 +62,6 @@ public:
   /// sets tensor to a value (normally zeros) at solid nodes
   void maskedFillSolids(torch::Tensor & t, const Real & value);
 
-  /// prints the tensor buffer, good for debugging
-  void
-  printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
-
 protected:
   /// LBM mesh/media
   torch::Tensor _binary_media;

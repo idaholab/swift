@@ -1,14 +1,13 @@
 [Domain]
-  dim = 3
+  dim = 2
   nx = 10
   ny = 10
-  nz = 10
   mesh_mode = DUMMY
 []
 
 [Stencil]
-  [d3q27]
-    type = LBMD3Q27
+  [d2q9]
+    type = LBMD2Q9
   []
 []
 
@@ -17,11 +16,7 @@
     type = LBMTensorBuffer
     buffer_type = df
   []
-  [feq]
-    type = LBMTensorBuffer
-    buffer_type = df
-  []
-  [fpc]
+  [f_bounce_back]
     type = LBMTensorBuffer
     buffer_type = df
   []
@@ -30,10 +25,6 @@
     buffer_type = mv
   []
   [density]
-    type=LBMTensorBuffer
-    buffer_type = ms
-  []
-  [speed]
     type=LBMTensorBuffer
     buffer_type = ms
   []
@@ -49,41 +40,16 @@
     [initial_velocity]
       type = LBMConstantTensor
       buffer = velocity
-      constants = '0.0 0.0'
+      constants = '0.0001 0.0005'
     []
-    [initial_equilibrium]
-      type = LBMEquilibrium
-      buffer = feq
-      bulk = density
-      velocity = velocity
-    []
-    [initial_distribution]
+    [initial_f]
       type = LBMEquilibrium
       buffer = f
       bulk = density
       velocity = velocity
     []
-    [initial_distribution_pc]
-      type = LBMEquilibrium
-      buffer = fpc
-      bulk = density
-      velocity = velocity
-    []
   []
   [Solve]
-    [equilibrium]
-      type=LBMEquilibrium
-      buffer = feq
-      bulk = density
-      velocity = velocity
-    []
-    [collision]
-      type=LBMMRTCollision
-      buffer = fpc
-      f = f
-      feq = feq
-      tau0 = 1.0
-    []
     [density]
       type = LBMComputeDensity
       buffer = density
@@ -97,29 +63,21 @@
       add_body_force = true
       body_force_x = 0.0001
     []
-    [speed]
-      type = LBMComputeVelocityMagnitude
-      buffer = speed
-      velocity = velocity
-    []
-    [residual]
-      type = LBMComputeResidual
-      buffer = speed
-      speed = speed
-    []
   []
   [Boundary]
-    [top]
-      type = LBMBounceBack
+    [left]
+      type = LBMFixedZerothOrderBC9Q
       buffer = f
-      f_old = fpc
-      boundary = top
+      f = f
+      value = 1.1
+      boundary = left
     []
-    [bottom]
-      type = LBMBounceBack
+    [right]
+      type = LBMFixedFirstOrderBC9Q
       buffer = f
-      f_old = fpc
-      boundary = bottom
+      f = f
+      value = 0.0001
+      boundary = right
     []
   []
 []
@@ -127,12 +85,12 @@
 [TensorSolver]
   type = LBMStream
   buffer = f
-  f_old = fpc
+  f_old = f
 []
 
 [Problem]
   type = LatticeBoltzmannProblem
-  substeps = 100
+  substeps = 2
 []
 
 [Executioner]
@@ -143,8 +101,8 @@
 [TensorOutputs]
   [xdmf2]
     type = XDMFTensorOutput
-    buffer = 'velocity'
-    output_mode = 'Cell'
+    buffer = 'velocity density'
+    output_mode = 'Cell Cell'
     enable_hdf5 = true
   []
 []

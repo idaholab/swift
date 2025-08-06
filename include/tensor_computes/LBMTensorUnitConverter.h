@@ -10,8 +10,9 @@
 
 #include "LatticeBoltzmannOperator.h"
 
+#if 0
 /**
- * LBMConstantTensor object
+ * LBMTensorUnitConverter object
  */
 class LBMTensorUnitConverter : public LatticeBoltzmannOperator
 {
@@ -26,3 +27,5 @@ protected:
   const torch::Tensor & _tensor_buffer;
   const Real & _conversion_constant;
 };
+
+#endif
