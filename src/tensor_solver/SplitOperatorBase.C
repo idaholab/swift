@@ -28,30 +28,42 @@ SplitOperatorBase::validParams()
       "given variable.");
   params.addRequiredParam<std::vector<TensorInputBufferName>>(
       "nonlinear_reciprocal", "Buffer with the reciprocal of the non-linear contribution");
+  params.addParam<std::vector<TensorInputBufferName>>(
+      "stabilization",
+      {},
+      "Optional list of buffers for stabilization terms. Either one buffer per "
+      "nonlinear_reciprocal, or no buffer names, or `0` to skip linear reciprocal buffers for a "
+      "given variable.");
+  params.addParam<bool>("verbose", false, "Verbose output.");
   return params;
 }
 
-SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters) : TensorSolver(parameters)
+SplitOperatorBase::SplitOperatorBase(const InputParameters & parameters)
+  : TensorSolver(parameters), _verbose(getParam<bool>("verbose"))
 {
 }
 
 void
 SplitOperatorBase::getVariables(unsigned int history_size)
 {
-  auto buffers = getParam<std::vector<TensorOutputBufferName>>("buffer");
-  auto reciprocal_buffers = getParam<std::vector<TensorInputBufferName>>("reciprocal_buffer");
+  const auto buffers = getParam<std::vector<TensorOutputBufferName>>("buffer");
+  const auto reciprocal_buffers = getParam<std::vector<TensorInputBufferName>>("reciprocal_buffer");
   auto linear_reciprocals = getParam<std::vector<TensorInputBufferName>>("linear_reciprocal");
-  auto nonlinear_reciprocals = getParam<std::vector<TensorInputBufferName>>("nonlinear_reciprocal");
+  const auto nonlinear_reciprocals =
+      getParam<std::vector<TensorInputBufferName>>("nonlinear_reciprocal");
+  auto stabilization_names = getParam<std::vector<TensorInputBufferName>>("stabilization");
 
   const auto n = buffers.size();
 
   if (linear_reciprocals.empty())
     linear_reciprocals.assign(n, "0");
+  if (stabilization_names.empty())
+    stabilization_names.assign(n, "0");
 
   if (reciprocal_buffers.size() != n || linear_reciprocals.size() != n ||
-      nonlinear_reciprocals.size() != n)
+      nonlinear_reciprocals.size() != n || stabilization_names.size() != n)
     paramError("buffer",
-               "Must have the same number of entries as 'reciprocal_buffer', 'linear_reciprocal' "
+               "Must have the same number of entries as 'reciprocal_buffer', "
                "and 'nonlinear_reciprocal'.");
 
   for (const auto i : make_range(n))
@@ -60,5 +72,8 @@ SplitOperatorBase::getVariables(unsigned int history_size)
         getInputBufferByName(reciprocal_buffers[i]),
         linear_reciprocals[i] == "0" ? nullptr : &getInputBufferByName(linear_reciprocals[i]),
         getInputBufferByName(nonlinear_reciprocals[i]),
-        getBufferOldByName(nonlinear_reciprocals[i], history_size)});
+        stabilization_names[i] == "0" ? nullptr : &getInputBufferByName(stabilization_names[i]),
+        getBufferOldByName(nonlinear_reciprocals[i], history_size),
+        stabilization_names[i] == "0" ? nullptr
+                                      : &getBufferOldByName(stabilization_names[i], history_size)});
 }

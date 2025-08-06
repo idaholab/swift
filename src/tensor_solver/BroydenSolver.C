@@ -27,7 +27,6 @@ BroydenSolver::validParams()
   params.addParam<Real>(
       "dt_epsilon", 1e-4, "Semi-implicit stable timestep to bootstrap broyden solve.");
   params.set<unsigned int>("substeps") = 0;
-  params.addParam<bool>("verbose", false, "Show convergence history.");
   return params;
 }
 
@@ -38,7 +37,6 @@ BroydenSolver::BroydenSolver(const InputParameters & parameters)
     _max_iterations(getParam<unsigned int>("max_iterations")),
     _relative_tolerance(getParam<Real>("relative_tolerance")),
     _absolute_tolerance(getParam<Real>("absolute_tolerance")),
-    _verbose(getParam<bool>("verbose")),
     _damping(getParam<Real>("damping")),
     _eye_factor(getParam<Real>("initial_jacobian_guess")),
     _dim(_domain.getDim()),

@@ -19,6 +19,7 @@ public:
   static InputParameters validParams();
 
   AdamsBashforthMoulton(const InputParameters & parameters);
+  ~AdamsBashforthMoulton();
 
   virtual void computeBuffer() override;
 
@@ -29,4 +30,6 @@ protected:
   std::size_t _corrector_steps;
   Real & _sub_dt;
   Real & _sub_time;
+
+  unsigned int _total_evaluations;
 };

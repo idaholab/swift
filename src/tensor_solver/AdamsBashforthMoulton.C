@@ -55,9 +55,19 @@ AdamsBashforthMoulton::AdamsBashforthMoulton(const InputParameters & parameters)
     _corrector_order(getParam<std::size_t>("corrector_order") - 1),
     _corrector_steps(getParam<std::size_t>("corrector_steps")),
     _sub_dt(_tensor_problem.subDt()),
-    _sub_time(_tensor_problem.subTime())
+    _sub_time(_tensor_problem.subTime()),
+    _total_evaluations(0)
 {
   getVariables(_predictor_order);
+
+  const auto n = _variables.size();
+  const auto stabilization_names = getParam<std::vector<TensorInputBufferName>>("stabilization");
+}
+
+AdamsBashforthMoulton::~AdamsBashforthMoulton()
+{
+  if (_verbose)
+    mooseInfo(_total_evaluations, " compute evaluations.");
 }
 
 void
@@ -83,6 +93,9 @@ AdamsBashforthMoulton::computeBuffer()
 
   const bool dt_changed = (_dt != _dt_old);
 
+  torch::Tensor stabilized_linear;
+  torch::Tensor stabilized_nonlinear;
+
   torch::Tensor ubar;
   _sub_dt = _dt / _substeps;
 
@@ -92,13 +105,16 @@ AdamsBashforthMoulton::computeBuffer()
     // re-evaluate the solve compute
     _compute->computeBuffer();
     forwardBuffers();
+    _total_evaluations++;
 
     // Adams-Bashforth predictor on all variables
     for (auto & [u,
                  reciprocal_buffer,
                  linear_reciprocal,
                  nonlinear_reciprocal,
-                 old_nonlinear_reciprocal] : _variables)
+                 stabilization,
+                 old_nonlinear_reciprocal,
+                 old_stabilization] : _variables)
     {
       const auto n_old = old_nonlinear_reciprocal.size();
 
@@ -149,6 +165,7 @@ AdamsBashforthMoulton::computeBuffer()
         // re-evaluate the solve compute with the predicted variable values
         _compute->computeBuffer();
         forwardBuffers();
+        _total_evaluations++;
 
         for (const auto k : index_range(_variables))
         {
