@@ -93,9 +93,6 @@ AdamsBashforthMoulton::computeBuffer()
 
   const bool dt_changed = (_dt != _dt_old);
 
-  torch::Tensor stabilized_linear;
-  torch::Tensor stabilized_nonlinear;
-
   torch::Tensor ubar;
   _sub_dt = _dt / _substeps;
 
@@ -112,9 +109,7 @@ AdamsBashforthMoulton::computeBuffer()
                  reciprocal_buffer,
                  linear_reciprocal,
                  nonlinear_reciprocal,
-                 stabilization,
-                 old_nonlinear_reciprocal,
-                 old_stabilization] : _variables)
+                 old_nonlinear_reciprocal] : _variables)
     {
       const auto n_old = old_nonlinear_reciprocal.size();
 

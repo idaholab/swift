@@ -28,12 +28,6 @@ SplitOperatorBase::validParams()
       "given variable.");
   params.addRequiredParam<std::vector<TensorInputBufferName>>(
       "nonlinear_reciprocal", "Buffer with the reciprocal of the non-linear contribution");
-  params.addParam<std::vector<TensorInputBufferName>>(
-      "stabilization",
-      {},
-      "Optional list of buffers for stabilization terms. Either one buffer per "
-      "nonlinear_reciprocal, or no buffer names, or `0` to skip linear reciprocal buffers for a "
-      "given variable.");
   params.addParam<bool>("verbose", false, "Verbose output.");
   return params;
 }
@@ -51,17 +45,14 @@ SplitOperatorBase::getVariables(unsigned int history_size)
   auto linear_reciprocals = getParam<std::vector<TensorInputBufferName>>("linear_reciprocal");
   const auto nonlinear_reciprocals =
       getParam<std::vector<TensorInputBufferName>>("nonlinear_reciprocal");
-  auto stabilization_names = getParam<std::vector<TensorInputBufferName>>("stabilization");
 
   const auto n = buffers.size();
 
   if (linear_reciprocals.empty())
     linear_reciprocals.assign(n, "0");
-  if (stabilization_names.empty())
-    stabilization_names.assign(n, "0");
 
   if (reciprocal_buffers.size() != n || linear_reciprocals.size() != n ||
-      nonlinear_reciprocals.size() != n || stabilization_names.size() != n)
+      nonlinear_reciprocals.size() != n)
     paramError("buffer",
                "Must have the same number of entries as 'reciprocal_buffer', "
                "and 'nonlinear_reciprocal'.");
@@ -72,8 +63,6 @@ SplitOperatorBase::getVariables(unsigned int history_size)
         getInputBufferByName(reciprocal_buffers[i]),
         linear_reciprocals[i] == "0" ? nullptr : &getInputBufferByName(linear_reciprocals[i]),
         getInputBufferByName(nonlinear_reciprocals[i]),
-        stabilization_names[i] == "0" ? nullptr : &getInputBufferByName(stabilization_names[i]),
         getBufferOldByName(nonlinear_reciprocals[i], history_size),
-        stabilization_names[i] == "0" ? nullptr
-                                      : &getBufferOldByName(stabilization_names[i], history_size)});
+    });
 }
