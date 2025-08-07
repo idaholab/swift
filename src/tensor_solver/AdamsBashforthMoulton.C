@@ -59,9 +59,6 @@ AdamsBashforthMoulton::AdamsBashforthMoulton(const InputParameters & parameters)
     _total_evaluations(0)
 {
   getVariables(_predictor_order);
-
-  const auto n = _variables.size();
-  const auto stabilization_names = getParam<std::vector<TensorInputBufferName>>("stabilization");
 }
 
 AdamsBashforthMoulton::~AdamsBashforthMoulton()
