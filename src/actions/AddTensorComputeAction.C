@@ -9,8 +9,10 @@
 #include "AddTensorComputeAction.h"
 #include "TensorProblem.h"
 #include "hit/parse.h"
+#include "LatticeBoltzmannProblem.h"
 
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_ic");
+registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_bc");
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_compute");
 registerMooseAction("SwiftApp", AddTensorComputeAction, "add_tensor_postprocessor");
 
@@ -40,6 +42,8 @@ void
 AddTensorComputeAction::act()
 {
   auto tensor_problem = std::dynamic_pointer_cast<TensorProblem>(_problem);
+  auto lb_poblem = std::dynamic_pointer_cast<LatticeBoltzmannProblem>(_problem);
+
   if (!tensor_problem)
     mooseError("Tensor objects are only supported if the problem class is set to `TensorProblem`");
 
@@ -69,4 +73,7 @@ AddTensorComputeAction::act()
 
   if (_current_task == "add_tensor_postprocessor")
     tensor_problem->addTensorComputePostprocess(_type, _name, _moose_object_pars);
+
+  if (_current_task == "add_tensor_bc")
+    lb_poblem->addTensorBoundaryCondition(_type, _name, _moose_object_pars);
 }
