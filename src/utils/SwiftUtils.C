@@ -201,7 +201,7 @@ printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsig
     field = t.select(3, index);
 
   if (t.dim() > 4)
-    mooseError("Higher than 4 dimensional tensor buffers are not suppored.");
+    mooseError("Higher than 4 dimensional tensor buffers are not supported.");
 
   if (t.dim() < 3)
     mooseError("Selected buffer is not 3 dimensional.");

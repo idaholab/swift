@@ -11,6 +11,7 @@
 #include "TensorProblem.h"
 #include "SwiftTypes.h"
 
+#if 0
 registerMooseObject("SwiftApp", ProjectVectorTensorAux);
 
 InputParameters
@@ -31,6 +32,7 @@ ProjectVectorTensorAux::ProjectVectorTensorAux(const InputParameters & parameter
     _n(_domain.getGridSize()),
     _grid_spacing(_domain.getGridSpacing())
 {
+  mooseWarning("ProjectVectorTensorAux is under development and not tested.");
 }
 
 RealEigenVector
@@ -77,3 +79,5 @@ ProjectVectorTensorAux::computeValue()
   }
   return v;
 }
+
+#endif

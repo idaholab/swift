@@ -152,4 +152,13 @@
     abs_tol = 1e-10
     devices = 'cpu cuda mps'
   []
+  [smagorinsky_mrt]
+    type = HDF5Diff
+    input = smagorinsky_mrt.i
+    hdf5diff = smagorinsky_mrt.h5
+    requirement = 'The system shall be able to solve Smagorinsky MRT collision.'
+    design = 'LBMCollisionDynamics.md' 
+    abs_tol = 1e-10
+    devices = 'cpu cuda mps'
+  []
 []

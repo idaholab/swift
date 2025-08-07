@@ -13,6 +13,8 @@
 #include "DomainInterface.h"
 #include "torch/torch.h"
 
+#if 0
+
 class TensorProblem;
 
 /**
@@ -37,3 +39,5 @@ protected:
   const std::array<int64_t, 3> & _n;
   const RealVectorValue & _grid_spacing;
 };
+
+#endif
