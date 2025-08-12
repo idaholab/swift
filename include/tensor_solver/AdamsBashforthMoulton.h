@@ -23,6 +23,11 @@ public:
   virtual void computeBuffer() override;
 
 protected:
+  /// implicit solve mode: diagonal (element-wise divide) or matrix (linear solve)
+  MooseEnum _implicit_mode;
+  /// optional full linear operator matrix buffers (row-major)
+  std::vector<std::vector<const torch::Tensor *>> _linear_matrix;
+
   unsigned int _substeps;
   std::size_t _predictor_order;
   std::size_t _corrector_order;
