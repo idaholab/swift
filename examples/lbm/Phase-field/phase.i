@@ -16,8 +16,6 @@
   [phi]
     type = LBMTensorBuffer
     buffer_type = ms
-    read_from_file = true
-    file = phi.h5
   []
   [grad_phi]
     type = LBMTensorBuffer
@@ -53,6 +51,12 @@
 
 [TensorComputes]
   [Initialize]
+    [phi]
+      type = RandomTensor
+      buffer = phi
+      min = 0.0
+      max = 1.0
+    []
      [grad_phi_init]
       type = LBMIsotropicGradient
       buffer = grad_phi

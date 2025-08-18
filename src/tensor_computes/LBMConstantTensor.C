@@ -34,6 +34,12 @@ LBMConstantTensor::init()
     auto value = (_lb_problem.getConstant<Real>(name));
     _values.push_back(value);
   }
+
+  // check number of constants
+  if (_u.dim() > 3 && size_t(_u.size(3)) != size_t(_values.size()))
+    mooseError("The number of constants must match the number of components in the buffer.");
+  else if (_u.dim() <= 3 && _values.size() != 1)
+    mooseError("For scalar buffers only one constant can be passed.");
 }
 
 void

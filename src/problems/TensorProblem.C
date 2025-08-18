@@ -88,6 +88,10 @@ TensorProblem::init()
   gridChanged();
 
   // init computes (must happen before dependency update)
+  for (auto & initializer : _ics)
+    initializer->init();
+
+  // init computes (must happen before dependency update)
   for (auto & cmp : _computes)
     cmp->init();
 

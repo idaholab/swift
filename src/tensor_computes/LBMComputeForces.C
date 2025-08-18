@@ -52,21 +52,22 @@ LBMComputeForces::LBMComputeForces(const InputParameters & parameters)
 void
 LBMComputeForces::computeGravity()
 {
-  _u = _u + _u.index_put_({Slice(), Slice(), Slice(), _gravity_direction}, _g * _density_tensor);
+  _u.index({Slice(), Slice(), Slice(), _gravity_direction}) += _g * _density_tensor;
 }
 
 void
 LBMComputeForces::computeBuoyancy()
 {
-
-  _u + _u.index_put_({Slice(), Slice(), Slice(), _gravity_direction},
-                     (_g * _reference_density) * (_temperature - _reference_temperature));
+  // Boussinesq approximation
+  _u.index({Slice(), Slice(), Slice(), _gravity_direction}) +=
+      _g * _reference_density * (_temperature - _reference_temperature);
 }
 
 void
 LBMComputeForces::computeSurfaceForces()
 {
   // TBD
+  mooseError("computeSurfaceForces is not yet implemented.");
 }
 
 void

@@ -50,6 +50,7 @@ void
 LBMFixedZerothOrderBCTempl<19>::frontBoundary()
 {
   // TBD
+  mooseError("Front boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -57,6 +58,7 @@ void
 LBMFixedZerothOrderBCTempl<27>::frontBoundary()
 {
   // TBD
+  mooseError("Front boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -72,6 +74,7 @@ void
 LBMFixedZerothOrderBCTempl<19>::backBoundary()
 {
   // TBD
+  mooseError("Back boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -79,6 +82,7 @@ void
 LBMFixedZerothOrderBCTempl<27>::backBoundary()
 {
   // TBD
+  mooseError("Back boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -295,6 +299,7 @@ void
 LBMFixedZerothOrderBCTempl<19>::bottomBoundary()
 {
   // TBD
+  mooseError("Bottom boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -302,6 +307,7 @@ void
 LBMFixedZerothOrderBCTempl<27>::bottomBoundary()
 {
   // TBD
+  mooseError("Bottom boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -341,6 +347,7 @@ void
 LBMFixedZerothOrderBCTempl<19>::topBoundary()
 {
   // TBD
+  mooseError("Top boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -348,6 +355,7 @@ void
 LBMFixedZerothOrderBCTempl<27>::topBoundary()
 {
   // TBD
+  mooseError("Top boundary for D3Q27 is not implemented.");
 }
 
 template <int dimension>

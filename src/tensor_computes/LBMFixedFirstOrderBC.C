@@ -5,13 +5,6 @@
 /*            Copyright 2024 Battelle Energy Alliance, LLC            */
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
-/**********************************************************************/
-/*                    DO NOT MODIFY THIS HEADER                       */
-/*             Swift, a Fourier spectral solver for MOOSE             */
-/*                                                                    */
-/*            Copyright 2024 Battelle Energy Alliance, LLC            */
-/*                        ALL RIGHTS RESERVED                         */
-/**********************************************************************/
 
 #include "LBMFixedFirstOrderBC.h"
 #include "LatticeBoltzmannProblem.h"
@@ -60,6 +53,7 @@ void
 LBMFixedFirstOrderBCTempl<19>::frontBoundary()
 {
   // TBD
+  mooseError("Front boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -67,6 +61,7 @@ void
 LBMFixedFirstOrderBCTempl<27>::frontBoundary()
 {
   // TBD
+  mooseError("Front boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -82,6 +77,7 @@ void
 LBMFixedFirstOrderBCTempl<19>::backBoundary()
 {
   // TBD
+  mooseError("Back boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -89,6 +85,7 @@ void
 LBMFixedFirstOrderBCTempl<27>::backBoundary()
 {
   // TBD
+  mooseError("Back boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -318,6 +315,7 @@ void
 LBMFixedFirstOrderBCTempl<19>::bottomBoundary()
 {
   // TBD
+  mooseError("Bottom boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -325,6 +323,7 @@ void
 LBMFixedFirstOrderBCTempl<27>::bottomBoundary()
 {
   // TBD
+  mooseError("Bottom boundary for D3Q27 is not implemented.");
 }
 
 template <>
@@ -363,6 +362,7 @@ void
 LBMFixedFirstOrderBCTempl<19>::topBoundary()
 {
   // TBD
+  mooseError("Top boundary for D3Q19 is not implemented.");
 }
 
 template <>
@@ -370,6 +370,7 @@ void
 LBMFixedFirstOrderBCTempl<27>::topBoundary()
 {
   // TBD
+  mooseError("Top boundary for D3Q27 is not implemented.");
 }
 
 template <int dimension>

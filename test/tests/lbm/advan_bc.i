@@ -60,7 +60,6 @@
   [binary_media]
     type = LBMTensorBuffer
     buffer_type = ms
-    read_from_file = true
     file = 'input_media.h5'
     is_integer = true
   []
@@ -79,7 +78,7 @@
     [velocity]
       type = LBMConstantTensor
       buffer = velocity
-      constants = '0.0 0.0'
+      constants = '0.0 0.0 0.0'
     []
 
     [temperature]
@@ -327,8 +326,6 @@
   substeps = 10
   scalar_constant_names = 'rho0 T_C T_H tau_f tau_T g u0'
   scalar_constant_values = '1.0 1.0 1.2 0.9 0.9 0.001 0.001'
-
-  is_binary_media = true
   binary_media = binary_media
 []
 

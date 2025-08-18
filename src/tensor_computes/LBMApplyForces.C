@@ -104,6 +104,6 @@ void
 LBMApplyForces::computeBuffer()
 {
   computeSourceTerm();
-  _u = _u + (1.0 - 1.0 / (2.0 * _tau)) * _source_term;
+  _u += (1.0 - 1.0 / (2.0 * _tau)) * _source_term;
   _lb_problem.maskedFillSolids(_u, 0);
 }

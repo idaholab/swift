@@ -49,7 +49,7 @@
     [initial_velocity]
       type = LBMConstantTensor
       buffer = velocity
-      constants = '0.0 0.0'
+      constants = '0.0 0.0 0.0'
     []
     [initial_equilibrium]
       type = LBMEquilibrium

@@ -23,9 +23,8 @@ InputParameters
 LatticeBoltzmannProblem::validParams()
 {
   InputParameters params = TensorProblem::validParams();
-  params.addParam<bool>("is_binary_media", false, "Is binary media provided");
-  params.addParam<std::string>(
-      "binary_media", "", "The tensor buffer object containing binary media/mesh");
+  params.addParam<TensorInputBufferName>("binary_media",
+                                         "The tensor buffer object containing binary media/mesh");
   params.addParam<bool>("enable_slip", false, "Enable slip model");
   // params.addParam<Real>("mfp", 0.0, "Mean free path of the system, (meters)");
   // params.addParam<Real>("dx", 0.0, "Domain resolution, (meters)");
@@ -38,7 +37,7 @@ LatticeBoltzmannProblem::validParams()
 
 LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & parameters)
   : TensorProblem(parameters),
-    _is_binary_media(getParam<bool>("is_binary_media")),
+    _is_binary_media(isParamValid("binary_media")),
     _enable_slip(getParam<bool>("enable_slip")),
     /*_mfp(getParam<Real>("mfp")),
     _dx(getParam<Real>("dx")),*/
@@ -60,10 +59,6 @@ LatticeBoltzmannProblem::LatticeBoltzmannProblem(const InputParameters & paramet
 void
 LatticeBoltzmannProblem::init()
 {
-  // init computes (must happen before dependency update)
-  for (auto & initializer : _ics)
-    initializer->init();
-
   TensorProblem::init();
 
   // dependency resolution of boundary conditions
@@ -71,7 +66,7 @@ LatticeBoltzmannProblem::init()
 
   // binary mesh if provided
   if (_is_binary_media)
-    _binary_media = getBuffer(getParam<std::string>("binary_media"));
+    _binary_media = getBuffer(getParam<TensorInputBufferName>("binary_media"));
   else
     _binary_media = torch::ones(_shape, MooseTensor::intTensorOptions());
 }

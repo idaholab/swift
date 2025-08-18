@@ -21,7 +21,6 @@
   [binary_media]
     type = LBMTensorBuffer
     buffer_type = ms
-    read_from_file = true
     file = 'binary_media.h5'
     is_integer = true
   []

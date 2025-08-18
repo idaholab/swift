@@ -90,7 +90,7 @@ LBMDirichletWallBC::computeBoundaryNormals()
     //                  _boundary_normals.unsqueeze(-2);
   }
   else
-    mooseError("Binary media must be avialble to use DirichletWall boundary condition.");
+    mooseError("Binary media must be avialble to use LBMDirichletWallBC boundary condition.");
 }
 
 void

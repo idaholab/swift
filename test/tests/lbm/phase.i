@@ -15,7 +15,6 @@
   [phi]
     type = LBMTensorBuffer
     buffer_type = ms
-    read_from_file = true
     file = phi.h5
   []
   [grad_phi]

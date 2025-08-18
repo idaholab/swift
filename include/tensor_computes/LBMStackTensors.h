@@ -20,5 +20,9 @@ public:
 
   LBMStackTensors(const InputParameters &);
 
+  virtual void init() override;
   void computeBuffer() override;
+
+protected:
+  const std::vector<TensorInputBufferName> & _buffer_names;
 };

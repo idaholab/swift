@@ -75,5 +75,6 @@ void
 LBMMacroscopicDirichletBC::wallBoundary()
 {
   // TBD
-  mooseError("LBMMacroscopicDirichletBC::wallBoundary() is not implemented.");
+  mooseError(
+      "LBMMacroscopicDirichletBC::wallBoundary is not implemented, use LBMDirichletWallBC instead");
 }

@@ -49,10 +49,10 @@ LBMMicroscopicZeroGradientBC::computeBuffer()
   switch (_boundary)
   {
     case Boundary::top:
-      topBoundary();
+      mooseError("Top boundary is not implemented");
       break;
     case Boundary::bottom:
-      bottomBoundary();
+      mooseError("Bottom boundary is not implemented");
       break;
     case Boundary::left:
       leftBoundary();
@@ -61,13 +61,13 @@ LBMMicroscopicZeroGradientBC::computeBuffer()
       rightBoundary();
       break;
     case Boundary::front:
-      frontBoundary();
+      mooseError("Front boundary is not implemented");
       break;
     case Boundary::back:
-      backBoundary();
+      mooseError("Back boundary is not implemented");
       break;
     case Boundary::wall:
-      wallBoundary();
+      mooseError("Wall boundary is not implemented");
       break;
     default:
       mooseError("Undefined boundary names");

@@ -79,5 +79,5 @@ void
 LBMMacroscopicNeumannBC::wallBoundary()
 {
   // TBD
-  mooseError("'LBMMacroscopicNeumannBC::wallBoundary() is not implemented'");
+  mooseError("LBMMacroscopicNeumannBC::wallBoundary is not implemented");
 }

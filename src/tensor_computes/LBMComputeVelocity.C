@@ -23,9 +23,9 @@ LBMComputeVelocity::validParams()
   params.addParam<TensorInputBufferName>("forces", "forces", "Force tensor");
   params.addParam<bool>("enable_forces", false, "Whether to enable forces or no");
   params.addParam<bool>("add_body_force", false, "Whether to enable forces or no");
-  params.addParam<std::string>("body_force_x", "0.0", "Body force to be added in x-dir");
-  params.addParam<std::string>("body_force_y", "0.0", "Body force to be added in y-dir");
-  params.addParam<std::string>("body_force_z", "0.0", "Body force to be added in z-dir");
+  params.addParam<SwiftConstantName>("body_force_x", "0.0", "Body force to be added in x-dir");
+  params.addParam<SwiftConstantName>("body_force_y", "0.0", "Body force to be added in y-dir");
+  params.addParam<SwiftConstantName>("body_force_z", "0.0", "Body force to be added in z-dir");
   params.addClassDescription("Compute object for macroscopic velocity reconstruction.");
   return params;
 }
@@ -35,9 +35,12 @@ LBMComputeVelocity::LBMComputeVelocity(const InputParameters & parameters)
     _f(getInputBuffer("f")),
     _rho(getInputBuffer("rho")),
     _force_tensor(getInputBuffer("forces")),
-    _body_force_constant_x(_lb_problem.getConstant<Real>(getParam<std::string>("body_force_x"))),
-    _body_force_constant_y(_lb_problem.getConstant<Real>(getParam<std::string>("body_force_y"))),
-    _body_force_constant_z(_lb_problem.getConstant<Real>(getParam<std::string>("body_force_z")))
+    _body_force_constant_x(
+        _lb_problem.getConstant<Real>(getParam<SwiftConstantName>("body_force_x"))),
+    _body_force_constant_y(
+        _lb_problem.getConstant<Real>(getParam<SwiftConstantName>("body_force_y"))),
+    _body_force_constant_z(
+        _lb_problem.getConstant<Real>(getParam<SwiftConstantName>("body_force_z")))
 {
   if (getParam<bool>("add_body_force"))
   {
@@ -60,27 +63,20 @@ void
 LBMComputeVelocity::computeBuffer()
 {
   const unsigned int & dim = _domain.getDim();
-  switch (dim)
-  {
-    case 3:
-      _u.index_put_({Slice(), Slice(), Slice(), 0}, torch::sum(_f * _stencil._ex, 3) / _rho);
-      _u.index_put_({Slice(), Slice(), Slice(), 1}, torch::sum(_f * _stencil._ey, 3) / _rho);
-      _u.index_put_({Slice(), Slice(), Slice(), 2}, torch::sum(_f * _stencil._ez, 3) / _rho);
-      break;
-    case 2:
-      _u.index_put_({Slice(), Slice(), Slice(), 0}, torch::sum(_f * _stencil._ex, 3) / _rho);
-      _u.index_put_({Slice(), Slice(), Slice(), 1}, torch::sum(_f * _stencil._ey, 3) / _rho);
-      break;
-    default:
-      mooseError("Unsupported dimension");
-  }
+
+  _u.index({Slice(), Slice(), Slice(), 0}) = torch::sum(_f * _stencil._ex, 3) / _rho;
+
+  if (dim > 1)
+    _u.index({Slice(), Slice(), Slice(), 1}) = torch::sum(_f * _stencil._ey, 3) / _rho;
+  if (dim > 2)
+    _u.index({Slice(), Slice(), Slice(), 2}) = torch::sum(_f * _stencil._ez, 3) / _rho;
 
   // include forces
   if (getParam<bool>("enable_forces"))
-    _u = _u + _force_tensor / (2.0 * _rho.unsqueeze(3));
+    _u += _force_tensor / (2.0 * _rho.unsqueeze(3));
 
   if (getParam<bool>("add_body_force"))
-    _u = _u + _body_forces / (2.0 * _rho.unsqueeze(3));
+    _u += _body_forces / (2.0 * _rho.unsqueeze(3));
 
   _lb_problem.maskedFillSolids(_u, 0);
 }

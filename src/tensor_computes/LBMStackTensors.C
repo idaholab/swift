@@ -23,17 +23,9 @@ LBMStackTensors::validParams()
 }
 
 LBMStackTensors::LBMStackTensors(const InputParameters & parameters)
-  : LatticeBoltzmannOperator(parameters)
+  : LatticeBoltzmannOperator(parameters),
+    _buffer_names(getParam<std::vector<TensorInputBufferName>>("inputs"))
 {
-}
-
-void
-LBMStackTensors::computeBuffer()
-{
-  using torch::indexing::Slice;
-
-  const auto & names = getParam<std::vector<TensorInputBufferName>>("inputs");
-
   // check for duplicates
   auto hasDuplicates = [](const std::vector<std::string> & values)
   {
@@ -41,15 +33,25 @@ LBMStackTensors::computeBuffer()
     return values.size() != s.size();
   };
 
-  if (hasDuplicates(names))
+  if (hasDuplicates(_buffer_names))
     paramError("inputs", "Duplicate buffer name.");
+}
 
+void
+LBMStackTensors::init()
+{
   // make sure output buffer has the same dimensions
   if (_u.dim() < 4)
     mooseError("Output buffer must be vectorial tensor.");
+}
+
+void
+LBMStackTensors::computeBuffer()
+{
+  using torch::indexing::Slice;
 
   std::vector<torch::Tensor> tensor_vector;
-  for (const auto & name : names)
+  for (const auto & name : _buffer_names)
   {
     auto tensor_buffer = getInputBufferByName(name);
 

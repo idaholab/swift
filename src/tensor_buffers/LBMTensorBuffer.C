@@ -25,8 +25,7 @@ LBMTensorBuffer::validParams()
                                        "The buffer type can be either distribution function (df), "
                                        "macroscopic scalar (ms) or macroscopic vectorial (mv)");
 
-  params.addParam<bool>("read_from_file", false, "Should the tensor buffer be read from file");
-  params.addParam<std::string>("file", "", "Full path of the file to read");
+  params.addParam<FileName>("file", "Optional path of the file to read tensor form.");
 
   params.addParam<bool>("is_integer", false, "Whether to specify integer dtype");
   params.addPrivateParam<TensorProblem *>("_tensor_problem", nullptr);
@@ -69,17 +68,16 @@ LBMTensorBuffer::init()
   else
     _u = torch::zeros(shape, MooseTensor::floatTensorOptions());
 
-  if (getParam<bool>("read_from_file"))
+  if (isParamValid("file"))
     readTensorFromHdf5();
 }
 
 void
 LBMTensorBuffer::readTensorFromFile(const std::vector<int64_t> & shape)
 {
+  mooseDeprecated("readTensorFromFile is deprecated, use h5 reader readTensorFromHdf5 instead!");
 
-  mooseDeprecated("readTensorFromFile is deprecated, use h5 reader readTensorFromHdf5 instead");
-
-  const std::string tensor_file = getParam<std::string>("file");
+  const FileName tensor_file = getParam<FileName>("file");
   mooseInfo("Loading tensor(s) from file \n" + tensor_file);
   std::ifstream file(tensor_file);
   if (!file.is_open())
@@ -111,16 +109,20 @@ void
 LBMTensorBuffer::readTensorFromHdf5()
 {
 #ifdef LIBMESH_HAVE_HDF5
-  const std::string tensor_file_name = getParam<std::string>("file");
+  const FileName tensor_file_name = getParam<FileName>("file");
 
-  std::string dataset_name = tensor_file_name.substr(0, tensor_file_name.size() - 3);
   auto tensor_file_char = tensor_file_name.c_str();
-  auto dataset_name_char = dataset_name.c_str();
 
   // open file
   hid_t file_id = H5Fopen(tensor_file_char, H5F_ACC_RDONLY, H5P_DEFAULT);
   if (file_id < 0)
     mooseError("Failed to open h5 file");
+
+  std::string dataset_name = tensor_file_name.substr(0, tensor_file_name.size() - 3);
+  auto last_slash = dataset_name.find_last_of("/\\");
+  if (last_slash != std::string::npos)
+    dataset_name = dataset_name.substr(last_slash + 1);
+  auto dataset_name_char = dataset_name.c_str();
 
   // open dataset
   hid_t dataset_id = H5Dopen2(file_id, dataset_name_char, H5P_DEFAULT);
@@ -175,6 +177,8 @@ LBMTensorBuffer::readTensorFromHdf5()
   H5Fclose(file_id);
   H5Dclose(dataset_id);
   H5Sclose(dataspace_id);
+#else
+  mooseError("MOOSE was built without HDF5 support.");
 #endif
 }
 

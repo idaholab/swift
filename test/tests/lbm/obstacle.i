@@ -38,7 +38,6 @@
   []
   [binary_media]
     type = LBMTensorBuffer
-    read_from_file = true
     file = binary_media.h5
     is_integer = true
     buffer_type = ms
@@ -172,7 +171,6 @@
   scalar_constant_values = '1.0 0.01 0.0 0.501 0.001 50 0.15'
   substeps = 5
   print_debug_output=true
-  is_binary_media = true
   binary_media = binary_media
 []
 
