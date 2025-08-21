@@ -29,12 +29,19 @@ static struct SwiftGlobalSettings
       _torch_device = "";
   }
   std::string _torch_device;
+  std::string _floating_precision;
 } swift_global_settings;
 
 std::string
 torchDevice()
 {
   return swift_global_settings._torch_device;
+}
+
+std::string
+precision()
+{
+  return swift_global_settings._floating_precision;
 }
 }
 
@@ -69,6 +76,12 @@ SwiftApp::setTorchDeviceStatic(std::string device, const MooseTensor::Key<SwiftI
 }
 
 void
+SwiftApp::setTorchPrecision(std::string precision, const MooseTensor::Key<DomainAction> &)
+{
+  MooseTensor::swift_global_settings._floating_precision = precision;
+}
+
+void
 SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 {
   ModulesApp::registerAllObjects<SwiftApp>(f, af, syntax);
@@ -91,16 +104,28 @@ SwiftApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   // ComputeDevice Action
   registerSyntax("DomainAction", "Domain");
 
+  // LBM Stencil Actions
+  registerSyntaxTask("AddLBMStencilAction", "Stencil/*", "add_stencil");
+  syntax.registerSyntaxType("Stencil/*", "StencilName");
+  registerMooseObjectTask("add_stencil", LBStencil, false);
+  addTaskDependency("add_stencil", "add_aux_variable");
+
   // TensorBuffer Actions
   registerSyntaxTask("AddTensorBufferAction", "TensorBuffers/*", "add_tensor_buffer");
   syntax.registerSyntaxType("TensorBuffers/*", "TensorInputBufferName");
   syntax.registerSyntaxType("TensorBuffers/*", "TensorOutputBufferName");
   registerMooseObjectTask("add_tensor_buffer", TensorBuffer, false);
-  addTaskDependency("add_tensor_buffer", "add_aux_variable");
+  addTaskDependency("add_tensor_buffer", "add_stencil");
 
   // TensorComputes/Initial Actions
   registerDeep("TensorComputes/Initialize", "add_tensor_ic");
   addTaskDependency("add_tensor_ic", "add_tensor_buffer");
+
+  // TensorComputes/Boundary Actions
+  registerSyntaxTask("AddLBMBCAction", "TensorComputes/Boundary/*", "add_tensor_bc");
+  syntax.registerSyntaxType("TensorComputes/Boundary/*", "TensorComputeName");
+  registerMooseObjectTask("add_tensor_bc", TensorOperator, false);
+  addTaskDependency("add_tensor_bc", "add_tensor_buffer");
 
   // TensorComputes/Solve Action
   registerDeep("TensorComputes/Solve", "add_tensor_compute");

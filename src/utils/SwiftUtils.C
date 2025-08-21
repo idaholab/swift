@@ -35,7 +35,10 @@ struct TorchDeviceSingleton
                                                   : (torch::mps::is_available() ? "mps" : "cpu"))
                                            : torchDevice()),
       _device(_device_string),
-      _float_dtype(isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32),
+      _floating_precision(precision().empty() ? "DEVICE_DEFAULT" : precision()),
+      _float_dtype(_floating_precision == "DEVICE_DEFAULT" || _floating_precision == "DOUBLE"
+                       ? (isSupported(torch::kFloat64, _device) ? torch::kFloat64 : torch::kFloat32)
+                       : torch::kFloat32),
       _complex_float_dtype(isSupported(torch::kComplexDouble, _device) ? torch::kComplexDouble
                                                                        : torch::kComplexFloat),
       _int_dtype(isSupported(torch::kInt64, _device) ? torch::kInt64 : torch::kInt32)
@@ -49,6 +52,7 @@ struct TorchDeviceSingleton
 
   const std::string _device_string;
   const torch::Device _device;
+  const std::string _floating_precision;
   const torch::Dtype _float_dtype;
   const torch::Dtype _complex_float_dtype;
   const torch::Dtype _int_dtype;
@@ -180,6 +184,39 @@ torch::Tensor
 dyad22(const torch::Tensor & A2, const torch::Tensor & B2)
 {
   return torch::einsum("...ij  ,...kl  ->...ijkl", {A2, B2});
+}
+
+void
+printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index)
+{
+  /**
+   * Print the entire field for debugging
+   */
+  torch::Tensor field = t;
+  // for buffers higher than 3 dimensions, such as distribution functions
+  // pass an index to print or call this method repeatedly to print all directions
+  // higher than 4 dimensions is not supported
+
+  if (t.dim() == 4)
+    field = t.select(3, index);
+
+  if (t.dim() > 4)
+    mooseError("Higher than 4 dimensional tensor buffers are not supported.");
+
+  if (t.dim() < 3)
+    mooseError("Selected buffer is not 3 dimensional.");
+
+  for (int64_t i = 0; i < field.size(2); i++)
+  {
+    for (int64_t j = 0; j < field.size(1); j++)
+    {
+      for (int64_t k = 0; k < field.size(0); k++)
+        std::cout << std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>()
+                  << " ";
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+  }
 }
 
 } // namespace MooseTensor
