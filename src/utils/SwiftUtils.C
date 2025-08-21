@@ -10,6 +10,9 @@
 #include "SwiftApp.h"
 #include "MooseUtils.h"
 #include "Moose.h"
+// for batched linear algebra
+#include <ATen/ops/linalg_inv.h>
+#include <ATen/ops/linalg_pinv.h>
 
 namespace MooseTensor
 {
@@ -216,6 +219,51 @@ printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsig
       std::cout << std::endl;
     }
     std::cout << std::endl;
+  }
+}
+// Invert local 4th-order blocks (batch of d*d x d*d matrices)
+torch::Tensor
+invertLocalBlocks(const torch::Tensor & K4)
+{
+  // Expect shape: [..., d, d, d, d]
+  const auto d = K4.size(-1);
+  // Flatten last 4 dims to (d*d, d*d) with batch = prod(leading dims)
+  auto K2 = K4.reshape({-1, d * d, d * d});
+  // Batched inverse
+  auto K2_inv = at::linalg_inv(K2);
+  // Restore original shape
+  return K2_inv.reshape(K4.sizes());
+}
+
+torch::Tensor
+invertLocalBlocksDamped(const torch::Tensor & K4, double damp_rel)
+{
+  // Flatten to (batch, n, n)
+  const auto d = K4.size(-1);
+  const auto n = d * d;
+  auto K2 = K4.reshape({-1, n, n});
+
+  // Build batched identity
+  auto I = torch::eye(n, K4.options()).unsqueeze(0).expand({K2.size(0), n, n});
+
+  // Scale damping by mean absolute diagonal across batch
+  auto diag = K2.diagonal(0, -2, -1);
+  double scale = diag.abs().mean().template item<double>();
+  if (!(scale > 0.0))
+    scale = 1.0;
+  const double eps = damp_rel > 0.0 ? damp_rel * scale : 0.0;
+
+  auto K2_reg = eps > 0.0 ? (K2 + eps * I) : K2;
+
+  try
+  {
+    auto K2_inv = at::linalg_inv(K2_reg);
+    return K2_inv.reshape(K4.sizes());
+  }
+  catch (const c10::Error &)
+  {
+    auto K2_pinv = at::linalg_pinv(K2_reg);
+    return K2_pinv.reshape(K4.sizes());
   }
 }
 

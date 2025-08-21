@@ -7,7 +7,7 @@
   ymax = ${fparse 2*pi}
   zmax = ${fparse 2*pi}
   mesh_mode = DUMMY
-  device_names = cuda
+  device_names = cpu
 []
 
 [TensorComputes]
@@ -72,7 +72,11 @@
         constitutive_model = hyper_elasticity
         stress = stress
         applied_macroscopic_strain = applied_strain
-        hutchinson_steps = 6
+        # hutchinson_steps = 64
+        # jacobi_min_rel = 1e-2
+        # jacobi_inv_cap = 1e4
+        block_jacobi = true
+        block_jacobi_damp=1e-1
         verbose = true
       []
     []
