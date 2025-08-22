@@ -21,7 +21,7 @@ public:
 
   NEML2TensorBuffer(const InputParameters & parameters);
 
-  virtual void init();
+  virtual void init() override;
   virtual void makeCPUCopy() override;
 
   using TensorBuffer<T>::_u;
