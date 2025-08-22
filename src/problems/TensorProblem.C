@@ -88,6 +88,10 @@ TensorProblem::init()
   gridChanged();
 
   // init computes (must happen before dependency update)
+  for (auto & initializer : _ics)
+    initializer->init();
+
+  // init computes (must happen before dependency update)
   for (auto & cmp : _computes)
     cmp->init();
 
@@ -479,7 +483,7 @@ TensorProblem::addTensorBuffer(const std::string & buffer_type,
     mooseError("TensorBuffer '", buffer_name, "' already exists in the system");
 
   // Add a pointer to the TensorProblem and the Domain
-  // parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
+  parameters.addPrivateParam<TensorProblem *>("_tensor_problem", this);
   // parameters.addPrivateParam<const DomainAction *>("_domain", &_domain);
 
   // Create the object
