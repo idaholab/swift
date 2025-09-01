@@ -58,7 +58,7 @@ SwiftApp::SwiftApp(const InputParameters & parameters) : MooseApp(parameters)
 {
   SwiftApp::registerAll(_factory, _action_factory, _syntax);
   MooseTensor::swift_global_settings._torch_device =
-      std::string(parameters.get<MooseEnum>("libtorch_device"));
+      std::string(parameters.get<MooseEnum>("compute_device"));
 }
 
 SwiftApp::~SwiftApp() {}
