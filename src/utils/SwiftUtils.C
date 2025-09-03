@@ -203,20 +203,40 @@ printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsig
   if (t.dim() > 4)
     mooseError("Higher than 4 dimensional tensor buffers are not supported.");
 
-  if (t.dim() < 3)
-    mooseError("Selected buffer is not 3 dimensional.");
-
-  for (int64_t i = 0; i < field.size(2); i++)
+  if (t.dim() == 2)
   {
     for (int64_t j = 0; j < field.size(1); j++)
     {
       for (int64_t k = 0; k < field.size(0); k++)
-        std::cout << std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>()
-                  << " ";
+        std::cout << std::fixed << std::setprecision(precision) << field[k][j].item<Real>() << " ";
       std::cout << std::endl;
     }
+  }
+
+  else if (t.dim() >= 3)
+  {
+    for (int64_t i = 0; i < field.size(2); i++)
+    {
+      for (int64_t j = 0; j < field.size(1); j++)
+      {
+        for (int64_t k = 0; k < field.size(0); k++)
+          std::cout << std::fixed << std::setprecision(precision) << field[k][j][i].item<Real>()
+                    << " ";
+        std::cout << std::endl;
+      }
+      std::cout << std::endl;
+    }
+  }
+
+  else if (t.dim() == 1)
+  {
+    for (int64_t k = 0; k < field.size(0); k++)
+      std::cout << std::fixed << std::setprecision(precision) << field[k].item<Real>() << " ";
     std::cout << std::endl;
   }
+
+  else
+    mooseError("Unsupported output dimension");
 }
 
 } // namespace MooseTensor

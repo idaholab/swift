@@ -16,7 +16,6 @@
 
 #include <torch/torch.h>
 
-class TensorProblem;
 class DomainAction;
 
 /**
