@@ -66,11 +66,33 @@
   [explicit_euler_exodiff]
     type = Exodiff
     input = cahnhilliard_explicit.i
-    cli_args = 'TensorBuffers/c/map_to_aux_variable=c TensorBuffers/mu/map_to_aux_variable=mu'
     exodiff = cahnhilliard_explicit_out.e
     issues = '#29'
-    requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation, and map a tensor directly to an aux variable solution vector in 2d for verification of the solve.'
+    requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation explicitly.'
     design = 'ForwardEulerSolver.md'
     compute_devices = 'cpu cuda mps'
+  []
+
+  [explicit_smoothed]
+    [sharp]
+      type = Exodiff
+      input = cahnhilliard_explicit_smooth.i
+      cli_args = 'TensorComputes/Initialize/smooth/method=SHARP Outputs/file_base=sharp'
+      exodiff = sharp.e
+      issues = '#29'
+      requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation explicitly with a 2/3 de-aliasing.'
+      design = 'DeAliasingTensor.md'
+      compute_devices = 'cpu cuda mps'
+    []
+    [hou-li]
+      type = Exodiff
+      input = cahnhilliard_explicit_smooth.i
+      cli_args = 'TensorComputes/Initialize/smooth/method=HOULI Outputs/file_base=houli'
+      exodiff = houli.e
+      issues = '#29'
+      requirement = 'The system shall be able to solve spinodal decomposition using the Cahn-Hilliard equation explicitly with Hou-Li de-aliasing.'
+      design = 'DeAliasingTensor.md'
+      compute_devices = 'cpu cuda mps'
+    []
   []
 []
