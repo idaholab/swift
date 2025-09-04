@@ -6,7 +6,7 @@ This object uses isotropic finite difference method ot compute the gradient of p
 
 ## Overview
 
-Computes an isotropic finite\-difference approximation to `\nabla \phi` on the LBM grid. Provide
+Computes an isotropic finite\-difference approximation to $\nabla \phi$ on the LBM grid. Provide
 the scalar field with
 [!param](/TensorComputes/Solve/LBMIsotropicGradient/scalar_field) and select the destination
 vector buffer via [!param](/TensorComputes/Solve/LBMIsotropicGradient/buffer).

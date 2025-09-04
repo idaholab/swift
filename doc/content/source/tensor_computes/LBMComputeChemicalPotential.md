@@ -6,7 +6,7 @@ This compute object computes chemical potential from parabiolic free energy equt
 
 ## Overview
 
-Evaluates the Cahn\-Hilliard chemical potential for a phase field `\phi` using a double\-well
+Evaluates the Cahn\-Hilliard chemical potential for a phase field $\phi$ using a double\-well
 potential and interfacial energy term. Provide the scalar field via
 [!param](/TensorComputes/Solve/LBMComputeChemicalPotential/phi) and its Laplacian via
 [!param](/TensorComputes/Solve/LBMComputeChemicalPotential/laplacian_phi). Control the interface

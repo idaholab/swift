@@ -6,7 +6,7 @@ This object uses isotropic finite difference method ot compute the Lapcian of ph
 
 ## Overview
 
-Computes an isotropic finite\-difference approximation to the Laplacian `\nabla^2 \phi` on the
+Computes an isotropic finite\-difference approximation to the Laplacian $\nabla^2 \phi$ on the
 LBM grid. Provide the scalar field with
 [!param](/TensorComputes/Solve/LBMIsotropicLaplacian/scalar_field) and select the destination
 scalar buffer via [!param](/TensorComputes/Solve/LBMIsotropicLaplacian/buffer).

@@ -8,9 +8,11 @@ Computes the elastic contribution to the chemical potential in Fourier space for
 problem. Given Lam\'e parameters `mu` and `lambda`, an eigenstrain amplitude `e0`, the Fourier
 transform of a scalar field `cbar`, and the displacement fields `u = (u_x,u_y,u_z)`, the output is
 
-`\mu_\text{mech} = -e0 * ( e0 * (9 lambda cbar + 6 mu cbar) - (2 mu + 3 lambda) * div(u) )`,
+\begin{equation}
+\mu_\text{mech} = -e0 * ( e0 * (9 lambda cbar + 6 mu cbar) - (2 mu + 3 lambda) * div(u) ),
+\end{equation}
 
-where `div(u)` is evaluated spectrally as `i 2 pi (k_x \hat u_x + k_y \hat u_y + k_z \hat u_z)`.
+where $\nabla\cdot u$ is evaluated spectrally as $i 2 \pi (k_x \hat u_x + k_y \hat u_y + k_z \hat u_z)$.
 
 The resulting tensor is inverse-transformed by downstream operators as needed.
 
