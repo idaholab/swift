@@ -12,7 +12,7 @@ component fields.
 
 ## Example Input File Syntax
 
-!listing test/tests/lbm/isotropic_stencil_mrt.i block=TensorComputes/Initialize/stack
+!listing test/tests/lbm/stacking.i block=TensorComputes/Initialize/u_stack
 
 !syntax parameters /TensorComputes/Solve/LBMStackTensors
 

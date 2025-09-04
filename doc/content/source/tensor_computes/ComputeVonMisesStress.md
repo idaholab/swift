@@ -12,7 +12,7 @@ For 2D, the expression reduces accordingly.
 
 ## Example Input File Syntax
 
-!listing test/tests/mechanics/mech.i block=/TensorComputes/Solve/vonmises
+!listing test/tests/mechanics/mech.i block=/TensorComputes/Postprocess/vonmises
 
 !syntax parameters /TensorComputes/Solve/ComputeVonMisesStress
 
