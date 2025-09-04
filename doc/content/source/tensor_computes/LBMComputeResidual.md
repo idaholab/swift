@@ -6,11 +6,13 @@ This object simply computes the L1 difference between current and old timestep s
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMComputeResidual object.
+Computes a simple residual measure from a supplied buffer, e.g., for convergence monitoring. Use
+[!param](/TensorComputes/Solve/LBMComputeResidual/buffer) to select the destination and
+[!param](/TensorComputes/Solve/LBMComputeResidual/speed) or another input for the source.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMComputeResidual object.
+!listing test/tests/lbm/channel2D.i block=TensorComputes/Solve/residual
 
 !syntax parameters /TensorComputes/Solve/LBMComputeResidual
 

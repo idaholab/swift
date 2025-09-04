@@ -2,15 +2,17 @@
 
 !syntax description /TensorComputes/Solve/LBMFixedFirstOrderBC9Q
 
-LBMFixedFirstOrderBC implements Zou-He velocity boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils. The choice of stencil should be indicated in the name of the compute object such as LBMFixedFirstOrderBC9Q for D2Q9.
+LBMFixedFirstOrderBC implements Zou\-He velocity boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils. The choice of stencil should be indicated in the name of the compute object such as LBMFixedFirstOrderBC9Q for D2Q9.
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMFixedFirstOrderBC9Q object.
+Enforces first\-order accurate macroscopic velocity at selected domain faces via Zou\-He formulas.
+Choose faces with [!param](/TensorComputes/Solve/LBMFixedFirstOrderBC9Q/boundary) and provide
+macroscopic fields as required by the implementation.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMFixedFirstOrderBC9Q object.
+No minimal example is included yet.
 
 !syntax parameters /TensorComputes/Solve/LBMFixedFirstOrderBC9Q
 

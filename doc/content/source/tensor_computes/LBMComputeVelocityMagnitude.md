@@ -6,11 +6,14 @@ Computes the magnitude of velocity (speed) from velocity buffer.
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMComputeVelocityMagnitude object.
+Computes the Euclidean magnitude of a velocity vector field and stores it into the output buffer.
+Select the destination via [!param](/TensorComputes/Solve/LBMComputeVelocityMagnitude/buffer)
+and supply the vector field with
+[!param](/TensorComputes/Solve/LBMComputeVelocityMagnitude/velocity).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMComputeVelocityMagnitude object.
+!listing test/tests/lbm/channel2D.i block=TensorComputes/Solve/speed
 
 !syntax parameters /TensorComputes/Solve/LBMComputeVelocityMagnitude
 

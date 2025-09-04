@@ -6,11 +6,13 @@ LBMFixedZerothOrderBC implements Zou-He pressure boundary conditions at the inle
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMFixedZerothOrderBC9Q object.
+Enforces zeroth\-order accurate macroscopic variables at selected domain faces. Choose faces with
+[!param](/TensorComputes/Solve/LBMFixedZerothOrderBC9Q/boundary) and provide macroscopic fields as
+required by the implementation.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMFixedZerothOrderBC9Q object.
+No minimal example is included yet.
 
 !syntax parameters /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
 

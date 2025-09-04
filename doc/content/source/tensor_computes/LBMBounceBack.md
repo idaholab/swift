@@ -6,11 +6,26 @@ This compute object implements simple bounce-back rule on boundaries for Lattice
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMBounceBack object.
+Imposes no-penetration by reflecting incoming distributions into their opposite directions at the
+selected boundary. Supports domain faces (`left`, `right`, `top`, `bottom`, `front`, `back`) and
+`wall` for solid-embedded geometries. For 3D binary media masks, adjacent-to-solid cells are handled
+by a specialized path. Corner exclusion on each axis can be enabled to avoid double-applying rules.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMBounceBack object.
+!listing
+[TensorComputes]
+  [Solve]
+    [bb]
+      type = LBMBounceBack
+      buffer = f
+      f_old = f
+      boundary = 'left right top bottom'
+      exclude_corners_x = true
+    []
+  []
+[]
+!listing-end
 
 !syntax parameters /TensorComputes/Solve/LBMBounceBack
 

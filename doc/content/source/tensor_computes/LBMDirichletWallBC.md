@@ -6,11 +6,14 @@ This LBMDirichletWallBC objects implements perliminary version of Dirichlet boun
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMDirichletWallBC object.
+Imposes a fixed value on a macroscopic field at solid walls by reconstructing incoming
+distributions to enforce the desired boundary condition. Select the target field via
+[!param](/TensorComputes/Solve/LBMDirichletWallBC/buffer) and choose faces using
+[!param](/TensorComputes/Solve/LBMDirichletWallBC/boundary).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMDirichletWallBC object.
+!listing test/tests/lbm/advan_bc.i block=TensorComputes/Boundary/bottom
 
 !syntax parameters /TensorComputes/Solve/LBMDirichletWallBC
 

@@ -6,11 +6,13 @@ Finds the largest (`torch::max`) or smallest (`torch::min`) value in the given b
 
 ## Overview
 
-!! Replace these lines with information regarding the TensorExtremeValuePostprocessor object.
+Computes the minimum or maximum over a scalar buffer. Choose the input with
+[!param](/Postprocessors/TensorExtremeValuePostprocessor/buffer) and the operation via
+[!param](/Postprocessors/TensorExtremeValuePostprocessor/value_type) set to `MIN` or `MAX`.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the TensorExtremeValuePostprocessor object.
+!listing test/tests/tensor_compute/group.i block=Postprocessors/max_c
 
 !syntax parameters /Postprocessors/TensorExtremeValuePostprocessor
 

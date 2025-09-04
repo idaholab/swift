@@ -6,11 +6,21 @@ This objects implements commonly used collision dynamics for Lattice Boltzmann s
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMSmagorinskyMRTCollision object.
+Template for multiple LBM collision operators:
+
+- BGK: single\-relaxation time model (`LBMBGKCollision`).
+- MRT: multi\-relaxation time in moment space (`LBMMRTCollision`).
+- Smagorinsky: eddy\-viscosity based turbulence (`LBMSmagorinskyCollision`, `LBMSmagorinskyMRTCollision`).
+
+Supply incoming and equilibrium distributions via
+[!param](/TensorComputes/Solve/LBMBGKCollision/f) and
+[!param](/TensorComputes/Solve/LBMBGKCollision/feq). Relaxation is controlled with
+[!param](/TensorComputes/Solve/LBMBGKCollision/tau0); Smagorinsky models also use
+[!param](/TensorComputes/Solve/LBMBGKCollision/Cs).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMSmagorinskyMRTCollision object.
+!listing test/tests/lbm/channel2D.i block=TensorComputes/Solve/collision
 
 !syntax parameters /TensorComputes/Solve/LBMSmagorinskyMRTCollision
 

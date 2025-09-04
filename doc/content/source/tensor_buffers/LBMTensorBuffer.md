@@ -6,11 +6,13 @@ This object provides common tensor buffers for Lattice Boltzmann simulations. `d
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMTensorBuffer object.
+Holds lattice quantities for LBM simulations: distribution functions (df), macroscopic scalars (ms)
+and vectors (mv). Use [!param](/TensorBuffers/LBMTensorBuffer/buffer_type) to choose the storage
+type and [!param](/TensorBuffers/LBMTensorBuffer/buffer) to name the buffer.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMTensorBuffer object.
+!listing test/tests/lbm/channel2D.i block=TensorBuffers/velocity
 
 !syntax parameters /TensorBuffers/LBMTensorBuffer
 

@@ -6,11 +6,13 @@ LBMComputeForces calculates forces for LBM simulations. Currently available forc
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMComputeForces object.
+Computes body force contributions (e.g., pressure gradients or capillary forces) required by the
+LBM forcing term. Supply required inputs (such as gradients or chemical potentials) and select the
+output force buffer via [!param](/TensorComputes/Solve/LBMComputeForces/buffer).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMComputeForces object.
+!listing test/tests/lbm/phase.i block=TensorComputes/Solve/forces
 
 !syntax parameters /TensorComputes/Solve/LBMComputeForces
 

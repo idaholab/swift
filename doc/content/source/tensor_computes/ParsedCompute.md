@@ -2,9 +2,17 @@
 
 !syntax description /TensorComputes/Solve/ParsedCompute
 
+## Overview
+
+Evaluates a user\-provided algebraic expression to compute the target buffer from named inputs and
+coordinates. Specify the expression via
+[!param](/TensorComputes/Solve/ParsedCompute/expression) and list input buffers with
+[!param](/TensorComputes/Solve/ParsedCompute/inputs). Enabling
+[!param](/TensorComputes/Solve/ParsedCompute/extra_symbols) adds symbols like `x`, `y`, `z`.
+
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ParsedCompute object.
+!listing test/tests/gradient/gradient_square.i block=TensorComputes/Initialize/diff
 
 !syntax parameters /TensorComputes/Solve/ParsedCompute
 
