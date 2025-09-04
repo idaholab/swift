@@ -8,19 +8,27 @@
 
 #pragma once
 
-#include "MooseObject.h"
-#include "TensorProblem.h"
+#include "GeneralPostprocessor.h"
 
-class TensorProblemInterface
+class ComputeGroup;
+class TensorProblem;
+
+/**
+ * Get number of cumulative compute group executions
+ */
+class ComputeGroupExecutionCount : public GeneralPostprocessor
 {
 public:
-  TensorProblemInterface(MooseObject * moose_object)
-    : _tensor_problem(TensorProblem::cast(
-          moose_object,
-          *moose_object->parameters().getCheckedPointerParam<SubProblem *>("_subproblem")))
-  {
-  }
+  static InputParameters validParams();
+
+  ComputeGroupExecutionCount(const InputParameters & parameters);
+
+  virtual void initialize() override {}
+  virtual void execute() override {}
+  virtual void finalize() override {}
+  virtual PostprocessorValue getValue() const override;
 
 protected:
   TensorProblem & _tensor_problem;
+  const ComputeGroup & _compute_group;
 };

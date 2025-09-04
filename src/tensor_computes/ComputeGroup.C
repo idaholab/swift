@@ -25,7 +25,7 @@ ComputeGroup::validParams()
 }
 
 ComputeGroup::ComputeGroup(const InputParameters & parameters)
-  : TensorOperatorBase(parameters), _visited(false)
+  : TensorOperatorBase(parameters), _visited(false), _compute_count(0)
 {
 }
 
@@ -67,6 +67,8 @@ ComputeGroup::computeBuffer()
       cmp->mooseError("Exception: ", e.what());
     }
   }
+
+  _compute_count++;
 }
 
 void

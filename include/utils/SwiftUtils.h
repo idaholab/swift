@@ -33,8 +33,9 @@ void printTensorInfo(const std::string & name, const torch::Tensor & x);
 void printElementZero(const torch::Tensor & tensor);
 void printElementZero(const std::string & name, const torch::Tensor & tensor);
 
-void
-printBuffer(const torch::Tensor & t, const unsigned int & precision, const unsigned int & index);
+void printBuffer(const torch::Tensor & t,
+                 const unsigned int & precision = 5,
+                 const unsigned int & index = 0);
 
 const torch::TensorOptions floatTensorOptions();
 const torch::TensorOptions complexFloatTensorOptions();

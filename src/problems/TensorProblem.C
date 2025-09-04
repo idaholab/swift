@@ -605,3 +605,11 @@ TensorProblem::getRawCPUBuffer(const std::string & buffer_name)
 {
   return getBufferBase(buffer_name).getRawCPUTensor();
 }
+
+TensorProblem &
+TensorProblem::cast(MooseObject * moose_object, Problem & problem)
+{
+  if (auto tensor_problem = dynamic_cast<TensorProblem *>(&problem); tensor_problem)
+    return *tensor_problem;
+  moose_object->mooseError("Object requires a TensorProblem.");
+}

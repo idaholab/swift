@@ -131,7 +131,8 @@ public:
   typedef std::vector<std::shared_ptr<TensorOperatorBase>> TensorComputeList;
   const TensorComputeList & getComputes() const { return _computes; }
 
-  TensorOperatorBase & getCompute(const std::string & param_name) const;
+  template <typename T = TensorOperatorBase>
+  T & getCompute(const std::string & name) const;
 
   typedef std::vector<std::shared_ptr<TensorOutput>> TensorOutputList;
   const TensorOutputList & getOutputs() const { return _outputs; }
@@ -149,6 +150,8 @@ public:
   /// get a reference to the current solver
   template <typename T>
   T & getSolver() const;
+
+  static TensorProblem & cast(MooseObject * moose_object, Problem & problem);
 
 protected:
   void updateDOFMap();
@@ -411,4 +414,20 @@ TensorProblem::declareConstant(const std::string & name, const T & value)
     param->_value = value;
     _constants[name] = std::move(param);
   }
+}
+
+template <typename T>
+T &
+TensorProblem::getCompute(const std::string & name) const
+{
+  for (const auto & tcb : _computes)
+    if (std::dynamic_pointer_cast<MooseObject>(tcb)->name() == name)
+      if (const auto ptr = std::dynamic_pointer_cast<T>(tcb); ptr)
+        return *ptr;
+
+  mooseError("No compute with name '",
+             name,
+             "' of type ",
+             libMesh::demangle(typeid(T).name()),
+             " found.");
 }
