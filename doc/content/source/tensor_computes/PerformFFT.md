@@ -1,9 +1,5 @@
 # ForwardFFT / InverseFFT
 
-!syntax description /TensorComputes/Solve/ForwardFFT
-
-!syntax description /TensorComputes/Solve/InverseFFT
-
 Perform fast Fourier transforms on tensor buffers. `ForwardFFT` maps a real-space buffer to its
 reciprocal representation; `InverseFFT` maps the reciprocal buffer back to real space.
 
@@ -26,11 +22,15 @@ reciprocal representation; `InverseFFT` maps the reciprocal buffer back to real 
 []
 !listing-end
 
+## ForwardFFT
+
 !syntax parameters /TensorComputes/Solve/ForwardFFT
 
 !syntax inputs /TensorComputes/Solve/ForwardFFT
 
 !syntax children /TensorComputes/Solve/ForwardFFT
+
+## InverseFFT
 
 !syntax parameters /TensorComputes/Solve/InverseFFT
 

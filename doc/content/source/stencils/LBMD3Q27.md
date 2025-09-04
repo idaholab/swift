@@ -11,7 +11,7 @@ and indexing used by streaming and boundary conditions.
 
 ## Example Input File Syntax
 
-!listing examples/lbm/Formula1-aerodynamics/f1.i block=Stencil/d3q27
+!listing examples/lbm/Formula1-aerodynamics/f1.i block=/Stencil
 
 !syntax parameters /Stencil/LBMD3Q27
 

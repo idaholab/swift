@@ -12,7 +12,7 @@ where $\mathbf{k}$ is the k-vector. This is the Fourier transform of the squared
 
 ## Example Input File Syntax
 
-!listing benchmarks/02_oswald_ripening/2a.i block=TensorComputes/Initialize/kappabarbar
+!listing test/tests/cahnhilliard/cahnhilliard.i block=TensorComputes/Initialize/kappabarbar
 
 !syntax parameters /TensorComputes/Solve/ReciprocalLaplacianSquareFactor
 
