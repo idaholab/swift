@@ -12,7 +12,8 @@ macroscopic fields as required by the implementation.
 
 ## Example Input File Syntax
 
-No minimal example is included yet.
+!listing test/tests/lbm/vertical_velocity_bcs.i block=TensorComputes/Boundary/top
+!listing test/tests/lbm/vertical_velocity_bcs.i block=TensorComputes/Boundary/bottom
 
 !syntax parameters /TensorComputes/Solve/LBMFixedFirstOrderBC9Q
 
