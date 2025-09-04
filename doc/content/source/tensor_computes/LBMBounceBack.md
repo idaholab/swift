@@ -15,11 +15,11 @@ by a specialized path. Corner exclusion on each axis can be enabled to avoid dou
 
 !listing
 [TensorComputes]
-  [Solve]
+  [Boundary]
     [bb]
       type = LBMBounceBack
       buffer = f
-      f_old = f
+      f_old = f_post_collision
       boundary = 'left right top bottom'
       exclude_corners_x = true
     []

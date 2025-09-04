@@ -7,8 +7,8 @@ The ComputeReynoldsNumber objects acts on speed buffer. The inputs tau and diame
 ## Overview
 
 Computes the Reynolds number `Re = U D / \nu` from a speed buffer and user\-provided length scale.
-Provide the speed via [!param](/Postprocessors/ComputeReynoldsNumber/buffer), kinematic viscosity
-through [!param](/Postprocessors/ComputeReynoldsNumber/tau) or related inputs, and the characteristic
+Provide the speed via [!param](/Postprocessors/ComputeReynoldsNumber/buffer), relaxation parameter
+through [!param](/Postprocessors/ComputeReynoldsNumber/tau), and the characteristic
 diameter with [!param](/Postprocessors/ComputeReynoldsNumber/diameter).
 
 ## Example Input File Syntax

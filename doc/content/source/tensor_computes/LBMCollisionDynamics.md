@@ -14,13 +14,15 @@ Template for multiple LBM collision operators:
 
 Supply incoming and equilibrium distributions via
 [!param](/TensorComputes/Solve/LBMBGKCollision/f) and
-[!param](/TensorComputes/Solve/LBMBGKCollision/feq). Relaxation is controlled with
-[!param](/TensorComputes/Solve/LBMBGKCollision/tau0); Smagorinsky models also use
+[!param](/TensorComputes/Solve/LBMBGKCollision/feq). Relaxation parameter related to viscous stress is controlled with
+[!param](/TensorComputes/Solve/LBMBGKCollision/tau0); Smagorinsky constant can be controlled via
 [!param](/TensorComputes/Solve/LBMBGKCollision/Cs).
 
 ## Example Input File Syntax
 
 !listing test/tests/lbm/channel2D.i block=TensorComputes/Solve/collision
+!listing test/tests/lbm/isotropic_stencil_mrt.i block=TensorComputes/Solve/collision
+!listing test/tests/lbm/smagorinsky_mrt.i block=TensorComputes/Solve/collision
 
 !syntax parameters /TensorComputes/Solve/LBMSmagorinskyMRTCollision
 

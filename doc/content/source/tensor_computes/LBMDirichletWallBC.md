@@ -13,7 +13,7 @@ distributions to enforce the desired boundary condition. Select the target field
 
 ## Example Input File Syntax
 
-!listing test/tests/lbm/advan_bc.i block=TensorComputes/Boundary/bottom
+!listing test/tests/lbm/dirichlet_box.i block=TensorComputes/Boundary/
 
 !syntax parameters /TensorComputes/Solve/LBMDirichletWallBC
 

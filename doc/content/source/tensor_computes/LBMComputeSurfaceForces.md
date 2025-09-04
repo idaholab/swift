@@ -6,7 +6,7 @@ This object acts similarly to LBMComputeForces and computes surface forces from 
 
 ## Overview
 
-Computes capillary force density from a chemical potential and its gradient for phase\-field LBM
+Computes interfacial tension force density from a chemical potential and gradient of phase field parameter for phase\-field LBM.
 coupling. Supply the chemical potential with
 [!param](/TensorComputes/Solve/LBMComputeSurfaceForces/chemical_potential) and the gradient with
 [!param](/TensorComputes/Solve/LBMComputeSurfaceForces/grad_phi). The result is a vector field
