@@ -9,7 +9,7 @@
       csvdiff = coupled_10_0_1.csv
       cli_args = 'ss=10 cs=0 order=1'
       requirement = 'of first order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
     [order_2]
       type = CSVDiff
@@ -17,7 +17,7 @@
       csvdiff = coupled_10_0_2.csv
       cli_args = 'ss=10 cs=0 order=2'
       requirement = 'of second order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
     [order_3]
       type = CSVDiff
@@ -25,7 +25,7 @@
       csvdiff = coupled_10_0_3.csv
       cli_args = 'ss=10 cs=0 order=3'
       requirement = 'of third order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
     [order_4]
       # higher order integrators have smaller stability regions, hence the increased number of substeps
@@ -34,7 +34,7 @@
       csvdiff = coupled_20_0_4.csv
       cli_args = 'ss=20 cs=0 order=4'
       requirement = 'of fourth order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
   []
   [adams_bashforth_moulton]
@@ -45,7 +45,7 @@
       csvdiff = coupled_10_1_1.csv
       cli_args = 'ss=10 cs=1 order=1'
       requirement = 'with one corrector step of first order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
     [corrector_steps_2_order_1]
       type = CSVDiff
@@ -53,7 +53,7 @@
       csvdiff = coupled_10_2_1.csv
       cli_args = 'ss=10 cs=2 order=1'
       requirement = 'with two corrector steps of first order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
     [corrector_steps_2_order_2]
       type = CSVDiff
@@ -61,7 +61,7 @@
       csvdiff = coupled_10_2_2.csv
       cli_args = 'ss=10 cs=2 order=2'
       requirement = 'with two corrector steps of second order'
-      devices = 'cpu cuda mps'
+      compute_devices = 'cpu cuda mps'
     []
   []
 []

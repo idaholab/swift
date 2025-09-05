@@ -8,19 +8,22 @@
 
 #pragma once
 
-#include "MooseObject.h"
-#include "TensorProblem.h"
+#include "TensorOperator.h"
 
-class TensorProblemInterface
+/**
+ * De-aliasing filter
+ */
+class DeAliasingTensor : public TensorOperator<>
 {
 public:
-  TensorProblemInterface(MooseObject * moose_object)
-    : _tensor_problem(TensorProblem::cast(
-          moose_object,
-          *moose_object->parameters().getCheckedPointerParam<SubProblem *>("_subproblem")))
-  {
-  }
+  static InputParameters validParams();
 
-protected:
-  TensorProblem & _tensor_problem;
+  DeAliasingTensor(const InputParameters & parameters);
+
+  virtual void computeBuffer() override;
+
+  const enum class DeAliasingMethod { SHARP, HOULI } _method;
+
+  const Real _p;
+  const Real _alpha;
 };
