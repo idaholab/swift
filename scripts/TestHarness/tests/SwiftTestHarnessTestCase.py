@@ -13,18 +13,9 @@ import TestHarness
 sys.path.append(os.path.join(TestHarness.__path__[0], 'tests'))
 from TestHarnessTestCase import TestHarnessTestCase
 
+#TEST_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+
 class SwiftTestHarnessTestCase(TestHarnessTestCase):
     """
     TestCase class for running TestHarness commands.
     """
-
-    def runTests(self, *args, tmp_output=True):
-        cmd = ['./run_tests'] + list(args) + ['--term-format', 'njCst']
-        sp_kwargs = {'cwd': os.path.join(os.path.dirname(__file__), '..', '..', '..'),
-                     'text': True}
-        if tmp_output:
-            with tempfile.TemporaryDirectory() as output_dir:
-                cmd += ['-o', output_dir]
-            return subprocess.check_output(cmd, **sp_kwargs)
-        return subprocess.check_output(cmd, **sp_kwargs)
-
