@@ -6,11 +6,12 @@ LBMD3Q27 objects creatres D3Q27 stencil. This object holds tensors for direction
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMD3Q27 object.
+Constructs a 3\-D, 27\-velocity LBM stencil (D3Q27) and exposes its discrete velocities, weights,
+and indexing used by streaming and boundary conditions.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMD3Q27 object.
+!listing examples/lbm/Formula1-aerodynamics/f1.i block=/Stencil
 
 !syntax parameters /Stencil/LBMD3Q27
 

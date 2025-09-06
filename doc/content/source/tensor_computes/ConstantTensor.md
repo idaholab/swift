@@ -6,11 +6,13 @@
 
 ## Overview
 
-!! Replace these lines with information regarding the ConstantTensor object.
+Writes a constant scalar into the target buffer each time it runs. Use
+[!param](/TensorComputes/Solve/ConstantTensor/buffer) to select the destination and
+[!param](/TensorComputes/Solve/ConstantTensor/real) to provide the value.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ConstantTensor object.
+!listing test/tests/neml2/scalar.i block=TensorComputes/Initialize/A
 
 !syntax parameters /TensorComputes/Solve/ConstantTensor
 

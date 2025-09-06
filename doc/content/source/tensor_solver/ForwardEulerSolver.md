@@ -14,7 +14,7 @@ Performs explicit time integration using the Forward-Euler method.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ForwardEulerSolver object.
+!listing benchmarks/01_spinodal_decomposition/1a_solver.i block=TensorSolver
 
 !syntax parameters /TensorSolver/ForwardEulerSolver
 

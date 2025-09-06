@@ -13,7 +13,7 @@ term in the Swift-Hohenberg equation.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the SwiftHohenbergLinear object.
+!listing test/tests/tensor_compute/rotating_grain_secant.i block=TensorComputes/Initialize/linear
 
 !syntax parameters /TensorComputes/Solve/SwiftHohenbergLinear
 
