@@ -6,11 +6,13 @@ This tensor solver moves LBM distributions in time by streaming them based to th
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMStream object.
+Streams distribution functions along stencil directions to advance in time. Provide the active
+distribution buffer via [!param](/TensorSolver/LBMStream/buffer) and the post\-collision history via
+[!param](/TensorSolver/LBMStream/f_old).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMStream object.
+!listing test/tests/lbm/channel2D.i block=TensorSolver
 
 !syntax parameters /TensorSolver/LBMStream
 

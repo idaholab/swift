@@ -4,9 +4,20 @@
 
 Use a NEML2 model to perform a tensor compute.
 
+## Overview
+
+Maps Swift buffers to NEML2 model inputs, executes the model, and maps model outputs back to Swift
+buffers. Configure the NEML2 input file and model via
+[!param](/TensorComputes/Solve/NEML2TensorCompute/neml2_input_file) and
+[!param](/TensorComputes/Solve/NEML2TensorCompute/neml2_model). Use
+[!param](/TensorComputes/Solve/NEML2TensorCompute/swift_inputs),
+[!param](/TensorComputes/Solve/NEML2TensorCompute/neml2_inputs),
+[!param](/TensorComputes/Solve/NEML2TensorCompute/neml2_outputs), and
+[!param](/TensorComputes/Solve/NEML2TensorCompute/swift_outputs) to define the mappings.
+
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the InverseFFT object.
+!listing test/tests/neml2/scalar.i block=TensorComputes/Initialize/C
 
 !syntax parameters /TensorComputes/Solve/NEML2TensorCompute
 

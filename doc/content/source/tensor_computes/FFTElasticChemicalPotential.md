@@ -1,20 +1,40 @@
 # FFTElasticChemicalPotential
 
-!alert construction title=Undocumented Class
-The FFTElasticChemicalPotential has not been documented. The content listed below should be used as a starting point for
-documenting the class, which includes the typical automatic documentation associated with a
-MooseObject; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
 !syntax description /TensorComputes/Solve/FFTElasticChemicalPotential
 
 ## Overview
 
-!! Replace these lines with information regarding the FFTElasticChemicalPotential object.
+Computes the elastic contribution to the chemical potential in Fourier space for an eigenstrain
+problem. Given Lam\'e parameters `mu` and `lambda`, an eigenstrain amplitude `e0`, the Fourier
+transform of a scalar field `cbar`, and the displacement fields `u = (u_x,u_y,u_z)`, the output is
+
+\begin{equation}
+\mu_\text{mech} = -e0 * ( e0 * (9 lambda cbar + 6 mu cbar) - (2 mu + 3 lambda) * div(u) ),
+\end{equation}
+
+where $\nabla\cdot u$ is evaluated spectrally as $i 2 \pi (k_x \hat u_x + k_y \hat u_y + k_z \hat u_z)$.
+
+The resulting tensor is inverse-transformed by downstream operators as needed.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the FFTElasticChemicalPotential object.
+!listing
+[TensorComputes]
+  [Solve]
+    [elastic_mu]
+      type = FFTElasticChemicalPotential
+      buffer = mubar_elastic
+      displacements = 'ux uy uz'
+      cbar = cbar
+      mu = 1.0
+      lambda = 2.0
+      e0 = 1e-3
+    []
+  []
+[]
+!listing-end
+
+See also: [FFTQuasistaticElasticity](FFTQuasistaticElasticity.md), [ForwardFFT](PerformFFT.md).
 
 !syntax parameters /TensorComputes/Solve/FFTElasticChemicalPotential
 
