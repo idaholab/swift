@@ -33,7 +33,7 @@
     requirement = 'The system shall be able to load tensor from h5 file and run LBMIterations.'
     design = 'LBMTensorBuffer.md'
     abs_tol = 1e-10
-    compute_devices = 'cpu' # DEBUG THIS
+    compute_devices = 'cpu cuda mps'
   []
   [phase-field]
     type = HDF5Diff
@@ -42,7 +42,7 @@
     requirement = 'The system shall be able to solve Cahn-Hillard equation for phase evolution from random initial condition using LBM.'
     design = 'LBMComputeChemicalPotential.md'
     abs_tol = 1e-10
-    compute_devices = 'cpu' # DEBUG THIS
+    compute_devices = 'cpu cuda mps'
   []
   [mass_heat_advan_bc]
     type = HDF5Diff
@@ -51,7 +51,7 @@
     requirement = 'The system shall be able to solve coupled heat and mass transfer with advanced boundary conditions using LBM.'
     design = 'LBMDirichletWallBC.md'
     abs_tol = 1e-10
-    compute_devices = 'cpu' # DEBUG THIS
+    compute_devices = 'cpu cuda mps'
   []
   [dirichlet_box]
     type = HDF5Diff

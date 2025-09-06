@@ -159,7 +159,8 @@ LBMTensorBuffer::readTensorFromHdf5()
     // read data
     H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
 
-    _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::intTensorOptions()).clone();
+    auto cpu_tensor = torch::from_blob(buffer.data(), torch_dims, torch::kInt64).clone();
+    _u = cpu_tensor.to(MooseTensor::intTensorOptions());
   }
   else
   {
@@ -168,7 +169,8 @@ LBMTensorBuffer::readTensorFromHdf5()
     // read data
     H5Dread(dataset_id, datatype_id, H5S_ALL, dataspace_id, H5P_DEFAULT, buffer.data());
 
-    _u = torch::from_blob(buffer.data(), torch_dims, MooseTensor::floatTensorOptions()).clone();
+    auto cpu_tensor = torch::from_blob(buffer.data(), torch_dims, torch::kFloat64).clone();
+    _u = cpu_tensor.to(MooseTensor::floatTensorOptions());
   }
   while (_u.dim() < 3)
     _u.unsqueeze_(-1);
