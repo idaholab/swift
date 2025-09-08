@@ -95,6 +95,6 @@
     issues = '#86'
     requirement = 'The system shall be able to interpolate two values smoothly between the inside and outside of a rectangle'
     design = SmoothRectangleCompute.md
-    devices = 'cpu cuda mps'
+    compute_devices = 'cpu cuda mps'
   []
 []
