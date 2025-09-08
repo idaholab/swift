@@ -114,5 +114,5 @@ SmoothRectangleCompute::computeBuffer()
       }
     }
   }
-  _u = h_box * _inside + (1 - h_box) * _outside;
+  _u = (h_box * _inside + (1 - h_box) * _outside).squeeze();
 }
