@@ -144,7 +144,7 @@
     []
 
     [left]
-      type = LBMFixedFirstOrderBC27Q
+      type = LBMFixedFirstOrderBC
       buffer=f
       f=f
       value=0.01

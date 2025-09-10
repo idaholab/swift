@@ -14,13 +14,10 @@
 
 using namespace torch::indexing;
 
-registerMooseObject("SwiftApp", LBMFixedFirstOrderBC9Q);
-registerMooseObject("SwiftApp", LBMFixedFirstOrderBC19Q);
-registerMooseObject("SwiftApp", LBMFixedFirstOrderBC27Q);
+registerMooseObject("SwiftApp", LBMFixedFirstOrderBC);
 
-template <int dimension>
 InputParameters
-LBMFixedFirstOrderBCTempl<dimension>::validParams()
+LBMFixedFirstOrderBC::validParams()
 {
   InputParameters params = LBMBoundaryCondition::validParams();
   params.addClassDescription("LBMFixedFirstOrderBC object");
@@ -30,8 +27,7 @@ LBMFixedFirstOrderBCTempl<dimension>::validParams()
   return params;
 }
 
-template <int dimension>
-LBMFixedFirstOrderBCTempl<dimension>::LBMFixedFirstOrderBCTempl(const InputParameters & parameters)
+LBMFixedFirstOrderBC::LBMFixedFirstOrderBC(const InputParameters & parameters)
   : LBMBoundaryCondition(parameters),
     _f(getInputBufferByName(getParam<TensorInputBufferName>("f"))),
     _grid_size(_lb_problem.getGridSize()),
@@ -40,57 +36,28 @@ LBMFixedFirstOrderBCTempl<dimension>::LBMFixedFirstOrderBCTempl(const InputParam
 {
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<9>::frontBoundary()
+LBMFixedFirstOrderBC::frontBoundary()
 {
-  // There is no front boundary in 2D
-  mooseError("There is no front boundary in 2 dimensions.");
+  if (_domain.getDim() == 2)
+    mooseError("There is no front boundary in 2 dimensions.");
+  else
+    mooseError("Front boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<19>::frontBoundary()
+LBMFixedFirstOrderBC::backBoundary()
 {
-  // TBD
-  mooseError("Front boundary for D3Q19 is not implemented.");
+  if (_domain.getDim() == 2)
+    mooseError("There is no back boundary in 2 dimensions.");
+  else
+    mooseError("Back boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<27>::frontBoundary()
-{
-  // TBD
-  mooseError("Front boundary for D3Q27 is not implemented.");
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<9>::backBoundary()
-{
-  // There is no back boundary in 2D
-  mooseError("There is no back boundary in 2 dimensions.");
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<19>::backBoundary()
-{
-  // TBD
-  mooseError("Back boundary for D3Q19 is not implemented.");
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<27>::backBoundary()
-{
-  // TBD
-  mooseError("Back boundary for D3Q27 is not implemented.");
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<9>::leftBoundary()
+LBMFixedFirstOrderBC::leftBoundaryD2Q9()
 {
   Real deltaU = 0.0;
   torch::Tensor u_x_perturbed = torch::zeros({_grid_size[1], 1}, MooseTensor::floatTensorOptions());
@@ -132,64 +99,34 @@ LBMFixedFirstOrderBCTempl<9>::leftBoundary()
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<19>::leftBoundary()
+LBMFixedFirstOrderBC::leftBoundary()
 {
-  torch::Tensor density = 1.0 / (1.0 - _value) *
-                          (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-                           2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1));
-
-  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
-                _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
-                    2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
-                        density);
-
-  for (unsigned int i = 1; i < _stencil._left.size(0); i++)
+  if (_stencil._q == 9)
+    leftBoundaryD2Q9(); // higher order specialization for D2Q9
+  else
   {
-    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
-                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
-                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+    torch::Tensor density = 1.0 / (1.0 - _value) *
+                            (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+                             2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1));
+
+    _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
+                  _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
+                      2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
                           density);
+
+    for (unsigned int i = 1; i < _stencil._left.size(0); i++)
+    {
+      _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
+                    _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
+                        2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
+                            density);
+    }
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<27>::leftBoundary()
-{
-  torch::Tensor density = 1.0 / (1.0 - _value) *
-                          (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-                           2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1));
-
-  _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
-                _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
-                    2.0 * _stencil._weights[_stencil._left[0]] / _lb_problem._cs2 * _value *
-                        density);
-
-  for (unsigned int i = 1; i < _stencil._left.size(0); i++)
-  {
-    // auto n1 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_y}), -1);
-    // auto n2 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_y}), -1);
-    // auto n3 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_pos_z}), -1);
-    // auto n4 = torch::sum(_f.index({0, Slice(), Slice(), _stencil._neutral_x_neg_z}), -1);
-
-    _u.index_put_({0, Slice(), Slice(), _stencil._left[i]},
-                  _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
-                      2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
-                          density);
-
-    /*-
-            0.5 * _stencil._ey[_stencil._left[i]] * (n1 - n2) -
-            0.5 * _stencil._ez[_stencil._left[i]] * (n3 - n4) -
-            0.5 * _stencil._ey[_stencil._left[i]] * _stencil._ez[_stencil._left[i]] *
-                (_f.index({0, Slice(), Slice(), 15}) + _f.index({0, Slice(), Slice(), 18})) */
-  }
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<9>::rightBoundary()
+LBMFixedFirstOrderBC::rightBoundaryD2Q9()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({_grid_size[0] - 1, Slice(), Slice(), 0}) +
@@ -218,72 +155,35 @@ LBMFixedFirstOrderBCTempl<9>::rightBoundary()
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<19>::rightBoundary()
+LBMFixedFirstOrderBC::rightBoundary()
 {
-  torch::Tensor density =
-      1.0 / (1.0 + _value) *
-      (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-       2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1));
-
-  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
-                _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
-                    2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
-                        density);
-
-  for (unsigned int i = 1; i < _stencil._right.size(0); i++)
+  if (_stencil._q == 9)
+    rightBoundaryD2Q9(); // higher order specialization for D2Q9
+  else
   {
-    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[i]},
-                  _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) -
-                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+    torch::Tensor density =
+        1.0 / (1.0 + _value) *
+        (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+         2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1));
+
+    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
+                  _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
+                      2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
                           density);
+
+    for (unsigned int i = 1; i < _stencil._right.size(0); i++)
+    {
+      _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[i]},
+                    _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) -
+                        2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
+                            density);
+    }
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<27>::rightBoundary()
-{
-  torch::Tensor density =
-      1.0 / (1.0 + _value) *
-      (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-       2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1));
-
-  _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
-                _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
-                    2.0 * _stencil._weights[_stencil._right[0]] / _lb_problem._cs2 * _value *
-                        density);
-
-  for (unsigned int i = 1; i < _stencil._right.size(0); i++)
-  {
-    // auto n1 =
-    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_pos_y}),
-    //     -1);
-    // auto n2 =
-    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_neg_y}),
-    //     -1);
-
-    // auto n3 =
-    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_pos_z}),
-    //     -1);
-    // auto n4 =
-    //     torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._neutral_x_neg_z}),
-    //     -1);
-
-    _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[i]},
-                  _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) -
-                      2.0 * _stencil._weights[_stencil._right[i]] / _lb_problem._cs2 * _value *
-                          density);
-    /*+
-                      0.5 * _stencil._ey[_stencil._right[i]] * (n1 - n2) -
-                      0.5 * _stencil._ez[_stencil._right[i]] * (n3 - n4)*/
-  }
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<9>::bottomBoundary()
+LBMFixedFirstOrderBC::bottomBoundaryD2Q9()
 {
   torch::Tensor density =
       1.0 / (1.0 - _value) *
@@ -310,25 +210,18 @@ LBMFixedFirstOrderBCTempl<9>::bottomBoundary()
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<19>::bottomBoundary()
+LBMFixedFirstOrderBC::bottomBoundary()
 {
-  // TBD
-  mooseError("Bottom boundary for D3Q19 is not implemented.");
+  if (_stencil._q == 9)
+    bottomBoundaryD2Q9();
+  else
+    mooseError("Bottom boundary is not implemented, but it can be replaced by another boundary by "
+               "rotating the domain.");
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<27>::bottomBoundary()
-{
-  // TBD
-  mooseError("Bottom boundary for D3Q27 is not implemented.");
-}
-
-template <>
-void
-LBMFixedFirstOrderBCTempl<9>::topBoundary()
+LBMFixedFirstOrderBC::topBoundaryD2Q9()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({Slice(), _grid_size[1] - 1, Slice(), 0}) +
@@ -357,25 +250,18 @@ LBMFixedFirstOrderBCTempl<9>::topBoundary()
   }
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<19>::topBoundary()
+LBMFixedFirstOrderBC::topBoundary()
 {
-  // TBD
-  mooseError("Top boundary for D3Q19 is not implemented.");
+  if (_stencil._q == 9)
+    topBoundaryD2Q9();
+  else
+    mooseError("Top boundary is not implemented, but it can be replaced by another boundary by "
+               "rotating the domain.");
 }
 
-template <>
 void
-LBMFixedFirstOrderBCTempl<27>::topBoundary()
-{
-  // TBD
-  mooseError("Top boundary for D3Q27 is not implemented.");
-}
-
-template <int dimension>
-void
-LBMFixedFirstOrderBCTempl<dimension>::computeBuffer()
+LBMFixedFirstOrderBC::computeBuffer()
 {
   _u = _u.clone();
   switch (_boundary)
@@ -406,7 +292,3 @@ LBMFixedFirstOrderBCTempl<dimension>::computeBuffer()
   }
   _lb_problem.maskedFillSolids(_u, 0);
 }
-
-template class LBMFixedFirstOrderBCTempl<9>;
-template class LBMFixedFirstOrderBCTempl<19>;
-template class LBMFixedFirstOrderBCTempl<27>;

@@ -221,7 +221,7 @@
   [Boundary]
     ##### for fluid
     [inlet]
-      type = LBMFixedFirstOrderBC19Q
+      type = LBMFixedFirstOrderBC
       buffer = f
       f = f
       value = u0
@@ -269,7 +269,7 @@
 
     ##### for temperature
     [t_inlet]
-      type = LBMFixedZerothOrderBC19Q
+      type = LBMFixedZerothOrderBC
       buffer = g
       f = g
       value = T_C

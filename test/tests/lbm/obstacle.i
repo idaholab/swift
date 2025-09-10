@@ -125,7 +125,7 @@
       boundary = wall
     []
     [left]
-      type = LBMFixedFirstOrderBC9Q
+      type = LBMFixedFirstOrderBC
       buffer=f
       f=f
       value='Ux'
