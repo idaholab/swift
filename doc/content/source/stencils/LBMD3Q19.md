@@ -6,11 +6,12 @@ LBMD3Q19 objects creatres D3Q19 stencil. This object holds tensors for direction
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMD3Q19 object.
+Constructs a 3\-D, 19\-velocity LBM stencil (D3Q19) and exposes its discrete velocities, weights,
+and indexing used by streaming and boundary conditions.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMD3Q19 object.
+!listing test/tests/lbm/neumann_box.i block=Stencil/d3q19
 
 !syntax parameters /Stencil/LBMD3Q19
 

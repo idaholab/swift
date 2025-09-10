@@ -12,7 +12,7 @@ where $\mathbf{k}$ is the k-vector. This is the Fourier transform of the Laplaci
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ReciprocalLaplacianFactor object.
+!listing benchmarks/01_spinodal_decomposition/1a.i block=TensorComputes/Initialize/kappabarbar
 
 !syntax parameters /TensorComputes/Solve/ReciprocalLaplacianFactor
 

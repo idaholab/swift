@@ -1,14 +1,15 @@
 # ComputeGroup
 
-This operator combines multiple specified operators as one execution unit and applies dependency resolution
-for the grouped operators. Compute groups may be nested.
+!syntax description /TensorComputes/Solve/ComputeGroup
 
-Inputs of a compute group are all required inputs of the contained operators that are not provided as outputs by any contained operator. Conversely outputs of the compute group are all outputs of the contained operators that are not
-consumed as inputs by any contained operator.
+Combines multiple compute operators into one execution unit and applies dependency resolution among
+them. Compute groups may be nested. Inputs of a group are all inputs of the members that are not
+produced by any member; outputs are all members' outputs not consumed by any member. Provide the
+members with [!param](/TensorComputes/Solve/ComputeGroup/computes).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ComputeGroup object.
+!listing test/tests/tensor_compute/group.i block=TensorComputes/Solve/group
 
 !syntax parameters /TensorComputes/Solve/ComputeGroup
 

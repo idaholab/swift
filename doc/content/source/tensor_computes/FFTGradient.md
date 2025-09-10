@@ -8,7 +8,23 @@ and inbetween a multiplication with the $\vec k$ vector and the imaginary unit $
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the FFTGradient object.
+!listing
+[TensorComputes]
+  [Solve]
+    [to_k]
+      type = ForwardFFT
+      buffer = cbar
+      input = c
+    []
+    [dc_dx]
+      type = FFTGradient
+      buffer = dc_dx
+      input = c
+      axis = 0                    # 0:x, 1:y, 2:z
+    []
+  []
+[]
+!listing-end
 
 !syntax parameters /TensorComputes/Solve/FFTGradient
 

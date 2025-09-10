@@ -8,15 +8,19 @@
 
 #pragma once
 
-#ifdef NEML2_ENABLED
-
 #include "TensorOperator.h"
+
+#ifdef NEML2_ENABLED
 #include "neml2/tensors/Vec.h"
+using GradientTensorType = neml2::Vec;
+#else
+using GradientTensorType = torch::Tensor;
+#endif
 
 /**
  * Gradient of a tensor field
  */
-class GradientTensor : public TensorOperator<neml2::Vec>
+class GradientTensor : public TensorOperator<GradientTensorType>
 {
 public:
   static InputParameters validParams();
@@ -31,5 +35,3 @@ protected:
 
   const torch::Tensor _zero;
 };
-
-#endif

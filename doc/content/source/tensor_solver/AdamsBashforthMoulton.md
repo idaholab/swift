@@ -1,23 +1,20 @@
-# SemiImplicitSolver
+# AdamsBashforthMoulton
 
-!alert construction title=Undocumented Class
-The SemiImplicitSolver has not been documented. The content listed below should be used as a starting point for
-documenting the class, which includes the typical automatic documentation associated with a
-MooseObject; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
+!syntax description /TensorSolver/AdamsBashforthMoulton
 
-!syntax description /TensorSolver/SemiImplicitSolver
-
-## Overview
-
-!! Replace these lines with information regarding the SemiImplicitSolver object.
+Semi\-implicit time integrator using Adams\-Bashforth prediction and Adams\-Moulton correction. The
+predictor and corrector orders, as well as the number of corrector iterations, are configurable via
+[!param](/TensorSolver/AdamsBashforthMoulton/predictor_order),
+[!param](/TensorSolver/AdamsBashforthMoulton/corrector_order), and
+[!param](/TensorSolver/AdamsBashforthMoulton/corrector_steps). Subcycling is controlled by
+[!param](/TensorSolver/AdamsBashforthMoulton/substeps).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the SemiImplicitSolver object.
+!listing test/tests/tensor_compute/group.i block=TensorSolver
 
-!syntax parameters /TensorSolver/SemiImplicitSolver
+!syntax parameters /TensorSolver/AdamsBashforthMoulton
 
-!syntax inputs /TensorSolver/SemiImplicitSolver
+!syntax inputs /TensorSolver/AdamsBashforthMoulton
 
-!syntax children /TensorSolver/SemiImplicitSolver
+!syntax children /TensorSolver/AdamsBashforthMoulton

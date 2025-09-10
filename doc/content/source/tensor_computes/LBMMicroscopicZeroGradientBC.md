@@ -6,11 +6,13 @@ This object implements zero flux Neumann BC on LBM distribution functions.
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMMicroscopicZeroGradientBC object.
+Imposes zero normal gradient on the microscopic distributions at selected domain faces. Choose
+faces via [!param](/TensorComputes/Solve/LBMMicroscopicZeroGradientBC/boundary) and provide the
+target distribution via [!param](/TensorComputes/Solve/LBMMicroscopicZeroGradientBC/buffer).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMMicroscopicZeroGradientBC object.
+!listing test/tests/lbm/obstacle.i block=TensorComputes/Boundary/right
 
 !syntax parameters /TensorComputes/Solve/LBMMicroscopicZeroGradientBC
 

@@ -12,11 +12,14 @@ the cell edge nodes are periodically replicated, resulting in `(N[0]+1) * (N[1]+
 
 ## Overview
 
-!! Replace these lines with information regarding the XDMFTensorOutput object.
+Writes one or more buffers selected by
+[!param](/TensorOutputs/XDMFTensorOutput/buffer) to an XDMF/HDF5 pair suitable for Paraview or
+Visit. Enable HDF5 with [!param](/TensorOutputs/XDMFTensorOutput/enable_hdf5) and select cell or
+node data with [!param](/TensorOutputs/XDMFTensorOutput/output_mode).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the XDMFTensorOutput object.
+!listing test/tests/lbm/neumann_box.i block=TensorOutputs/xdmf2
 
 !syntax parameters /TensorOutputs/XDMFTensorOutput
 

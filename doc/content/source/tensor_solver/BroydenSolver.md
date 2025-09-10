@@ -10,11 +10,12 @@ documentation clear for users.
 
 ## Overview
 
-!! Replace these lines with information regarding the BroydenSolver object.
+Quasi\-Newton nonlinear solver that updates an approximate Jacobian using Broyden's method to
+accelerate fixed\-point iterations on the nonlinear reciprocal term.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the BroydenSolver object.
+!listing benchmarks/02_oswald_ripening/2a_broyden.i block=TensorSolver
 
 !syntax parameters /TensorSolver/BroydenSolver
 

@@ -8,11 +8,14 @@ and invetwee a multiplication with $-k^2$.
 
 ## Overview
 
-!! Replace these lines with information regarding the FFTGradientSquare object.
+Computes `|\nabla u|^2` using spectral derivatives: forward FFT, multiply by wave vectors, and
+sum component squares. Provide the source field via
+[!param](/TensorComputes/Solve/FFTGradientSquare/input) and the destination via
+[!param](/TensorComputes/Solve/FFTGradientSquare/buffer).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the FFTGradientSquare object.
+!listing test/tests/gradient/gradient_square.i block=TensorComputes/Initialize/grad_sq
 
 !syntax parameters /TensorComputes/Solve/FFTGradientSquare
 

@@ -6,11 +6,14 @@ Fills the buffer with given constant value.
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMConstantTensor object.
+Writes a constant scalar or vector into the target buffer each time it runs. Use
+[!param](/TensorComputes/Solve/LBMConstantTensor/buffer) to select the destination and
+[!param](/TensorComputes/Solve/LBMConstantTensor/constants) to provide one or more values
+matching the buffer type and stencil dimension.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMConstantTensor object.
+!listing test/tests/lbm/channel2D.i block=TensorComputes/Initialize/initial_velocity
 
 !syntax parameters /TensorComputes/Solve/LBMConstantTensor
 

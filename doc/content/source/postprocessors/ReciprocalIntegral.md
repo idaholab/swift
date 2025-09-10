@@ -2,12 +2,13 @@
 
 !syntax description /Postprocessors/ReciprocalIntegral
 
-This postprocesso should act on a reciprocal space tensor and will extract the magnitude of the zero k vector, the constant zero frequency contribution.
-The result should be identical to an [integral](TensorIntegralPostprocessor.md) of the real space representatiopn of the tensor.
+This postprocessor acts on a reciprocal\-space tensor and extracts the magnitude of the zero wave
+vector (constant contribution). The result matches the
+[TensorIntegralPostprocessor](TensorIntegralPostprocessor.md) applied to the corresponding real\-space field.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ReciprocalIntegral object.
+!listing test/tests/postprocessors/postprocessors.i block=Postprocessors/int_c_bar
 
 !syntax parameters /Postprocessors/ReciprocalIntegral
 

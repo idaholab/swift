@@ -14,11 +14,14 @@ Using the [Domain action](/DomainAction.md) such a mesh can be set up automatica
 
 ## Overview
 
-!! Replace these lines with information regarding the ProjectTensorAux object.
+Projects a tensor buffer to a mesh variable by sampling the buffer at cell centroids (elemental
+variables) or at nodal locations shifted by half a grid spacing with periodic wrap (nodal
+variables). Select the source tensor via [!param](/AuxKernels/ProjectTensorAux/buffer) and the
+target with [!param](/AuxKernels/ProjectTensorAux/variable).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the ProjectTensorAux object.
+!listing test/tests/cahnhilliard/cahnhilliard.i block=AuxKernels/c
 
 !syntax parameters /AuxKernels/ProjectTensorAux
 

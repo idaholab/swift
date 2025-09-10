@@ -6,11 +6,16 @@ This object computes equilibrium distribution for phase-field LBM.
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMPhaseEquilibrium object.
+Builds equilibrium distributions for a phase field according to the chosen stencil and supplied
+macroscopic fields. Provide the scalar phase field via
+[!param](/TensorComputes/Solve/LBMPhaseEquilibrium/phi) and its gradient via
+[!param](/TensorComputes/Solve/LBMPhaseEquilibrium/grad_phi). Relaxation time is set by
+[!param](/TensorComputes/Solve/LBMPhaseEquilibrium/tau_phi) and interface thickness by
+[!param](/TensorComputes/Solve/LBMPhaseEquilibrium/thickness).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMPhaseEquilibrium object.
+!listing test/tests/lbm/phase.i block=TensorComputes/Initialize/h_init
 
 !syntax parameters /TensorComputes/Solve/LBMPhaseEquilibrium
 

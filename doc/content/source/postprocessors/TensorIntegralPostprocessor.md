@@ -6,11 +6,13 @@ Takes the sum over all grid values multiplied by the grid cell volume.
 
 ## Overview
 
-!! Replace these lines with information regarding the TensorIntegralPostprocessor object.
+Integrates the values in a scalar buffer over the domain by summing all entries and multiplying by
+the cell volume. Select the input with
+[!param](/Postprocessors/TensorIntegralPostprocessor/buffer).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the TensorIntegralPostprocessor object.
+!listing test/tests/postprocessors/postprocessors.i block=Postprocessors/int_c
 
 !syntax parameters /Postprocessors/TensorIntegralPostprocessor
 

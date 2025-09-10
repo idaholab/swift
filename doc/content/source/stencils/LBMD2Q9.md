@@ -6,11 +6,12 @@ LBMD2Q9 objects creatres D2Q9 stencil. This object holds tensors for directions 
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMD2Q9 object.
+Constructs a 2\-D, 9\-velocity LBM stencil (D2Q9) and exposes its discrete velocities, weights,
+and indexing used by streaming and boundary conditions.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMD2Q9 object.
+!listing test/tests/lbm/channel2D.i block=Stencil/d2q9
 
 !syntax parameters /Stencil/LBMD2Q9
 

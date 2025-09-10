@@ -8,7 +8,7 @@ number of cells with a value that falls into the histogram bin.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the TensorHistogram object.
+!listing test/tests/histogram/test.i block=VectorPostprocessors/hist
 
 !syntax parameters /VectorPostprocessors/TensorHistogram
 

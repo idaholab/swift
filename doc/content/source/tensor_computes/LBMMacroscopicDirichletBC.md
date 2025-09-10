@@ -2,15 +2,29 @@
 
 !syntax description /TensorComputes/Solve/LBMMacroscopicDirichletBC
 
-This object applies Dirichelt boundary condition on macroscopic tensor buffers at the boundaries left, right, top, bottom, front and back. For solid boundaries LBMDirichletWallBC (/LBMDirichletWallBC.md) must be used.
+This object applies Dirichlet boundary conditions on macroscopic buffers at the domain faces
+(`left`, `right`, `top`, `bottom`, `front`, `back`). For solid boundaries spanning interior cells,
+use [LBMDirichletWallBC](LBMDirichletWallBC.md).
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMMacroscopicDirichletBC object.
+Sets the target buffer to the constant value `value` on the selected faces. The `wall` boundary is
+not supported here; see `LBMDirichletWallBC` for that use case.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMMacroscopicDirichletBC object.
+!listing
+[TensorComputes]
+  [Solve]
+    [inlet_outlet]
+      type = LBMMacroscopicDirichletBC
+      buffer = rho
+      boundary = 'left right'
+      value = '1.0'
+    []
+  []
+[]
+!listing-end
 
 !syntax parameters /TensorComputes/Solve/LBMMacroscopicDirichletBC
 

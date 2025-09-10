@@ -6,11 +6,13 @@ A `PlainTensorBuffer` holds a plain vanilla `torch::Tensor` and is interpreted a
 
 ## Overview
 
-!! Replace these lines with information regarding the PlainTensorBuffer object.
+Generic N\-dimensional tensor buffer for scalar, vector, or user\-defined data not tied to an LBM
+stencil. Optional [!param](/TensorBuffers/PlainTensorBuffer/map_to_aux_variable) enables fast projection onto a
+matching mesh variable.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the PlainTensorBuffer object.
+!listing test/tests/gradient/gradient_square.i block=TensorBuffers/grad_sq
 
 !syntax parameters /TensorBuffers/PlainTensorBuffer
 

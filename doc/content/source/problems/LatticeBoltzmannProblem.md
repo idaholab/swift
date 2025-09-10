@@ -6,11 +6,13 @@ The problem object derived from TensorProblem (/TensorProblem.md) is used to sol
 
 ## Overview
 
-!! Replace these lines with information regarding the LatticeBoltzmannProblem object.
+Problem driver specialized for Lattice Boltzmann simulations: manages stencils, distribution buffers,
+macroscopic fields, and substepping between collision and streaming. Provides access to LBM
+constants like `c_s` and time step for objects that require them.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LatticeBoltzmannProblem object.
+!listing test/tests/lbm/channel2D.i block=Problem
 
 !syntax parameters /Problem/LatticeBoltzmannProblem
 

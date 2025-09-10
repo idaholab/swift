@@ -6,11 +6,14 @@ This object implements Neumann BC on macroscopic tensor buffers on left, right, 
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMMacroscopicNeumannBC object.
+Applies a Neumann\-type flux on a macroscopic scalar by adjusting distributions on selected faces.
+Provide the target with [!param](/TensorComputes/Solve/LBMMacroscopicNeumannBC/buffer) and the flux
+value via [!param](/TensorComputes/Solve/LBMMacroscopicNeumannBC/value). Choose faces with
+[!param](/TensorComputes/Solve/LBMMacroscopicNeumannBC/boundary).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMMacroscopicNeumannBC object.
+!listing test/tests/lbm/neumann_box.i block=TensorComputes/Boundary/left
 
 !syntax parameters /TensorComputes/Solve/LBMMacroscopicNeumannBC
 

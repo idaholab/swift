@@ -1,20 +1,36 @@
 # FFTQuasistaticElasticity
 
-!alert construction title=Undocumented Class
-The FFTQuasistaticElasticity has not been documented. The content listed below should be used as a starting point for
-documenting the class, which includes the typical automatic documentation associated with a
-MooseObject; however, what is contained is ultimately determined by what is necessary to make the
-documentation clear for users.
-
 !syntax description /TensorComputes/Solve/FFTQuasistaticElasticity
 
 ## Overview
 
-!! Replace these lines with information regarding the FFTQuasistaticElasticity object.
+Solves a homogeneous, linear, quasi-static elasticity system in Fourier space using Lam\'e
+parameters `mu` and `lambda` and an eigenstrain amplitude `e0` driven by a scalar field `cbar`
+provided in reciprocal space. The object solves for displacements `u = (u_x, u_y, u_z)` and writes
+them to the output buffers listed in `displacements` (one per dimension), by assembling and solving
+the spectral linear system `A(\vec k) \hat u = b(\vec k)` and then inverse transforming.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the FFTQuasistaticElasticity object.
+!listing
+[TensorComputes]
+  [Solve]
+    [u_quasi]
+      type = FFTQuasistaticElasticity
+      # outputs: one buffer per dimension
+      displacements = 'ux uy uz'
+      # inputs
+      cbar = cbar
+      mu = 1.0
+      lambda = 2.0
+      e0 = 1e-3
+    []
+  []
+[]
+!listing-end
+
+See also: [ForwardFFT](PerformFFT.md), [InverseFFT](PerformFFT.md),
+[FFTElasticChemicalPotential](FFTElasticChemicalPotential.md).
 
 !syntax parameters /TensorComputes/Solve/FFTQuasistaticElasticity
 

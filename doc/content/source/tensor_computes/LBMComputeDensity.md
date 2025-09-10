@@ -6,11 +6,22 @@ This compute object sums LBM distribution functions along the last dimension to 
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMComputeDensity object.
+Given a distribution tensor `f(x,y,z, q)`, computes the macroscopic scalar quantity
+`rho(x,y,z) = sum_q f`. Values on solid cells are set to zero using the lattice mask.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMComputeDensity object.
+!listing
+[TensorComputes]
+  [Solve]
+    [rho]
+      type = LBMComputeDensity
+      buffer = rho
+      f = f
+    []
+  []
+[]
+!listing-end
 
 !syntax parameters /TensorComputes/Solve/LBMComputeDensity
 

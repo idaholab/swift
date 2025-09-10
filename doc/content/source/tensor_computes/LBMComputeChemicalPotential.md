@@ -6,11 +6,16 @@ This compute object computes chemical potential from parabiolic free energy equt
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMComputeChemicalPotential object.
+Evaluates the Cahn\-Hilliard chemical potential for a phase field $\phi$ using a double\-well
+potential and interfacial energy term. Provide the scalar field via
+[!param](/TensorComputes/Solve/LBMComputeChemicalPotential/phi) and its Laplacian via
+[!param](/TensorComputes/Solve/LBMComputeChemicalPotential/laplacian_phi). Control the interface
+thickness with [!param](/TensorComputes/Solve/LBMComputeChemicalPotential/thickness) and the
+surface tension with [!param](/TensorComputes/Solve/LBMComputeChemicalPotential/sigma).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMComputeChemicalPotential object.
+!listing test/tests/lbm/phase.i block=TensorComputes/Solve/potential
 
 !syntax parameters /TensorComputes/Solve/LBMComputeChemicalPotential
 

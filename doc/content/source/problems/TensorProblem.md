@@ -10,11 +10,13 @@ fast mapping for tensor buffers onto conforming meshes using the [!param](/Tenso
 
 ## Overview
 
-!! Replace these lines with information regarding the TensorProblem object.
+Coordinator for Swift tensor simulations: owns the Domain, schedules `TensorComputes`, and manages
+`TensorOutputs`. Supports fast projection of buffers to mesh variables via
+[!param](/TensorBuffers/PlainTensorBuffer/map_to_aux_variable).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the TensorProblem object.
+!listing test/tests/gradient/gradient_square.i block=Problem
 
 !syntax parameters /Problem/TensorProblem
 

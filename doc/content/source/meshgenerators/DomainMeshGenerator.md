@@ -6,7 +6,7 @@ This object should not be used directly, but instead be added through the [Domai
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the DomainMeshGenerator object.
+!listing test/tests/lbm/channel2D.i block=Domain
 
 !syntax parameters /Mesh/DomainMeshGenerator
 

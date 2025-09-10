@@ -14,7 +14,7 @@
 #include "libmesh/mesh_tools.h"
 #include "libmesh/elem.h"
 
-registerMooseObject("MooseApp", DomainPartitioner);
+registerMooseObject("SwiftApp", DomainPartitioner);
 
 #include <memory>
 

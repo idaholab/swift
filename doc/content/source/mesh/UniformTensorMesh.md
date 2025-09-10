@@ -7,7 +7,7 @@ This object is deprecated in favor of the [Domain action](/DomainAction.md).
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the UniformTensorMesh object.
+!listing test/tests/lbm/channel2D.i block=Domain
 
 !syntax parameters /Mesh/UniformTensorMesh
 

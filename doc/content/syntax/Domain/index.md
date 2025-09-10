@@ -5,7 +5,7 @@ documented under the [DomainAction](DomainAction.md) docs.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the Domain system.
+!listing test/tests/lbm/channel2D.i block=Domain
 
 !syntax list /Domain objects=True actions=False subsystems=False
 
