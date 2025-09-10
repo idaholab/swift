@@ -24,8 +24,7 @@ LBMFixedZerothOrderBC::validParams()
   return params;
 }
 
-LBMFixedZerothOrderBC::LBMFixedZerothOrderBC(
-    const InputParameters & parameters)
+LBMFixedZerothOrderBC::LBMFixedZerothOrderBC(const InputParameters & parameters)
   : LBMBoundaryCondition(parameters),
     _f(getInputBufferByName(getParam<TensorInputBufferName>("f"))),
     _grid_size(_lb_problem.getGridSize()),
@@ -39,7 +38,8 @@ LBMFixedZerothOrderBC::frontBoundary()
   if (_domain.getDim() == 2)
     mooseError("There is no front boundary in 2 dimensions.");
   else
-    mooseError("Front boundary is not implemented, but it can be replaced by any other boundary by rotating the domain.");
+    mooseError("Front boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
 void
@@ -48,7 +48,8 @@ LBMFixedZerothOrderBC::backBoundary()
   if (_domain.getDim() == 2)
     mooseError("There is no back boundary in 2 dimensions.");
   else
-    mooseError("Back boundary is not implemented, but it can be replaced by any other boundary by rotating the domain.");
+    mooseError("Back boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
 void
@@ -86,9 +87,9 @@ LBMFixedZerothOrderBC::leftBoundary()
     leftBoundaryD2Q9();
   else
   {
-     torch::Tensor velocity =
+    torch::Tensor velocity =
         1.0 - (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-              2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1)) /
+               2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1)) /
                   _value;
 
     _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
@@ -102,9 +103,8 @@ LBMFixedZerothOrderBC::leftBoundary()
                     _f.index({0, Slice(), Slice(), _stencil._right[i]}) +
                         2.0 * _stencil._weights[_stencil._left[i]] / _lb_problem._cs2 * _value *
                             velocity);
-    }    
+    }
   }
-
 }
 
 void
@@ -145,11 +145,11 @@ LBMFixedZerothOrderBC::rightBoundary()
     rightBoundaryD2Q9();
   else
   {
-     torch::Tensor velocity =
-      (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-       2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1)) /
-          _value -
-      1.0;
+    torch::Tensor velocity =
+        (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
+         2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1)) /
+            _value -
+        1.0;
 
     _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
                   _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
@@ -201,7 +201,8 @@ LBMFixedZerothOrderBC::bottomBoundary()
   if (_stencil._q == 9)
     bottomBoundaryD2Q9();
   else
-    mooseError("Bottom boundary is not implemented, but it can be replaced by any other boundary by rotating the domain");
+    mooseError("Bottom boundary is not implemented, but it can be replaced by any other boundary "
+               "by rotating the domain");
 }
 
 void
@@ -242,7 +243,8 @@ LBMFixedZerothOrderBC::topBoundary()
   if (_stencil._q == 9)
     topBoundaryD2Q9();
   else
-    mooseError("Top boundary is not implemented, but it can be replaced by any other boundary by rotating the domain");
+    mooseError("Top boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain");
 }
 
 void
