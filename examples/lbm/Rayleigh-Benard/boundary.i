@@ -17,7 +17,7 @@
 
   ##### for temperature
   [temperature_g_top]
-    type = LBMFixedZerothOrderBC9Q
+    type = LBMFixedZerothOrderBC
     buffer = g
     f = g
     value = T_C
@@ -25,7 +25,7 @@
   []
 
   [temperature_g_bottom]
-    type = LBMFixedZerothOrderBC9Q
+    type = LBMFixedZerothOrderBC
     buffer = g
     f = g
     value = T_H

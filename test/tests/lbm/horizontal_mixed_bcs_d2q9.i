@@ -66,14 +66,14 @@
   []
   [Boundary]
     [left]
-      type = LBMFixedZerothOrderBC9Q
+      type = LBMFixedZerothOrderBC
       buffer = f
       f = f
       value = 1.1
       boundary = left
     []
     [right]
-      type = LBMFixedFirstOrderBC9Q
+      type = LBMFixedFirstOrderBC
       buffer = f
       f = f
       value = 0.0001
