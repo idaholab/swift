@@ -13,20 +13,23 @@
 /**
  * LBMFixedFirstOrderBC object
  */
-template <int dimension>
-class LBMFixedFirstOrderBCTempl : public LBMBoundaryCondition
+class LBMFixedFirstOrderBC : public LBMBoundaryCondition
 {
 public:
   static InputParameters validParams();
 
-  LBMFixedFirstOrderBCTempl(const InputParameters & parameters);
+  LBMFixedFirstOrderBC(const InputParameters & parameters);
 
   void init() override {};
 
   void topBoundary() override;
+  void topBoundaryD2Q9();
   void bottomBoundary() override;
+  void bottomBoundaryD2Q9();
   void leftBoundary() override;
+  void leftBoundaryD2Q9();
   void rightBoundary() override;
+  void rightBoundaryD2Q9();
   void frontBoundary() override;
   void backBoundary() override;
   void computeBuffer() override;
@@ -37,7 +40,3 @@ protected:
   const Real & _value;
   const bool _perturb;
 };
-
-typedef LBMFixedFirstOrderBCTempl<9> LBMFixedFirstOrderBC9Q;
-typedef LBMFixedFirstOrderBCTempl<19> LBMFixedFirstOrderBC19Q;
-typedef LBMFixedFirstOrderBCTempl<27> LBMFixedFirstOrderBC27Q;
