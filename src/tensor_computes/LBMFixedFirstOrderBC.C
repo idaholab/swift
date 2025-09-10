@@ -42,7 +42,8 @@ LBMFixedFirstOrderBC::frontBoundary()
   if (_domain.getDim() == 2)
     mooseError("There is no front boundary in 2 dimensions.");
   else
-    mooseError("Front boundary is not implemented, but it can be replaced by any other boundary by rotating the domain.");
+    mooseError("Front boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
 void
@@ -51,7 +52,8 @@ LBMFixedFirstOrderBC::backBoundary()
   if (_domain.getDim() == 2)
     mooseError("There is no back boundary in 2 dimensions.");
   else
-    mooseError("Back boundary is not implemented, but it can be replaced by any other boundary by rotating the domain.");
+    mooseError("Back boundary is not implemented, but it can be replaced by any other boundary by "
+               "rotating the domain.");
 }
 
 void
@@ -106,7 +108,7 @@ LBMFixedFirstOrderBC::leftBoundary()
   {
     torch::Tensor density = 1.0 / (1.0 - _value) *
                             (torch::sum(_f.index({0, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-                            2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1));
+                             2 * torch::sum(_f.index({0, Slice(), Slice(), _stencil._right}), -1));
 
     _u.index_put_({0, Slice(), Slice(), _stencil._left[0]},
                   _f.index({0, Slice(), Slice(), _stencil._right[0]}) +
@@ -128,9 +130,9 @@ LBMFixedFirstOrderBC::rightBoundaryD2Q9()
 {
   torch::Tensor density = 1.0 / (1.0 + _value) *
                           (_f.index({_grid_size[0] - 1, Slice(), Slice(), 0}) +
-                          _f.index({_grid_size[0] - 1, Slice(), Slice(), 2}) +
-                          _f.index({_grid_size[0] - 1, Slice(), Slice(), 4}) +
-                          2 * (_f.index({_grid_size[0] - 1, Slice(), Slice(), 1}) +
+                           _f.index({_grid_size[0] - 1, Slice(), Slice(), 2}) +
+                           _f.index({_grid_size[0] - 1, Slice(), Slice(), 4}) +
+                           2 * (_f.index({_grid_size[0] - 1, Slice(), Slice(), 1}) +
                                 _f.index({_grid_size[0] - 1, Slice(), Slice(), 5}) +
                                 _f.index({_grid_size[0] - 1, Slice(), Slice(), 8})));
 
@@ -148,7 +150,7 @@ LBMFixedFirstOrderBC::rightBoundaryD2Q9()
                   _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[i]}) +
                       0.5 * _stencil._ey[opposite_dir] *
                           (_f.index({_grid_size[0] - 1, Slice(), Slice(), 4}) -
-                          _f.index({_grid_size[0] - 1, Slice(), Slice(), 2})) -
+                           _f.index({_grid_size[0] - 1, Slice(), Slice(), 2})) -
                       1.0 / 6.0 * density * _value);
   }
 }
@@ -163,7 +165,7 @@ LBMFixedFirstOrderBC::rightBoundary()
     torch::Tensor density =
         1.0 / (1.0 + _value) *
         (torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), -_stencil._neutral_x}), -1) +
-        2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1));
+         2 * torch::sum(_f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left}), -1));
 
     _u.index_put_({_grid_size[0] - 1, Slice(), Slice(), _stencil._right[0]},
                   _f.index({_grid_size[0] - 1, Slice(), Slice(), _stencil._left[0]}) -
@@ -214,7 +216,8 @@ LBMFixedFirstOrderBC::bottomBoundary()
   if (_stencil._q == 9)
     bottomBoundaryD2Q9();
   else
-    mooseError("Bottom boundary is not implemented, but it can be replaced by another boundary by rotating the domain.");
+    mooseError("Bottom boundary is not implemented, but it can be replaced by another boundary by "
+               "rotating the domain.");
 }
 
 void
@@ -253,7 +256,8 @@ LBMFixedFirstOrderBC::topBoundary()
   if (_stencil._q == 9)
     topBoundaryD2Q9();
   else
-    mooseError("Top boundary is not implemented, but it can be replaced by another boundary by rotating the domain.");
+    mooseError("Top boundary is not implemented, but it can be replaced by another boundary by "
+               "rotating the domain.");
 }
 
 void
