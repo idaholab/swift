@@ -64,6 +64,20 @@ protected:
   /// applied macroscopic (affine) strain
   const torch::Tensor * const _applied_macroscopic_strain;
 
+  /// steps for diagonal estimation
+  const unsigned int _hutchinson_steps;
+
+  /// use block-Jacobi (local compliance) preconditioner
+  const bool _block_jacobi;
+  /// relative damping for block-Jacobi inversion
+  const Real _block_jacobi_damp;
+
+  /// minimum relative floor for Jacobi diagonal (relative to median)
+  const Real _jacobi_min_rel;
+  /// cap on inverse diagonal scaling (0 disables)
+  const Real _jacobi_inv_cap;
+
+  /// add diagnostic output for iterations
   const bool _verbose;
 
   using TensorOperatorBase::_dim;

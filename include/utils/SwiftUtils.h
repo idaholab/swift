@@ -52,75 +52,29 @@ torch::Tensor dot24(const torch::Tensor & A2, const torch::Tensor & B4);
 torch::Tensor dot42(const torch::Tensor & A4, const torch::Tensor & B2);
 torch::Tensor dyad22(const torch::Tensor & A2, const torch::Tensor & B2);
 
-template <typename T1, typename T2>
+// Invert local 4th-order blocks (...., i, j, k, l) -> (...., i, j, k, l)
+// Treats each grid point's (i,j)-(k,l) matrix as a (d*d x d*d) block and inverts it in batch.
+// Returns a tensor with the same shape as the input, containing per-point block inverses.
+torch::Tensor invertLocalBlocks(const torch::Tensor & K4);
+
+// Damped inversion of local 4th-order blocks with optional pinv fallback.
+// damp_rel scales an identity added to each (d*d x d*d) block by damp_rel * mean(|diag|).
+// If inversion fails, falls back to pseudo-inverse.
+torch::Tensor invertLocalBlocksDamped(const torch::Tensor & K4, double damp_rel = 1e-8);
+
+torch::Tensor
+estimateJacobiPreconditioner(const std::function<torch::Tensor(const torch::Tensor &)> & A,
+                             const torch::Tensor & template_vec,
+                             int num_samples = 6);
+
 std::tuple<torch::Tensor, unsigned int, double>
-conjugateGradientSolve(T1 A, torch::Tensor b, torch::Tensor x0, double tol, int64_t maxiter, T2 M)
-{
-  // initialize solution guess
-  torch::Tensor x = x0.defined() ? x0.clone() : torch::zeros_like(b);
 
-  // norm of b (for relative tolerance)
-  const double b_norm = torch::norm(b).cpu().template item<double>();
-  if (b_norm == 0.0)
-    // solution is zero if b is zero
-    return {x, 0u, 0.0};
-
-  // default max iterations
-  if (!maxiter)
-    maxiter = b.numel();
-
-  // initial residual
-  torch::Tensor r = b - A(x);
-
-  // Apply preconditioner (or identity)
-  torch::Tensor z = M(r); // z = M^{-1} r
-
-  // initial search direction p
-  torch::Tensor p = z.clone();
-
-  // dot product (r, z)
-  double rz_old = torch::sum(r * z).cpu().template item<double>();
-
-  // CG iteration
-  double res_norm;
-  for (const auto k : libMesh::make_range(maxiter))
-  {
-    // compute matrix-vector product
-    const auto Ap = A(p);
-
-    // step size alpha
-    double alpha = rz_old / torch::sum(p * Ap).cpu().template item<double>();
-
-    // update solution
-    x = x + alpha * p;
-
-    // update residual
-    r = r - alpha * Ap;
-    res_norm = torch::norm(r).cpu().template item<double>(); // ||r||
-
-    // std::cout << res_norm << '\n';
-
-    // Converged to desired tolerance
-    if (res_norm <= tol * b_norm)
-      return {x, k + 1, res_norm};
-
-    // apply preconditioner to new residual
-    z = M(r);
-    const auto rz_new = torch::sum(r * z).cpu().template item<double>();
-
-    // update scalar beta
-    double beta = rz_new / rz_old;
-
-    // update search direction
-    p = z + beta * p;
-
-    // prepare for next iteration
-    rz_old = rz_new;
-  }
-
-  // Reached max iterations without full convergence
-  return {x, maxiter, res_norm};
-}
+conjugateGradientSolve(const std::function<torch::Tensor(const torch::Tensor &)> & A,
+                       torch::Tensor b,
+                       torch::Tensor x0,
+                       double tol,
+                       int64_t maxiter,
+                       const std::function<torch::Tensor(const torch::Tensor &)> & M);
 
 template <typename T>
 std::tuple<torch::Tensor, unsigned int, double>

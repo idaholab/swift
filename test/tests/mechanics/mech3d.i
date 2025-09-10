@@ -34,7 +34,7 @@
       constant_expressions = '0.5 5'
     []
     [Finit]
-      type = RankTwoIdentity
+      type = RankTwoDiagonalTensor
       buffer = F
     []
   []
