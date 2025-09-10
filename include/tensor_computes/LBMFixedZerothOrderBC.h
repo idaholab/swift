@@ -13,18 +13,21 @@
 /**
  * LBMFixedZerothOrderBC object
  */
-template <int dimension>
-class LBMFixedZerothOrderBCTempl : public LBMBoundaryCondition
+class LBMFixedZerothOrderBC : public LBMBoundaryCondition
 {
 public:
   static InputParameters validParams();
 
-  LBMFixedZerothOrderBCTempl(const InputParameters & parameters);
+  LBMFixedZerothOrderBC(const InputParameters & parameters);
 
   void topBoundary() override;
+  void topBoundaryD2Q9();
   void bottomBoundary() override;
+  void bottomBoundaryD2Q9();
   void leftBoundary() override;
+  void leftBoundaryD2Q9();
   void rightBoundary() override;
+  void rightBoundaryD2Q9();
   void frontBoundary() override;
   void backBoundary() override;
   void computeBuffer() override;
@@ -34,7 +37,3 @@ protected:
   const std::array<int64_t, 3> _grid_size;
   const Real _value;
 };
-
-typedef LBMFixedZerothOrderBCTempl<9> LBMFixedZerothOrderBC9Q;
-typedef LBMFixedZerothOrderBCTempl<19> LBMFixedZerothOrderBC19Q;
-typedef LBMFixedZerothOrderBCTempl<27> LBMFixedZerothOrderBC27Q;

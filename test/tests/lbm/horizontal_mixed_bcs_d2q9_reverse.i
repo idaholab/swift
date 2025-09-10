@@ -66,7 +66,7 @@
   []
   [Boundary]
     [right]
-      type = LBMFixedZerothOrderBC9Q
+      type = LBMFixedZerothOrderBC
       buffer = f
       f = f
       value = 1.1
