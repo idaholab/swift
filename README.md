@@ -11,7 +11,7 @@
 
 ## Contacts
 
-The primary developer of Swift is _Daniel Schwen_. In case of questions or problems please file a GitHub issue.
+The primary developer of Swift is _Daniel Schwen_. Lattice Boltzmann implementation by _Nijat Rustamov_. In case of questions or problems please file a GitHub issue.
 
 ## Install
 
