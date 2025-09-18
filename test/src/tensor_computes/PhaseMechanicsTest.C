@@ -9,6 +9,7 @@
 #include "PhaseMechanicsTest.h"
 #include "SwiftUtils.h"
 #include "TensorProblem.h"
+#include "DomainAction.h"
 #include <ATen/ops/zeros.h>
 
 registerMooseObject("SwiftApp", PhaseMechanicsTest);

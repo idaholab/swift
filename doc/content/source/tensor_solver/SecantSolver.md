@@ -10,11 +10,12 @@ documentation clear for users.
 
 ## Overview
 
-!! Replace these lines with information regarding the SecantSolver object.
+Nonlinear solver using a secant update of the reciprocal nonlinear operator to accelerate fixed\-point
+iterations. Useful when a Jacobian is expensive or unavailable.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the SecantSolver object.
+!listing test/tests/tensor_compute/rotating_grain_secant.i block=TensorSolver
 
 !syntax parameters /TensorSolver/SecantSolver
 

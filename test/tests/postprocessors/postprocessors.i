@@ -27,7 +27,30 @@
       buffer = c_bar
       input = c
     []
+    [u]
+      type = ConstantTensor
+      buffer = u
+      real = 0
+    []
   []
+
+  [Solve]
+    [root]
+      [test]
+        type = ForwardFFT
+        buffer = u_bar
+        input = u
+      []
+    []
+  []
+[]
+
+[TensorSolver]
+  type = ForwardEulerSolver
+  time_derivative_reciprocal = c_bar
+  buffer = u
+  reciprocal_buffer = u_bar
+  substeps = 10
 []
 
 [Postprocessors]
@@ -57,6 +80,9 @@
     type = ReciprocalIntegral
     buffer = c_bar
     execute_on = 'INITIAL TIMESTEP_END'
+  []
+  [count]
+    type = ComputeGroupExecutionCount
   []
 []
 

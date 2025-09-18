@@ -26,6 +26,8 @@ public:
 
   virtual void updateDependencies() override;
 
+  std::size_t getComputeCount() const { return _compute_count; }
+
 protected:
   /// nested tensor computes
   std::vector<std::shared_ptr<TensorOperatorBase>> _computes;
@@ -36,4 +38,6 @@ protected:
   std::vector<CheckedTensorList> _checked_tensors;
 
   bool _visited;
+
+  std::size_t _compute_count;
 };

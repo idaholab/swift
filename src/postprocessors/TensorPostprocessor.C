@@ -23,14 +23,7 @@ template <class T>
 TensorPostprocessorTempl<T>::TensorPostprocessorTempl(const InputParameters & parameters)
   : T(parameters),
     DomainInterface(this),
-    _tensor_problem(
-        [this]()
-        {
-          auto tensor_problem = dynamic_cast<TensorProblem *>(&this->_fe_problem);
-          if (!tensor_problem)
-            mooseError("TensorPostprocessors require a TensorProblem.");
-          return std::ref(*tensor_problem);
-        }()),
+    _tensor_problem(TensorProblem::cast(this, this->_fe_problem)),
     _u(_tensor_problem.getBuffer(this->template getParam<TensorInputBufferName>("buffer")))
 {
 }

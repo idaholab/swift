@@ -6,11 +6,14 @@ LBMFixedZerothOrderBC implements Zou-He pressure boundary conditions at the inle
 
 ## Overview
 
-!! Replace these lines with information regarding the LBMFixedZerothOrderBC9Q object.
+LBMFixedZerothOrderBC implements Zou\-He pressure boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils. The choice of stencil should be indicated in the name of the compute object such as LBMFixedZerothOrderBC9Q for D2Q9.
+Choose faces with [!param](/TensorComputes/Solve/LBMFixedZerothOrderBC9Q/boundary) and provide macroscopic fields as
+required by the implementation.
 
 ## Example Input File Syntax
 
-!! Describe and include an example of how to use the LBMFixedZerothOrderBC9Q object.
+!listing test/tests/lbm/vertical_density_bcs.i block=TensorComputes/Boundary/top
+!listing test/tests/lbm/vertical_density_bcs.i block=TensorComputes/Boundary/bottom
 
 !syntax parameters /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
 

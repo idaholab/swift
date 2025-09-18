@@ -59,14 +59,7 @@ TensorSolveIterationAdaptiveDT::TensorSolveIterationAdaptiveDT(const InputParame
     _growth_factor(getParam<Real>("growth_factor")),
     _cutback_factor(getParam<Real>("cutback_factor")),
     _cutback_occurred(declareRestartableData<bool>("cutback_occurred", false)),
-    _tensor_problem(
-        [this]() -> const TensorProblem &
-        {
-          auto tensor_problem = dynamic_cast<TensorProblem *>(&_fe_problem);
-          if (!tensor_problem)
-            mooseError("TensorSolveIterationAdaptiveDT requires a TensorProblem.");
-          return *tensor_problem;
-        }())
+    _tensor_problem(TensorProblem::cast(this, _fe_problem))
 {
   for (const auto & name :
        getParam<std::vector<PostprocessorName>>("timestep_limiting_postprocessor"))
