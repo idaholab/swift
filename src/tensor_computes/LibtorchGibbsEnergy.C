@@ -40,6 +40,7 @@ LibtorchGibbsEnergy::LibtorchGibbsEnergy(const InputParameters & parameters)
 {
   const auto options = MooseTensor::floatTensorOptions();
   _surrogate->to(options);
+  _surrogate->to(*options.dtype());
   _surrogate->eval();
 
   auto phase_fractions = getParam<std::vector<TensorInputBufferName>>("phase_fractions");
