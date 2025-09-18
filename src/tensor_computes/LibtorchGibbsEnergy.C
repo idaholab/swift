@@ -39,8 +39,9 @@ LibtorchGibbsEnergy::LibtorchGibbsEnergy(const InputParameters & parameters)
     _surrogate(std::make_unique<torch::jit::script::Module>(torch::jit::load(_file_path.path)))
 {
   const auto options = MooseTensor::floatTensorOptions();
-  _surrogate->to(options.device());
+  _surrogate->to(options);
   _surrogate->to(*options.dtype());
+  _surrogate->eval();
 
   auto phase_fractions = getParam<std::vector<TensorInputBufferName>>("phase_fractions");
   auto domega_detas = getParam<std::vector<TensorOutputBufferName>>("domega_detas");
