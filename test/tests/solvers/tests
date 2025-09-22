@@ -1,6 +1,72 @@
 [Tests]
-  [adams_bashforth]
+  [adams_bashforth_diagonal]
     requirement = 'The system shall provide an Adams-Bashforth semi-implicit time integrator'
+    issues = '#32'
+    detail = 'AdamsBashforthMoulton.md'
+    [order_1]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_0_1.csv
+      cli_args = 'ss=10 cs=0 order=1'
+      requirement = 'of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_2]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_0_2.csv
+      cli_args = 'ss=10 cs=0 order=2'
+      requirement = 'of second order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_3]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_0_3.csv
+      cli_args = 'ss=10 cs=0 order=3'
+      requirement = 'of third order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_4]
+      # higher order integrators have smaller stability regions, hence the increased number of substeps
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_20_0_4.csv
+      cli_args = 'ss=20 cs=0 order=4'
+      requirement = 'of fourth order'
+      compute_devices = 'cpu cuda mps'
+    []
+  []
+  [adams_bashforth_moulton_diagonal]
+    requirement = 'The system shall provide an Adams-Bashforth-Moulton semi-implicit time integrator with an implcit corrector'
+    [corrector_steps_1_order_1]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_1_1.csv
+      cli_args = 'ss=10 cs=1 order=1'
+      requirement = 'with one corrector step of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [corrector_steps_2_order_1]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_2_1.csv
+      cli_args = 'ss=10 cs=2 order=1'
+      requirement = 'with two corrector steps of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [corrector_steps_2_order_2]
+      type = CSVDiff
+      input = diagonal.i
+      csvdiff = diagonal_10_2_2.csv
+      cli_args = 'ss=10 cs=2 order=2'
+      requirement = 'with two corrector steps of second order'
+      compute_devices = 'cpu cuda mps'
+    []
+  []
+
+  [adams_bashforth_coupled]
+    requirement = 'The system shall provide an Adams-Bashforth semi-implicit time integrator with off-diagonal linear coupling'
     issues = '#32'
     detail = 'AdamsBashforthMoulton.md'
     [order_1]
@@ -37,8 +103,8 @@
       compute_devices = 'cpu cuda mps'
     []
   []
-  [adams_bashforth_moulton]
-    requirement = 'The system shall provide an Adams-Bashforth-Moulton semi-implicit time integrator with an implcit corrector'
+  [adams_bashforth_moulton_coupled]
+    requirement = 'The system shall provide an Adams-Bashforth-Moulton semi-implicit time integrator with off-diagonal linear coupling and an implcit corrector'
     [corrector_steps_1_order_1]
       type = CSVDiff
       input = coupled.i
@@ -59,6 +125,72 @@
       type = CSVDiff
       input = coupled.i
       csvdiff = coupled_10_2_2.csv
+      cli_args = 'ss=10 cs=2 order=2'
+      requirement = 'with two corrector steps of second order'
+      compute_devices = 'cpu cuda mps'
+    []
+  []
+
+  [adams_bashforth_nl_coupled]
+    requirement = 'The system shall provide an Adams-Bashforth semi-implicit time integrator with off-diagonal non-linear coupling'
+    issues = '#32'
+    detail = 'AdamsBashforthMoulton.md'
+    [order_1]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_0_1.csv
+      cli_args = 'ss=10 cs=0 order=1'
+      requirement = 'of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_2]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_0_2.csv
+      cli_args = 'ss=10 cs=0 order=2'
+      requirement = 'of second order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_3]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_0_3.csv
+      cli_args = 'ss=10 cs=0 order=3'
+      requirement = 'of third order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [order_4]
+      # higher order integrators have smaller stability regions, hence the increased number of substeps
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_20_0_4.csv
+      cli_args = 'ss=20 cs=0 order=4'
+      requirement = 'of fourth order'
+      compute_devices = 'cpu cuda mps'
+    []
+  []
+  [adams_bashforth_moulton_nl_coupled]
+    requirement = 'The system shall provide an Adams-Bashforth-Moulton semi-implicit time integrator with off-diagonal non-linear coupling and an implcit corrector'
+    [corrector_steps_1_order_1]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_1_1.csv
+      cli_args = 'ss=10 cs=1 order=1'
+      requirement = 'with one corrector step of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [corrector_steps_2_order_1]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_2_1.csv
+      cli_args = 'ss=10 cs=2 order=1'
+      requirement = 'with two corrector steps of first order'
+      compute_devices = 'cpu cuda mps'
+    []
+    [corrector_steps_2_order_2]
+      type = CSVDiff
+      input = nl_coupled.i
+      csvdiff = nl_coupled_10_2_2.csv
       cli_args = 'ss=10 cs=2 order=2'
       requirement = 'with two corrector steps of second order'
       compute_devices = 'cpu cuda mps'

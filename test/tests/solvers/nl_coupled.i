@@ -62,18 +62,28 @@
       buffer = v_bar
       input = v
     []
+
+    [Du]
+      type = ParsedCompute
+      buffer = Du
+      expression = 'D2*v_bar'
+      inputs = 'D2 v_bar'
+    []
+    [Dv]
+      type = ParsedCompute
+      buffer = Dv
+      expression = 'D2*u_bar'
+      inputs = 'D2 u_bar'
+    []
   []
 []
 
 [TensorSolver]
-  type = AdamsBashforthMoultonCoupled
+  type = AdamsBashforthMoulton
   buffer = 'u v'
   reciprocal_buffer = 'u_bar v_bar'
   linear_reciprocal = 'D1 D1'
-  linear_offdiag_cols = '0 1'
-  linear_offdiag_rows = '1 0'
-  linear_offdiag = 'D2 D2'
-  nonlinear_reciprocal = 'zero zero'
+  nonlinear_reciprocal = 'Du Dv'
   substeps = ${ss}
   corrector_steps = ${cs}
   predictor_order = ${order}
@@ -122,6 +132,6 @@
 []
 
 [Outputs]
-  file_base = coupled_${ss}_${cs}_${order}
+  file_base = nl_coupled_${ss}_${cs}_${order}
   csv = true
 []

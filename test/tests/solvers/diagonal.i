@@ -27,27 +27,21 @@
       expand = REAL
     []
     [v]
-      type = ParsedCompute
+      type = ConstantTensor
       buffer = v
-      extra_symbols = true
-      expression = 'cos(x)*cos(y)'
-      expand = REAL
-    []
-    [zero]
-      type = ConstantReciprocalTensor
-      buffer = zero
+      real = 0
     []
 
     # precompute fixed factors for the solve
-    [D1]
+    [Du]
       type = ReciprocalLaplacianFactor
       factor = 1e-2
-      buffer = D1
+      buffer = Du
     []
-    [D2]
+    [Dv]
       type = ReciprocalLaplacianFactor
       factor = 1e-3
-      buffer = D2
+      buffer = Dv
     []
   []
 
@@ -62,18 +56,39 @@
       buffer = v_bar
       input = v
     []
+
+    [source_u]
+      type = ParsedCompute
+      buffer = source_u
+      expression = 'A - (B+1)*u +u^2*v'
+      inputs = 'u v'
+    []
+    [source_u_bar]
+      type = ForwardFFT
+      buffer = source_u_bar
+      input = source_u
+    []
+
+    [source_v]
+      type = ParsedCompute
+      buffer = source_v
+      expression = 'B*u - u^2*v'
+      inputs = 'u v'
+    []
+    [source_v_bar]
+      type = ForwardFFT
+      buffer = source_v_bar
+      input = source_v
+    []
   []
 []
 
 [TensorSolver]
-  type = AdamsBashforthMoultonCoupled
+  type = AdamsBashforthMoulton
   buffer = 'u v'
   reciprocal_buffer = 'u_bar v_bar'
-  linear_reciprocal = 'D1 D1'
-  linear_offdiag_cols = '0 1'
-  linear_offdiag_rows = '1 0'
-  linear_offdiag = 'D2 D2'
-  nonlinear_reciprocal = 'zero zero'
+  linear_reciprocal = 'Du Dv'
+  nonlinear_reciprocal = 'source_u_bar source_v_bar'
   substeps = ${ss}
   corrector_steps = ${cs}
   predictor_order = ${order}
@@ -118,10 +133,10 @@
 [Executioner]
   type = Transient
   num_steps = 25
-  dt = 10
+  dt = 0.5
 []
 
 [Outputs]
-  file_base = coupled_${ss}_${cs}_${order}
+  file_base = diagonal_${ss}_${cs}_${order}
   csv = true
 []
