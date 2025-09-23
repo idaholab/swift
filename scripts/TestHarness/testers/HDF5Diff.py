@@ -11,6 +11,15 @@ from FileTester import FileTester
 import os
 import sys
 
+try:
+    import h5py
+except e:
+    print("=========================================")
+    print(os.environ['LD_LIBRARY_PATH'])
+    #= os.getcwd()
+    print(e)
+    print("=========================================")
+
 class HDF5Diff(FileTester):
 
     @staticmethod
@@ -23,9 +32,11 @@ class HDF5Diff(FileTester):
     def __init__(self, name, params):
         FileTester.__init__(self, name, params)
         if self.specs['required_python_packages'] is None:
-             self.specs['required_python_packages'] = 'h5py numpy'
+            #  self.specs['required_python_packages'] = 'h5py numpy'
+             self.specs['required_python_packages'] = 'numpy'
         elif 'h5py' not in self.specs['required_python_packages']:
-            self.specs['required_python_packages'] += ' h5py numpy'
+            # self.specs['required_python_packages'] += ' h5py numpy'
+            self.specs['required_python_packages'] += ' numpy'
 
     def getOutputFiles(self, options):
         return self.specs['hdf5diff']
