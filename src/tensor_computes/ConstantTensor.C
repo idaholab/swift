@@ -27,7 +27,6 @@ ConstantTensorTempl<reciprocal>::validParams()
     params.suppressParameter<SwiftConstantName>("imaginary");
   }
   params.addParam<SwiftConstantName>("real", "0.0", "Real part of the constant value.");
-  params.addParam<bool>("reciprocal", false, "Construct a reciprocal buffer");
   params.addParam<bool>("full", false, "Construct a full tensor will all entries");
   return params;
 }

@@ -18,12 +18,6 @@ registerMooseObjectRenamed("SwiftApp",
                            "10/01/2025 00:01",
                            AdamsBashforthMoulton);
 
-namespace
-{
-// Max order supported (up to ABM5)
-constexpr std::size_t max_order = 5;
-}
-
 InputParameters
 AdamsBashforthMoulton::validParams()
 {
@@ -57,7 +51,9 @@ AdamsBashforthMoulton::AdamsBashforthMoulton(const InputParameters & parameters)
     _sub_dt(_tensor_problem.subDt()),
     _sub_time(_tensor_problem.subTime())
 {
-  getVariables(_predictor_order);
+  // request history consistent with chosen orders
+  const auto history = std::max(_predictor_order, _corrector_order);
+  getVariables(history);
 }
 
 void
