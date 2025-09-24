@@ -78,14 +78,14 @@
       boundary = right
     []
     [top]
-      type = LBMFixedFirstOrderBC9Q
+      type = LBMFixedFirstOrderBC
       buffer = f
       f = f
       value = 0.0001
       boundary = top
     []
     [bottom]
-      type = LBMFixedFirstOrderBC9Q
+      type = LBMFixedFirstOrderBC
       buffer = f
       f = f
       value = 0.00011

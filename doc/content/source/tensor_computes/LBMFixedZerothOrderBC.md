@@ -1,13 +1,13 @@
-# LBMFixedZerothOrderBC9Q
+# LBMFixedZerothOrderBC
 
-!syntax description /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
+!syntax description /TensorComputes/Solve/LBMFixedZerothOrderBC
 
-LBMFixedZerothOrderBC implements Zou-He pressure boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils. The choice of stencil should be indicated in the name of the compute object such as LBMFixedZerothOrderBC9Q for D2Q9.
+LBMFixedZerothOrderBC implements Zou-He pressure boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils.
 
 ## Overview
 
-LBMFixedZerothOrderBC implements Zou\-He pressure boundary conditions at the inlet and outlet for D2Q9, D3Q19 and D3Q27 stencils. The choice of stencil should be indicated in the name of the compute object such as LBMFixedZerothOrderBC9Q for D2Q9.
-Choose faces with [!param](/TensorComputes/Solve/LBMFixedZerothOrderBC9Q/boundary) and provide macroscopic fields as
+Enforces first\-order accurate macroscopic pressure at selected domain faces via Zou\-He formulas.
+Choose faces with [!param](/TensorComputes/Solve/LBMFixedZerothOrderBC/boundary) and provide macroscopic fields as
 required by the implementation.
 
 ## Example Input File Syntax
@@ -15,8 +15,4 @@ required by the implementation.
 !listing test/tests/lbm/vertical_density_bcs.i block=TensorComputes/Boundary/top
 !listing test/tests/lbm/vertical_density_bcs.i block=TensorComputes/Boundary/bottom
 
-!syntax parameters /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
-
-!syntax inputs /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
-
-!syntax children /TensorComputes/Solve/LBMFixedZerothOrderBC9Q
+!syntax parameters /TensorComputes/Solve/LBMFixedZerothOrderBC
