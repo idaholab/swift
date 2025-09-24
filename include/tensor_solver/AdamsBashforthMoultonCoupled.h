@@ -11,14 +11,16 @@
 #include "SplitOperatorBase.h"
 
 /**
- * Adams-Bashforth-Moulton semi-implicit/explicit solver
+ * Adams-Bashforth-Moulton semi-implicit/explicit solver for coupled systems
+ * with a full linear operator L. Uses a batched torch linear solve per
+ * reciprocal-space wavenumber to apply (I - dt L)^{-1}.
  */
-class AdamsBashforthMoulton : public SplitOperatorBase
+class AdamsBashforthMoultonCoupled : public SplitOperatorBase
 {
 public:
   static InputParameters validParams();
 
-  AdamsBashforthMoulton(const InputParameters & parameters);
+  AdamsBashforthMoultonCoupled(const InputParameters & parameters);
 
   virtual void computeBuffer() override;
 
@@ -26,10 +28,19 @@ protected:
   // Max order supported (up to ABM5)
   static constexpr std::size_t max_order = 5;
 
+  // configuration
   unsigned int _substeps;
   std::size_t _predictor_order;
   std::size_t _corrector_order;
   std::size_t _corrector_steps;
+  bool _assume_symmetric;
+
+  // off-diagonal specification (i -> row, j -> col)
+  std::vector<std::pair<unsigned int, unsigned int>> _L_offdiag_indices;
+  std::vector<TensorInputBufferName> _L_offdiag_names;
+  std::vector<const torch::Tensor *> _L_offdiag_buffer;
+
+  // references to substep state
   Real & _sub_dt;
   Real & _sub_time;
 };
