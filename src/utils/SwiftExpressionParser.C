@@ -6,13 +6,13 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "ExpressionParser.h"
+#include "SwiftExpressionParser.h"
 #include <torch/csrc/jit/runtime/custom_operator.h>
 #include <stdexcept>
 #include <sstream>
 #include <cmath>
 
-namespace ExprParser
+namespace SwiftExpressionParser
 {
 
 // Helper to check if an expression is a constant
@@ -851,4 +851,4 @@ ExprPtr Parser::parse(const std::string & expr)
   return result;
 }
 
-} // namespace ExprParser
+} // namespace SwiftExpressionParser

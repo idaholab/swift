@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "ExpressionParser.h"
+#include "SwiftExpressionParser.h"
 #include <torch/csrc/jit/ir/ir.h>
 #include <torch/torch.h>
 
@@ -25,7 +25,8 @@ struct Value;
 /**
  * ParsedJITTensor - JIT-optimized mathematical expression evaluator
  *
- * Similar to ParsedTensor but caches the compiled graph for repeated evaluations
+ * Parses mathematical expressions and compiles them to optimized PyTorch compute graphs
+ * for efficient repeated evaluations with automatic differentiation support.
  */
 class ParsedJITTensor
 {
@@ -54,8 +55,8 @@ public:
   std::string toString() const;
 
 protected:
-  ExprParser::Parser _parser;
-  ExprParser::ExprPtr _ast;
+  SwiftExpressionParser::Parser _parser;
+  SwiftExpressionParser::ExprPtr _ast;
   std::vector<std::string> _variables;
   std::string _error;
 

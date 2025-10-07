@@ -6,7 +6,6 @@
 /*                        ALL RIGHTS RESERVED                         */
 /**********************************************************************/
 
-#include "ParsedTensor.h"
 #include "ParsedJITTensor.h"
 #include "SwiftUtils.h"
 #include "MooseError.h"
@@ -25,12 +24,9 @@ TEST(ParsedTensorTest, Parse)
 
   auto check = [x, y, n](const std::string & expression, auto gold)
   {
-    ParsedTensor fp;
     ParsedJITTensor fp_jit;
     std::vector<std::string> variables{"x", "y", "n"};
 
-    if (!fp.parse(expression, variables))
-      mooseError("Invalid function: ", expression, "   ", fp.errorMessage());
     if (!fp_jit.parse(expression, variables))
       mooseError("Invalid JIT function: ", expression, "   ", fp_jit.errorMessage());
 
@@ -38,25 +34,17 @@ TEST(ParsedTensorTest, Parse)
 
     std::cout << "--  " << expression << std::endl;
 
-    // Test without optimization
-    const auto result_no_opt = fp.eval(params);
-    const auto result_jit_no_opt = fp_jit.eval(params);
+    // Test without compilation
+    const auto result_no_opt = fp_jit.eval(params);
 
-    // Test with optimization
-    ParsedTensor fp_opt;
+    // Test with compilation (optimization)
     ParsedJITTensor fp_jit_opt;
-    fp_opt.parse(expression, variables);
     fp_jit_opt.parse(expression, variables);
-    fp_opt.optimize();
     fp_jit_opt.compile();  // compile does optimization for JIT
 
-    const auto result_opt = fp_opt.eval(params);
-    const auto result_jit_opt = fp_jit_opt.eval(params);
+    const auto result_opt = fp_jit_opt.eval(params);
 
-    EXPECT_NEAR(
-        (result_no_opt - result_jit_no_opt).abs().max().template item<double>(), 0.0, 1e-12);
     EXPECT_NEAR((result_no_opt - result_opt).abs().max().template item<double>(), 0.0, 1e-12);
-    EXPECT_NEAR((result_opt - result_jit_opt).abs().max().template item<double>(), 0.0, 1e-12);
     EXPECT_NEAR((result_opt - gold).abs().max().template item<double>(), 0.0, 1e-12);
   };
 

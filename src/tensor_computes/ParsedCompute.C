@@ -26,8 +26,6 @@ ParsedCompute::validParams()
       "inputs", {}, "Buffer names used in the expression");
   params.addParam<std::vector<TensorInputBufferName>>(
       "derivatives", {}, "List of inputs to take the derivative w.r.t. (or none)");
-  params.addParam<bool>(
-      "enable_jit", true, "Use operator fusion and just in time compilation (recommended on GPU)");
   params.addParam<bool>("enable_fpoptimizer", true, "Use algebraic optimizer");
   params.addParam<bool>("extra_symbols",
                         false,
@@ -50,7 +48,6 @@ ParsedCompute::validParams()
 
 ParsedCompute::ParsedCompute(const InputParameters & parameters)
   : TensorOperator<>(parameters),
-    _use_jit(getParam<bool>("enable_jit")),
     _extra_symbols(getParam<bool>("extra_symbols")),
     _expand(getParam<MooseEnum>("expand").getEnum<ExpandEnum>())
 {
@@ -250,47 +247,24 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
   }
 
   // Parse the expression
-  if (_use_jit)
+  if (!_parser.parse(processed_expr, variables_vec))
+    paramError("expression", "Invalid function: ", _parser.errorMessage());
+
+  // Take derivatives
+  for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
   {
-    if (!_jit.parse(processed_expr, variables_vec))
-      paramError("expression", "Invalid function: ", _jit.errorMessage());
-
-    // Take derivatives
-    for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
-    {
-      if (std::find(names.begin(), names.end(), d) != names.end())
-        _jit.differentiate(d);
-      else
-        paramError("derivatives",
-                   "Derivative w.r.t `",
-                   d,
-                   "` was requested, but it is not listed in `inputs`.");
-    }
-
-    // Compile (optimization is done during compilation)
-    _jit.compile();
+    if (std::find(names.begin(), names.end(), d) != names.end())
+      _parser.differentiate(d);
+    else
+      paramError("derivatives",
+                 "Derivative w.r.t `",
+                 d,
+                 "` was requested, but it is not listed in `inputs`.");
   }
-  else
-  {
-    if (!_no_jit.parse(processed_expr, variables_vec))
-      paramError("expression", "Invalid function: ", _no_jit.errorMessage());
 
-    // Take derivatives
-    for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
-    {
-      if (std::find(names.begin(), names.end(), d) != names.end())
-        _no_jit.differentiate(d);
-      else
-        paramError("derivatives",
-                   "Derivative w.r.t `",
-                   d,
-                   "` was requested, but it is not listed in `inputs`.");
-    }
-
-    // Optimize if requested
-    if (getParam<bool>("enable_fpoptimizer"))
-      _no_jit.optimize();
-  }
+  // Compile (optimization is done during compilation if enable_fpoptimizer is true)
+  // The compile step performs AST simplification and JIT graph optimization
+  _parser.compile();
 }
 
 void
@@ -305,11 +279,8 @@ ParsedCompute::computeBuffer()
                                          MooseTensor::complexFloatTensorOptions());
   }
 
-  // use local shape if we add parallel support, and add option for reciprocal shape
-  if (_use_jit)
-    _u = _jit.eval(_params);
-  else
-    _u = _no_jit.eval(_params);
+  // Evaluate using JIT-compiled graph
+  _u = _parser.eval(_params);
 
   // optionally expand the tensor
   switch (_expand)

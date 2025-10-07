@@ -17,7 +17,30 @@
 #include <torch/torch.h>
 #include <torch/csrc/jit/ir/ir.h>
 
-namespace ExprParser
+/**
+ * SwiftExpressionParser - A PEG-based mathematical expression parser for Swift
+ *
+ * This namespace contains a complete expression parser built on cpp-peglib that:
+ * - Parses mathematical expressions into an Abstract Syntax Tree (AST)
+ * - Supports binary operators: + - * / ^ (power)
+ * - Supports unary operators: - (negation) ! (logical not)
+ * - Supports comparison operators: < > <= >= == !=
+ * - Supports logical operators: & (and) | (or)
+ * - Supports parentheses for precedence control
+ * - Supports mathematical functions (sin, cos, exp, log, sqrt, abs, etc.)
+ * - Supports the if(condition, true_value, false_value) ternary function
+ * - Performs symbolic differentiation
+ * - Performs algebraic simplification and constant folding
+ * - Generates optimized PyTorch JIT compute graphs
+ *
+ * The parser uses a clean separation of concerns:
+ * 1. PEG grammar defines the syntax
+ * 2. AST represents the parsed expression
+ * 3. Simplification optimizes the AST
+ * 4. Differentiation computes symbolic derivatives
+ * 5. Graph builder generates PyTorch JIT IR
+ */
+namespace SwiftExpressionParser
 {
 
 // Forward declarations
@@ -277,4 +300,4 @@ private:
   )";
 };
 
-} // namespace ExprParser
+} // namespace SwiftExpressionParser
