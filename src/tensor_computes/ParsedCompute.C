@@ -12,6 +12,7 @@
 #include "SwiftUtils.h"
 #include "MultiMooseEnum.h"
 #include "DomainAction.h"
+#include "libmesh/fparser_ad.hh"
 
 registerMooseObject("SwiftApp", ParsedCompute);
 
@@ -71,7 +72,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     _params.push_back(&getInputBufferByName(name));
 
   static const std::vector<std::string> reserved_symbols = {
-      "i", "x", "kx", "y", "ky", "z", "kz", "k2", "t"};
+      "i", "x", "kx", "y", "ky", "z", "kz", "k2", "t", "pi", "e"};
 
   // helper function to check if the name given is one of the reserved_names
   auto isReservedName = [this](const auto & name)
@@ -100,101 +101,215 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
                nconst,
                ") must have equal length.");
 
-  auto setup = [&](auto & fp)
+  // Build the expression with constants substituted
+  std::string processed_expr = expression;
+
+  // Evaluate constants
+  std::vector<Real> constant_values(nconst);
+  for (unsigned int i = 0; i < nconst; ++i)
   {
-    std::vector variables_vec = names;
+    // no need to use dual numbers for the constant expressions
+    auto expr = std::make_shared<FunctionParserADBase<Real>>();
 
-    // add extra symbols
-    if (_extra_symbols)
+    // add previously evaluated constants
+    for (unsigned int j = 0; j < i; ++j)
+      if (!expr->AddConstant(constant_names[j], constant_values[j]))
+        paramError("constant_names", "Invalid constant name '", constant_names[j], "'");
+
+    // build the temporary constant expression function
+    if (expr->Parse(constant_expressions[i], "") >= 0)
+      mooseError("Invalid constant expression\n",
+                 constant_expressions[i],
+                 "\n in parsed function object.\n",
+                 expr->ErrorMsg());
+
+    constant_values[i] = expr->Eval(nullptr);
+  }
+
+  // Pre-substitute pi and e in the expression (they are mathematical constants, not variables)
+  if (_extra_symbols)
+  {
+    // Replace 'pi' with its numeric value
     {
-      // append extra symbols
-      variables_vec.insert(variables_vec.end(), reserved_symbols.begin(), reserved_symbols.end());
-
-      _constant_tensors.push_back(
-          torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()));
-      _params.push_back(&_constant_tensors[0]);
-
-      for (const auto dim : make_range(3u))
+      std::string pi_str = std::to_string(libMesh::pi);
+      size_t pos = 0;
+      while ((pos = processed_expr.find("pi", pos)) != std::string::npos)
       {
-        _params.push_back(&_domain.getAxis(dim));
-        _params.push_back(&_domain.getReciprocalAxis(dim));
+        // Check if this is a complete identifier
+        bool is_complete = true;
+        if (pos > 0)
+        {
+          char prev = processed_expr[pos - 1];
+          if (std::isalnum(prev) || prev == '_')
+            is_complete = false;
+        }
+        if (pos + 2 < processed_expr.length())
+        {
+          char next = processed_expr[pos + 2];
+          if (std::isalnum(next) || next == '_')
+            is_complete = false;
+        }
+
+        if (is_complete)
+        {
+          processed_expr.replace(pos, 2, "(" + pi_str + ")");
+          pos += pi_str.length() + 2;
+        }
+        else
+          pos += 2;
+      }
+    }
+
+    // Replace standalone 'e' (but not in scientific notation like 1e-5)
+    {
+      std::string e_str = std::to_string(std::exp(Real(1.0)));
+      size_t pos = 0;
+      while ((pos = processed_expr.find("e", pos)) != std::string::npos)
+      {
+        // Check if this is a complete identifier (not part of scientific notation)
+        bool is_complete = true;
+        if (pos > 0)
+        {
+          char prev = processed_expr[pos - 1];
+          // If previous char is a digit, this might be scientific notation
+          if (std::isalnum(prev) || prev == '_')
+            is_complete = false;
+        }
+        if (pos + 1 < processed_expr.length())
+        {
+          char next = processed_expr[pos + 1];
+          // If next char is +, -, or digit, this is scientific notation
+          if (std::isalnum(next) || next == '_' || next == '+' || next == '-')
+            is_complete = false;
+        }
+
+        if (is_complete)
+        {
+          processed_expr.replace(pos, 1, "(" + e_str + ")");
+          pos += e_str.length() + 2;
+        }
+        else
+          pos += 1;
+      }
+    }
+  }
+
+  // Build list of variables (excluding pi and e which are now substituted)
+  std::vector<std::string> variables_vec = names;
+
+  // add extra symbols (but not pi and e)
+  if (_extra_symbols)
+  {
+    // Only include the actual tensor variables, not mathematical constants
+    static const std::vector<std::string> tensor_symbols = {"i", "x", "kx", "y", "ky", "z", "kz", "k2", "t"};
+    variables_vec.insert(variables_vec.end(), tensor_symbols.begin(), tensor_symbols.end());
+
+    _constant_tensors.push_back(
+        torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()));
+    _params.push_back(&_constant_tensors[0]);
+
+    for (const auto dim : make_range(3u))
+    {
+      _params.push_back(&_domain.getAxis(dim));
+      _params.push_back(&_domain.getReciprocalAxis(dim));
+    }
+
+    _params.push_back(&_domain.getKSquare());
+    _params.push_back(&_time_tensor);
+  }
+
+  // Substitute constants in expression
+  for (unsigned int i = 0; i < nconst; ++i)
+  {
+    std::string placeholder = constant_names[i];
+    std::string value = std::to_string(constant_values[i]);
+
+    size_t pos = 0;
+    while ((pos = processed_expr.find(placeholder, pos)) != std::string::npos)
+    {
+      // Check if this is a complete identifier (not part of a larger identifier)
+      bool is_complete = true;
+      if (pos > 0)
+      {
+        char prev = processed_expr[pos - 1];
+        if (std::isalnum(prev) || prev == '_')
+          is_complete = false;
+      }
+      if (pos + placeholder.length() < processed_expr.length())
+      {
+        char next = processed_expr[pos + placeholder.length()];
+        if (std::isalnum(next) || next == '_')
+          is_complete = false;
       }
 
-      _params.push_back(&_domain.getKSquare());
-      _params.push_back(&_time_tensor);
-
-      fp.AddConstant("pi", libMesh::pi);
-      fp.AddConstant("e", std::exp(Real(1.0)));
+      if (is_complete)
+        processed_expr.replace(pos, placeholder.length(), value);
+      else
+        pos += placeholder.length();
     }
+  }
 
-    // previously evaluated constant_expressions may be used in following constant_expressions
-    std::vector<Real> constant_values(nconst);
-    for (unsigned int i = 0; i < nconst; ++i)
-    {
-      // no need to use dual numbers for the constant expressions
-      auto expression = std::make_shared<FunctionParserADBase<Real>>();
+  // Parse the expression
+  if (_use_jit)
+  {
+    if (!_jit.parse(processed_expr, variables_vec))
+      paramError("expression", "Invalid function: ", _jit.errorMessage());
 
-      // add previously evaluated constants
-      for (unsigned int j = 0; j < i; ++j)
-        if (!expression->AddConstant(constant_names[j], constant_values[j]))
-          paramError("constant_names", "Invalid constant name '", constant_names[j], "'");
-
-      // build the temporary constant expression function
-      if (expression->Parse(constant_expressions[i], "") >= 0)
-        mooseError("Invalid constant expression\n",
-                   constant_expressions[i],
-                   "\n in parsed function object.\n",
-                   expression->ErrorMsg());
-
-      constant_values[i] = expression->Eval(nullptr);
-
-      if (!fp.AddConstant(constant_names[i], constant_values[i]))
-        mooseError("Invalid constant name in parsed function object");
-    }
-
-    // build variables string
-    const auto variables = MooseUtils::join(variables_vec, ",");
-
-    // parse
-    if (fp.Parse(expression, variables) >= 0)
-      paramError("expression", "Invalid function: ", fp.ErrorMsg());
-
-    // take derivatives
+    // Take derivatives
     for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
+    {
       if (std::find(names.begin(), names.end(), d) != names.end())
-      {
-        if (fp.AutoDiff(d) != -1)
-          paramError("expression", "Failed to take derivative w.r.t. `", d, "`.");
-      }
+        _jit.differentiate(d);
       else
         paramError("derivatives",
                    "Derivative w.r.t `",
                    d,
                    "` was requested, but it is not listed in `inputs`.");
+    }
 
-    if (getParam<bool>("enable_fpoptimizer"))
-      fp.Optimize();
-
-    fp.setupTensors();
-  };
-
-  if (_use_jit)
-    setup(_jit);
+    // Compile (optimization is done during compilation)
+    _jit.compile();
+  }
   else
-    setup(_no_jit);
+  {
+    if (!_no_jit.parse(processed_expr, variables_vec))
+      paramError("expression", "Invalid function: ", _no_jit.errorMessage());
+
+    // Take derivatives
+    for (const auto & d : getParam<std::vector<TensorInputBufferName>>("derivatives"))
+    {
+      if (std::find(names.begin(), names.end(), d) != names.end())
+        _no_jit.differentiate(d);
+      else
+        paramError("derivatives",
+                   "Derivative w.r.t `",
+                   d,
+                   "` was requested, but it is not listed in `inputs`.");
+    }
+
+    // Optimize if requested
+    if (getParam<bool>("enable_fpoptimizer"))
+      _no_jit.optimize();
+  }
 }
 
 void
 ParsedCompute::computeBuffer()
 {
   if (_extra_symbols)
+  {
     _time_tensor = torch::tensor(_time, MooseTensor::floatTensorOptions());
+
+    // Update constants
+    _constant_tensors[0] = torch::tensor(c10::complex<double>(0.0, 1.0),
+                                         MooseTensor::complexFloatTensorOptions());
+  }
 
   // use local shape if we add parallel support, and add option for reciprocal shape
   if (_use_jit)
-    _u = _jit.Eval(_params);
+    _u = _jit.eval(_params);
   else
-    _u = _no_jit.Eval(_params);
+    _u = _no_jit.eval(_params);
 
   // optionally expand the tensor
   switch (_expand)

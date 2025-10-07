@@ -9,6 +9,7 @@
 #include "ParsedTensor.h"
 #include "ParsedJITTensor.h"
 #include "SwiftUtils.h"
+#include "MooseError.h"
 #include "gtest/gtest.h"
 
 #include <ATen/ops/linspace.h>
@@ -26,33 +27,31 @@ TEST(ParsedTensorTest, Parse)
   {
     ParsedTensor fp;
     ParsedJITTensor fp_jit;
-    std::string variables = "x, y, n";
-    if (fp.Parse(expression, variables) >= 0)
-      mooseError("Invalid function: ", expression, "   ", fp.ErrorMsg());
-    if (fp_jit.Parse(expression, variables) >= 0)
-      mooseError("Invalid JIT function: ", expression, "   ", fp.ErrorMsg());
+    std::vector<std::string> variables{"x", "y", "n"};
 
-    // if (fp.AutoDiff(d) != -1)
-    //   FAIL() << "Failed to take derivative w.r.t. " << d << " of " << expression << '\n';
+    if (!fp.parse(expression, variables))
+      mooseError("Invalid function: ", expression, "   ", fp.errorMessage());
+    if (!fp_jit.parse(expression, variables))
+      mooseError("Invalid JIT function: ", expression, "   ", fp_jit.errorMessage());
 
     std::vector<const torch::Tensor *> params{&x, &y, &n};
 
     std::cout << "--  " << expression << std::endl;
 
-    fp.setupTensors();
-    fp_jit.setupTensors();
+    // Test without optimization
+    const auto result_no_opt = fp.eval(params);
+    const auto result_jit_no_opt = fp_jit.eval(params);
 
-    const auto result_no_opt = fp.Eval(params);
+    // Test with optimization
+    ParsedTensor fp_opt;
+    ParsedJITTensor fp_jit_opt;
+    fp_opt.parse(expression, variables);
+    fp_jit_opt.parse(expression, variables);
+    fp_opt.optimize();
+    fp_jit_opt.compile();  // compile does optimization for JIT
 
-    const auto result_jit_no_opt = fp_jit.Eval(params);
-
-    fp.Optimize();
-    fp_jit.Optimize();
-    fp.setupTensors();
-    fp_jit.setupTensors();
-
-    const auto result_opt = fp.Eval(params);
-    const auto result_jit_opt = fp_jit.Eval(params);
+    const auto result_opt = fp_opt.eval(params);
+    const auto result_jit_opt = fp_jit_opt.eval(params);
 
     EXPECT_NEAR(
         (result_no_opt - result_jit_no_opt).abs().max().template item<double>(), 0.0, 1e-12);
@@ -61,7 +60,7 @@ TEST(ParsedTensorTest, Parse)
     EXPECT_NEAR((result_opt - gold).abs().max().template item<double>(), 0.0, 1e-12);
   };
 
-  // check cHypot opcode
+  // check hypot
   check("sqrt(x^2+y^2)", torch::sqrt(x * x + y * y));
 
   // trig functions
@@ -76,10 +75,10 @@ TEST(ParsedTensorTest, Parse)
   check("asinh(x-y)", torch::asinh(x - y));
   check("atan2(x,y)", torch::atan2(x, y));
 
-  // check cRsqrt opcode
+  // check reciprocal sqrt
   check("1/sqrt(x+y)", 1.0 / torch::sqrt(x + y));
 
-  // check cSincos opcode
+  // check sin and cos together
   check("sin(y)-cos(y)", torch::sin(y) - torch::cos(y));
 
   // misc
@@ -87,10 +86,10 @@ TEST(ParsedTensorTest, Parse)
   check("y/x", y / x);
   check("-x", -x);
   check("log(x)", torch::log(x));
-  check("y^x", torch::pow(y, x));
+  check("pow(y, x)", torch::pow(y, x));
   check("abs(y-x)", torch::abs(y - x));
   check("min(x,y)", torch::minimum(x, y));
   check("max(x,y)", torch::maximum(x, y));
-  check("2^x", torch::pow(2, x));
-  check("cbrt(x)", torch::pow(x, 1.0 / 3.0));
+  check("pow(2, x)", torch::pow(2, x));
+  check("pow(x, 1.0/3.0)", torch::pow(x, 1.0 / 3.0));
 }

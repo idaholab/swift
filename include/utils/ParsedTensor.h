@@ -8,33 +8,45 @@
 
 #pragma once
 
-#include "MooseTypes.h"
-#include "libmesh/fparser_ad.hh"
+#include "ExpressionParser.h"
 #include <torch/torch.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
 
-class ParsedTensor : public FunctionParserAD
+/**
+ * ParsedTensor - mathematical expression parser for torch tensors
+ *
+ * This class uses a PEG-based parser to parse mathematical expressions,
+ * build an AST, perform symbolic differentiation and algebraic simplification,
+ * and generate optimized code for evaluation.
+ */
+class ParsedTensor
 {
 public:
   ParsedTensor();
 
-  void setupTensors();
+  /// Parse an expression with given variable names
+  bool parse(const std::string & expression, const std::vector<std::string> & variables);
 
-  /// overload for torch tensors
-  torch::Tensor Eval(const std::vector<const torch::Tensor *> & params);
+  /// Take derivative with respect to a variable
+  void differentiate(const std::string & var);
+
+  /// Optimize the expression (constant folding, algebraic simplification)
+  void optimize();
+
+  /// Evaluate the expression with torch tensors
+  torch::Tensor eval(const std::vector<const torch::Tensor *> & params);
+
+  /// Get the error message from the last operation
+  const std::string & errorMessage() const { return _error; }
+
+  /// Get a string representation of the parsed expression
+  std::string toString() const;
 
 protected:
-  /// dummy function for fourier transforms (those are executed in
-  /// the custom bytecode interpreter instead)
-  static Real fp_dummy(const Real *);
-
-  /// we'll need a stack pool to make this thread safe
-  std::vector<torch::Tensor> s;
-
-  /// immediate values converted to tensors
-  std::vector<torch::Tensor> tensor_immed;
-
-  const Data & _data;
-
-  std::size_t _mFFT;
-  std::size_t _miFFT;
+  ExprParser::Parser _parser;
+  ExprParser::ExprPtr _ast;
+  std::vector<std::string> _variables;
+  std::string _error;
 };
