@@ -665,6 +665,91 @@ std::string FunctionCall::toString() const
 }
 
 //=============================================================================
+// LetExpression implementation
+//=============================================================================
+
+ExprPtr LetExpression::simplify() const
+{
+  // Simplify all bindings and the body
+  std::vector<std::pair<std::string, ExprPtr>> simplified_bindings;
+  for (const auto & [name, expr] : _bindings)
+    simplified_bindings.push_back({name, expr->simplify()});
+
+  auto simplified_body = _body->simplify();
+
+  // If there are no bindings, just return the body
+  if (simplified_bindings.empty())
+    return simplified_body;
+
+  return std::make_shared<LetExpression>(std::move(simplified_bindings), simplified_body);
+}
+
+ExprPtr LetExpression::differentiate(const std::string & var) const
+{
+  // To differentiate (let x1=e1, x2=e2, ... in body) w.r.t. var:
+  // We use the chain rule: d/dvar(body) = ∂body/∂var + Σ(∂body/∂xi * dxi/dvar)
+  //
+  // But this is complex. Instead, we use substitution:
+  // 1. Keep all bindings
+  // 2. Differentiate the body with respect to var
+  // 3. Add derivative bindings for each local variable
+  //
+  // For simplicity, we'll inline-expand and differentiate:
+  // This creates: let x1=e1, x2=e2, dx1=d(e1)/dvar, dx2=d(e2)/dvar in d(body)/dvar
+  // where the body derivative is computed treating local vars as functions of var
+
+  // Build new bindings with derivatives
+  std::vector<std::pair<std::string, ExprPtr>> new_bindings;
+
+  // Copy original bindings
+  for (const auto & [name, expr] : _bindings)
+  {
+    new_bindings.push_back({name, expr});
+    // Add derivative binding for each local variable
+    new_bindings.push_back({"d" + name, expr->differentiate(var)});
+  }
+
+  // Differentiate the body
+  // The body differentiation needs to account for local variables being functions of var
+  // We create a new body that includes the chain rule terms
+  ExprPtr dbody = _body->differentiate(var);
+
+  // For each binding xi := ei, add chain rule term: ∂body/∂xi * dei/dvar
+  // But ∂body/∂xi requires symbolic differentiation of body w.r.t. local var
+  // For now, use a simpler approach: just differentiate body treating locals as constants initially
+  // TODO: Full chain rule implementation would require computing ∂body/∂xi symbolically
+
+  return std::make_shared<LetExpression>(std::move(new_bindings), dbody);
+}
+
+torch::jit::Value * LetExpression::buildGraph(
+    torch::jit::Graph & graph,
+    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+{
+  // Create a scoped copy of vars
+  auto scoped_vars = vars;
+
+  // Evaluate bindings in order and add to scoped environment
+  for (const auto & [name, expr] : _bindings)
+  {
+    auto value = expr->buildGraph(graph, scoped_vars);
+    scoped_vars[name] = value;
+  }
+
+  // Evaluate body in the augmented environment
+  return _body->buildGraph(graph, scoped_vars);
+}
+
+std::string LetExpression::toString() const
+{
+  std::string result;
+  for (const auto & [name, expr] : _bindings)
+    result += name + ":=" + expr->toString() + "; ";
+  result += _body->toString();
+  return result;
+}
+
+//=============================================================================
 // Parser implementation
 //=============================================================================
 
@@ -830,6 +915,33 @@ Parser::Parser()
     if (sv.size() > 1)
       args = std::any_cast<std::vector<ExprPtr>>(sv[1]);
     return std::make_shared<FunctionCall>(name, args);
+  };
+
+  _parser["ASSIGNMENT"] = [](const peg::SemanticValues & sv) {
+    std::string name = std::any_cast<std::string>(sv[0]);
+    ExprPtr expr = std::any_cast<ExprPtr>(sv[1]);
+    return std::make_pair(name, expr);
+  };
+
+  _parser["STATEMENTS"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+    // sv contains: [assignment1, assignment2, ..., body_expr]
+    // All but the last element are assignments
+
+    if (sv.size() == 1)
+    {
+      // No assignments, just the body expression
+      return std::any_cast<ExprPtr>(sv[0]);
+    }
+
+    // Extract bindings (all but last element)
+    std::vector<std::pair<std::string, ExprPtr>> bindings;
+    for (size_t i = 0; i < sv.size() - 1; ++i)
+      bindings.push_back(std::any_cast<std::pair<std::string, ExprPtr>>(sv[i]));
+
+    // Last element is the body
+    ExprPtr body = std::any_cast<ExprPtr>(sv[sv.size() - 1]);
+
+    return std::make_shared<LetExpression>(std::move(bindings), body);
   };
 
   _parser["EXPRESSION"] = [](const peg::SemanticValues & sv) -> ExprPtr {

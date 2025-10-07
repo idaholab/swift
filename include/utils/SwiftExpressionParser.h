@@ -273,6 +273,30 @@ private:
 };
 
 /**
+ * Let expression with local variable bindings
+ * Syntax: var1 := expr1; var2 := expr2; body_expression
+ */
+class LetExpression : public Expr
+{
+public:
+  LetExpression(std::vector<std::pair<std::string, ExprPtr>> bindings, ExprPtr body)
+    : _bindings(std::move(bindings)), _body(std::move(body)) {}
+
+  const std::vector<std::pair<std::string, ExprPtr>> & bindings() const { return _bindings; }
+  const ExprPtr & body() const { return _body; }
+
+  ExprPtr simplify() const override;
+  ExprPtr differentiate(const std::string & var) const override;
+  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
+                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  std::string toString() const override;
+
+private:
+  std::vector<std::pair<std::string, ExprPtr>> _bindings;
+  ExprPtr _body;
+};
+
+/**
  * Main parser class using peglib
  */
 class Parser
@@ -292,8 +316,12 @@ private:
   std::unordered_set<std::string> _constants;
 
   static constexpr const char * grammar = R"(
-    # Top-level expression
-    EXPRESSION  <- LOGICAL
+    # Top-level expression (may include local variable assignments)
+    EXPRESSION  <- STATEMENTS
+
+    # Statements: assignments followed by final expression
+    STATEMENTS  <- (ASSIGNMENT ';')* LOGICAL
+    ASSIGNMENT  <- IDENTIFIER ':=' LOGICAL
 
     # Logical operators (lowest precedence)
     LOGICAL     <- COMPARISON (LOGICAL_OP COMPARISON)*
@@ -319,16 +347,16 @@ private:
     POWER       <- PRIMARY ('^' POWER)?
 
     # Primary expressions
-    PRIMARY     <- FUNCTION / NUMBER / VARIABLE / '(' EXPRESSION ')'
+    PRIMARY     <- FUNCTION / NUMBER / VARIABLE / '(' LOGICAL ')'
 
     # Function calls
     FUNCTION    <- IDENTIFIER '(' ARGS? ')'
-    ARGS        <- EXPRESSION (',' EXPRESSION)*
+    ARGS        <- LOGICAL (',' LOGICAL)*
 
     # Terminals
     NUMBER      <- < [0-9]+ ('.' [0-9]+)? ([eE] [+-]? [0-9]+)? >
     IDENTIFIER  <- < [a-zA-Z_][a-zA-Z0-9_]* >
-    VARIABLE    <- IDENTIFIER !('(')
+    VARIABLE    <- IDENTIFIER !('(' / ':')
 
     %whitespace <- [ \t\r\n]*
   )";
