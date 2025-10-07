@@ -63,8 +63,9 @@ public:
   virtual ExprPtr differentiate(const std::string & var) const = 0;
 
   /// Build a torch JIT graph node
-  virtual torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                         std::unordered_map<std::string, torch::jit::Value *> & vars) const = 0;
+  virtual torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const = 0;
 
   /// Debug string representation
   virtual std::string toString() const = 0;
@@ -82,10 +83,14 @@ public:
 
   ExprPtr simplify() const override { return std::make_shared<Constant>(_value); }
 
-  ExprPtr differentiate(const std::string &) const override { return std::make_shared<Constant>(0.0); }
+  ExprPtr differentiate(const std::string &) const override
+  {
+    return std::make_shared<Constant>(0.0);
+  }
 
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> &) const override
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> &) const override
   {
     return graph.insertConstant(_value);
   }
@@ -113,8 +118,9 @@ public:
     return std::make_shared<Constant>(var == _name ? 1.0 : 0.0);
   }
 
-  torch::jit::Value * buildGraph(torch::jit::Graph &,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph &,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override
   {
     auto it = vars.find(_name);
     if (it == vars.end())
@@ -145,8 +151,9 @@ public:
     return std::make_shared<Constant>(0.0);
   }
 
-  torch::jit::Value * buildGraph(torch::jit::Graph &,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph &,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override
   {
     auto it = vars.find(_name);
     if (it == vars.end())
@@ -166,14 +173,22 @@ private:
 class BinaryOp : public Expr
 {
 public:
-  enum class Op { Add, Sub, Mul, Div, Pow };
+  enum class Op
+  {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow
+  };
 
   BinaryOp(Op op, ExprPtr left, ExprPtr right) : _op(op), _left(left), _right(right) {}
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:
@@ -190,14 +205,19 @@ private:
 class UnaryOp : public Expr
 {
 public:
-  enum class Op { Neg, Not };
+  enum class Op
+  {
+    Neg,
+    Not
+  };
 
   UnaryOp(Op op, ExprPtr operand) : _op(op), _operand(operand) {}
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:
@@ -211,14 +231,23 @@ private:
 class Comparison : public Expr
 {
 public:
-  enum class Op { Lt, Gt, Le, Ge, Eq, Ne };
+  enum class Op
+  {
+    Lt,
+    Gt,
+    Le,
+    Ge,
+    Eq,
+    Ne
+  };
 
   Comparison(Op op, ExprPtr left, ExprPtr right) : _op(op), _left(left), _right(right) {}
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:
@@ -233,14 +262,19 @@ private:
 class LogicalOp : public Expr
 {
 public:
-  enum class Op { And, Or };
+  enum class Op
+  {
+    And,
+    Or
+  };
 
   LogicalOp(Op op, ExprPtr left, ExprPtr right) : _op(op), _left(left), _right(right) {}
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:
@@ -256,15 +290,18 @@ class FunctionCall : public Expr
 {
 public:
   FunctionCall(const std::string & name, std::vector<ExprPtr> args)
-    : _name(name), _args(std::move(args)) {}
+    : _name(name), _args(std::move(args))
+  {
+  }
 
   const std::string & name() const { return _name; }
   const std::vector<ExprPtr> & args() const { return _args; }
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:
@@ -280,15 +317,18 @@ class LetExpression : public Expr
 {
 public:
   LetExpression(std::vector<std::pair<std::string, ExprPtr>> bindings, ExprPtr body)
-    : _bindings(std::move(bindings)), _body(std::move(body)) {}
+    : _bindings(std::move(bindings)), _body(std::move(body))
+  {
+  }
 
   const std::vector<std::pair<std::string, ExprPtr>> & bindings() const { return _bindings; }
   const ExprPtr & body() const { return _body; }
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
-  torch::jit::Value * buildGraph(torch::jit::Graph & graph,
-                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
+  torch::jit::Value *
+  buildGraph(torch::jit::Graph & graph,
+             std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
   std::string toString() const override;
 
 private:

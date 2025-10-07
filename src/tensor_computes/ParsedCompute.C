@@ -128,7 +128,8 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
 
   // Add user-provided constants as scalar tensors
   for (unsigned int i = 0; i < nconst; ++i)
-    constants_map[constant_names[i]] = torch::tensor(constant_values[i], MooseTensor::floatTensorOptions());
+    constants_map[constant_names[i]] =
+        torch::tensor(constant_values[i], MooseTensor::floatTensorOptions());
 
   // Add extra symbols if requested
   if (_extra_symbols)
@@ -136,10 +137,12 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     // Add mathematical constants (pi, e, i) to the constants map
     constants_map["pi"] = torch::tensor(libMesh::pi, MooseTensor::floatTensorOptions());
     constants_map["e"] = torch::tensor(std::exp(Real(1.0)), MooseTensor::floatTensorOptions());
-    constants_map["i"] = torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions());
+    constants_map["i"] =
+        torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions());
 
     // Add tensor variables (x, kx, y, ky, z, kz, k2, t) to variables list
-    static const std::vector<std::string> tensor_symbols = {"x", "kx", "y", "ky", "z", "kz", "k2", "t"};
+    static const std::vector<std::string> tensor_symbols = {
+        "x", "kx", "y", "ky", "z", "kz", "k2", "t"};
     variables_vec.insert(variables_vec.end(), tensor_symbols.begin(), tensor_symbols.end());
 
     // Add tensor variable parameters

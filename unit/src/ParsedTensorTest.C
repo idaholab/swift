@@ -40,7 +40,7 @@ TEST(ParsedTensorTest, Parse)
     // Test with compilation (optimization)
     ParsedJITTensor fp_jit_opt;
     fp_jit_opt.parse(expression, variables);
-    fp_jit_opt.compile();  // compile does optimization for JIT
+    fp_jit_opt.compile(); // compile does optimization for JIT
 
     const auto result_opt = fp_jit_opt.eval(params);
 

@@ -14,13 +14,12 @@
 #include <torch/csrc/jit/passes/graph_fuser.h>
 #include <torch/csrc/autograd/grad_mode.h>
 
-ParsedJITTensor::ParsedJITTensor()
-{
-}
+ParsedJITTensor::ParsedJITTensor() {}
 
-bool ParsedJITTensor::parse(const std::string & expression,
-                            const std::vector<std::string> & variables,
-                            const std::unordered_map<std::string, torch::Tensor> & constants)
+bool
+ParsedJITTensor::parse(const std::string & expression,
+                       const std::vector<std::string> & variables,
+                       const std::unordered_map<std::string, torch::Tensor> & constants)
 {
   _variables = variables;
   _constants = constants;
@@ -43,7 +42,8 @@ bool ParsedJITTensor::parse(const std::string & expression,
   return true;
 }
 
-void ParsedJITTensor::differentiate(const std::string & var)
+void
+ParsedJITTensor::differentiate(const std::string & var)
 {
   if (!_ast)
   {
@@ -56,7 +56,8 @@ void ParsedJITTensor::differentiate(const std::string & var)
   _executor.reset();
 }
 
-void ParsedJITTensor::compile()
+void
+ParsedJITTensor::compile()
 {
   if (!_ast)
   {
@@ -106,7 +107,8 @@ void ParsedJITTensor::compile()
   _executor = std::make_shared<torch::jit::GraphExecutor>(_graph, "F");
 }
 
-torch::Tensor ParsedJITTensor::eval(const std::vector<const torch::Tensor *> & params)
+torch::Tensor
+ParsedJITTensor::eval(const std::vector<const torch::Tensor *> & params)
 {
   if (!_ast)
     throw std::runtime_error("No expression to evaluate");
@@ -137,7 +139,8 @@ torch::Tensor ParsedJITTensor::eval(const std::vector<const torch::Tensor *> & p
   return stack[0].toTensor();
 }
 
-void ParsedJITTensor::print() const
+void
+ParsedJITTensor::print() const
 {
   if (_graph)
     _graph->dump();
@@ -145,7 +148,8 @@ void ParsedJITTensor::print() const
     std::cout << "No compiled graph\n";
 }
 
-std::string ParsedJITTensor::toString() const
+std::string
+ParsedJITTensor::toString() const
 {
   if (!_ast)
     return "<no expression>";

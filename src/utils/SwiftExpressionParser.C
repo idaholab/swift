@@ -16,7 +16,8 @@ namespace SwiftExpressionParser
 {
 
 // Helper to check if an expression is a constant
-static std::shared_ptr<Constant> asConstant(const ExprPtr & expr)
+static std::shared_ptr<Constant>
+asConstant(const ExprPtr & expr)
 {
   return std::dynamic_pointer_cast<Constant>(expr);
 }
@@ -25,20 +26,27 @@ static std::shared_ptr<Constant> asConstant(const ExprPtr & expr)
 // BinaryOp implementation
 //=============================================================================
 
-const char * BinaryOp::opString(Op op)
+const char *
+BinaryOp::opString(Op op)
 {
   switch (op)
   {
-    case Op::Add: return "+";
-    case Op::Sub: return "-";
-    case Op::Mul: return "*";
-    case Op::Div: return "/";
-    case Op::Pow: return "^";
+    case Op::Add:
+      return "+";
+    case Op::Sub:
+      return "-";
+    case Op::Mul:
+      return "*";
+    case Op::Div:
+      return "/";
+    case Op::Pow:
+      return "^";
   }
   return "?";
 }
 
-ExprPtr BinaryOp::simplify() const
+ExprPtr
+BinaryOp::simplify() const
 {
   auto left = _left->simplify();
   auto right = _right->simplify();
@@ -52,11 +60,21 @@ ExprPtr BinaryOp::simplify() const
     double result = 0.0;
     switch (_op)
     {
-      case Op::Add: result = lc->value() + rc->value(); break;
-      case Op::Sub: result = lc->value() - rc->value(); break;
-      case Op::Mul: result = lc->value() * rc->value(); break;
-      case Op::Div: result = lc->value() / rc->value(); break;
-      case Op::Pow: result = std::pow(lc->value(), rc->value()); break;
+      case Op::Add:
+        result = lc->value() + rc->value();
+        break;
+      case Op::Sub:
+        result = lc->value() - rc->value();
+        break;
+      case Op::Mul:
+        result = lc->value() * rc->value();
+        break;
+      case Op::Div:
+        result = lc->value() / rc->value();
+        break;
+      case Op::Pow:
+        result = std::pow(lc->value(), rc->value());
+        break;
     }
     return std::make_shared<Constant>(result);
   }
@@ -65,21 +83,28 @@ ExprPtr BinaryOp::simplify() const
   switch (_op)
   {
     case Op::Add:
-      if (lc && lc->value() == 0.0) return right;
-      if (rc && rc->value() == 0.0) return left;
+      if (lc && lc->value() == 0.0)
+        return right;
+      if (rc && rc->value() == 0.0)
+        return left;
       break;
 
     case Op::Sub:
-      if (rc && rc->value() == 0.0) return left;
+      if (rc && rc->value() == 0.0)
+        return left;
       if (lc && lc->value() == 0.0)
         return std::make_shared<UnaryOp>(UnaryOp::Op::Neg, right)->simplify();
       break;
 
     case Op::Mul:
-      if (lc && lc->value() == 0.0) return std::make_shared<Constant>(0.0);
-      if (rc && rc->value() == 0.0) return std::make_shared<Constant>(0.0);
-      if (lc && lc->value() == 1.0) return right;
-      if (rc && rc->value() == 1.0) return left;
+      if (lc && lc->value() == 0.0)
+        return std::make_shared<Constant>(0.0);
+      if (rc && rc->value() == 0.0)
+        return std::make_shared<Constant>(0.0);
+      if (lc && lc->value() == 1.0)
+        return right;
+      if (rc && rc->value() == 1.0)
+        return left;
       if (lc && lc->value() == -1.0)
         return std::make_shared<UnaryOp>(UnaryOp::Op::Neg, right)->simplify();
       if (rc && rc->value() == -1.0)
@@ -87,21 +112,27 @@ ExprPtr BinaryOp::simplify() const
       break;
 
     case Op::Div:
-      if (lc && lc->value() == 0.0) return std::make_shared<Constant>(0.0);
-      if (rc && rc->value() == 1.0) return left;
+      if (lc && lc->value() == 0.0)
+        return std::make_shared<Constant>(0.0);
+      if (rc && rc->value() == 1.0)
+        return left;
       break;
 
     case Op::Pow:
-      if (rc && rc->value() == 0.0) return std::make_shared<Constant>(1.0);
-      if (rc && rc->value() == 1.0) return left;
-      if (lc && lc->value() == 1.0) return std::make_shared<Constant>(1.0);
+      if (rc && rc->value() == 0.0)
+        return std::make_shared<Constant>(1.0);
+      if (rc && rc->value() == 1.0)
+        return left;
+      if (lc && lc->value() == 1.0)
+        return std::make_shared<Constant>(1.0);
       break;
   }
 
   return std::make_shared<BinaryOp>(_op, left, right);
 }
 
-ExprPtr BinaryOp::differentiate(const std::string & var) const
+ExprPtr
+BinaryOp::differentiate(const std::string & var) const
 {
   auto dl = _left->differentiate(var);
   auto dr = _right->differentiate(var);
@@ -116,19 +147,17 @@ ExprPtr BinaryOp::differentiate(const std::string & var) const
 
     case Op::Mul:
       // (f*g)' = f'*g + f*g'
-      return std::make_shared<BinaryOp>(
-          Op::Add,
-          std::make_shared<BinaryOp>(Op::Mul, dl, _right),
-          std::make_shared<BinaryOp>(Op::Mul, _left, dr));
+      return std::make_shared<BinaryOp>(Op::Add,
+                                        std::make_shared<BinaryOp>(Op::Mul, dl, _right),
+                                        std::make_shared<BinaryOp>(Op::Mul, _left, dr));
 
     case Op::Div:
       // (f/g)' = (f'*g - f*g') / g^2
       return std::make_shared<BinaryOp>(
           Op::Div,
-          std::make_shared<BinaryOp>(
-              Op::Sub,
-              std::make_shared<BinaryOp>(Op::Mul, dl, _right),
-              std::make_shared<BinaryOp>(Op::Mul, _left, dr)),
+          std::make_shared<BinaryOp>(Op::Sub,
+                                     std::make_shared<BinaryOp>(Op::Mul, dl, _right),
+                                     std::make_shared<BinaryOp>(Op::Mul, _left, dr)),
           std::make_shared<BinaryOp>(Op::Pow, _right, std::make_shared<Constant>(2.0)));
 
     case Op::Pow:
@@ -141,9 +170,7 @@ ExprPtr BinaryOp::differentiate(const std::string & var) const
                 Op::Mul,
                 _right,
                 std::make_shared<BinaryOp>(
-                    Op::Pow,
-                    _left,
-                    std::make_shared<Constant>(rc->value() - 1.0))),
+                    Op::Pow, _left, std::make_shared<Constant>(rc->value() - 1.0))),
             dl);
       }
       // General case: (f^g)' = f^g * (g' * ln(f) + g * f'/f)
@@ -153,36 +180,38 @@ ExprPtr BinaryOp::differentiate(const std::string & var) const
           std::make_shared<BinaryOp>(
               Op::Add,
               std::make_shared<BinaryOp>(
-                  Op::Mul,
-                  dr,
-                  std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{_left})),
+                  Op::Mul, dr, std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{_left})),
               std::make_shared<BinaryOp>(
-                  Op::Mul,
-                  _right,
-                  std::make_shared<BinaryOp>(Op::Div, dl, _left))));
+                  Op::Mul, _right, std::make_shared<BinaryOp>(Op::Div, dl, _left))));
   }
   throw std::runtime_error("Invalid binary operator");
 }
 
-torch::jit::Value * BinaryOp::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+BinaryOp::buildGraph(torch::jit::Graph & graph,
+                     std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   auto left = _left->buildGraph(graph, vars);
   auto right = _right->buildGraph(graph, vars);
 
   switch (_op)
   {
-    case Op::Add: return graph.insert(torch::jit::aten::add, {left, right});
-    case Op::Sub: return graph.insert(torch::jit::aten::sub, {left, right});
-    case Op::Mul: return graph.insert(torch::jit::aten::mul, {left, right});
-    case Op::Div: return graph.insert(torch::jit::aten::div, {left, right});
-    case Op::Pow: return graph.insert(torch::jit::aten::pow, {left, right});
+    case Op::Add:
+      return graph.insert(torch::jit::aten::add, {left, right});
+    case Op::Sub:
+      return graph.insert(torch::jit::aten::sub, {left, right});
+    case Op::Mul:
+      return graph.insert(torch::jit::aten::mul, {left, right});
+    case Op::Div:
+      return graph.insert(torch::jit::aten::div, {left, right});
+    case Op::Pow:
+      return graph.insert(torch::jit::aten::pow, {left, right});
   }
   throw std::runtime_error("Invalid binary operator");
 }
 
-std::string BinaryOp::toString() const
+std::string
+BinaryOp::toString() const
 {
   return "(" + _left->toString() + " " + opString(_op) + " " + _right->toString() + ")";
 }
@@ -191,7 +220,8 @@ std::string BinaryOp::toString() const
 // UnaryOp implementation
 //=============================================================================
 
-ExprPtr UnaryOp::simplify() const
+ExprPtr
+UnaryOp::simplify() const
 {
   auto operand = _operand->simplify();
 
@@ -199,15 +229,18 @@ ExprPtr UnaryOp::simplify() const
   {
     switch (_op)
     {
-      case Op::Neg: return std::make_shared<Constant>(-c->value());
-      case Op::Not: return std::make_shared<Constant>(c->value() == 0.0 ? 1.0 : 0.0);
+      case Op::Neg:
+        return std::make_shared<Constant>(-c->value());
+      case Op::Not:
+        return std::make_shared<Constant>(c->value() == 0.0 ? 1.0 : 0.0);
     }
   }
 
   return std::make_shared<UnaryOp>(_op, operand);
 }
 
-ExprPtr UnaryOp::differentiate(const std::string & var) const
+ExprPtr
+UnaryOp::differentiate(const std::string & var) const
 {
   switch (_op)
   {
@@ -219,9 +252,9 @@ ExprPtr UnaryOp::differentiate(const std::string & var) const
   throw std::runtime_error("Invalid unary operator");
 }
 
-torch::jit::Value * UnaryOp::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+UnaryOp::buildGraph(torch::jit::Graph & graph,
+                    std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   auto operand = _operand->buildGraph(graph, vars);
 
@@ -235,12 +268,15 @@ torch::jit::Value * UnaryOp::buildGraph(
   throw std::runtime_error("Invalid unary operator");
 }
 
-std::string UnaryOp::toString() const
+std::string
+UnaryOp::toString() const
 {
   switch (_op)
   {
-    case Op::Neg: return "(-" + _operand->toString() + ")";
-    case Op::Not: return "(!" + _operand->toString() + ")";
+    case Op::Neg:
+      return "(-" + _operand->toString() + ")";
+    case Op::Not:
+      return "(!" + _operand->toString() + ")";
   }
   return "?";
 }
@@ -249,7 +285,8 @@ std::string UnaryOp::toString() const
 // Comparison implementation
 //=============================================================================
 
-ExprPtr Comparison::simplify() const
+ExprPtr
+Comparison::simplify() const
 {
   auto left = _left->simplify();
   auto right = _right->simplify();
@@ -262,12 +299,24 @@ ExprPtr Comparison::simplify() const
     bool result = false;
     switch (_op)
     {
-      case Op::Lt: result = lc->value() < rc->value(); break;
-      case Op::Gt: result = lc->value() > rc->value(); break;
-      case Op::Le: result = lc->value() <= rc->value(); break;
-      case Op::Ge: result = lc->value() >= rc->value(); break;
-      case Op::Eq: result = lc->value() == rc->value(); break;
-      case Op::Ne: result = lc->value() != rc->value(); break;
+      case Op::Lt:
+        result = lc->value() < rc->value();
+        break;
+      case Op::Gt:
+        result = lc->value() > rc->value();
+        break;
+      case Op::Le:
+        result = lc->value() <= rc->value();
+        break;
+      case Op::Ge:
+        result = lc->value() >= rc->value();
+        break;
+      case Op::Eq:
+        result = lc->value() == rc->value();
+        break;
+      case Op::Ne:
+        result = lc->value() != rc->value();
+        break;
     }
     return std::make_shared<Constant>(result ? 1.0 : 0.0);
   }
@@ -275,42 +324,62 @@ ExprPtr Comparison::simplify() const
   return std::make_shared<Comparison>(_op, left, right);
 }
 
-ExprPtr Comparison::differentiate(const std::string &) const
+ExprPtr
+Comparison::differentiate(const std::string &) const
 {
   // Derivative of comparison is zero (not differentiable in classical sense)
   return std::make_shared<Constant>(0.0);
 }
 
-torch::jit::Value * Comparison::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+Comparison::buildGraph(torch::jit::Graph & graph,
+                       std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   auto left = _left->buildGraph(graph, vars);
   auto right = _right->buildGraph(graph, vars);
 
   switch (_op)
   {
-    case Op::Lt: return graph.insert(torch::jit::aten::lt, {left, right});
-    case Op::Gt: return graph.insert(torch::jit::aten::gt, {left, right});
-    case Op::Le: return graph.insert(torch::jit::aten::le, {left, right});
-    case Op::Ge: return graph.insert(torch::jit::aten::ge, {left, right});
-    case Op::Eq: return graph.insert(torch::jit::aten::eq, {left, right});
-    case Op::Ne: return graph.insert(torch::jit::aten::ne, {left, right});
+    case Op::Lt:
+      return graph.insert(torch::jit::aten::lt, {left, right});
+    case Op::Gt:
+      return graph.insert(torch::jit::aten::gt, {left, right});
+    case Op::Le:
+      return graph.insert(torch::jit::aten::le, {left, right});
+    case Op::Ge:
+      return graph.insert(torch::jit::aten::ge, {left, right});
+    case Op::Eq:
+      return graph.insert(torch::jit::aten::eq, {left, right});
+    case Op::Ne:
+      return graph.insert(torch::jit::aten::ne, {left, right});
   }
   throw std::runtime_error("Invalid comparison operator");
 }
 
-std::string Comparison::toString() const
+std::string
+Comparison::toString() const
 {
   const char * op = "?";
   switch (_op)
   {
-    case Op::Lt: op = "<"; break;
-    case Op::Gt: op = ">"; break;
-    case Op::Le: op = "<="; break;
-    case Op::Ge: op = ">="; break;
-    case Op::Eq: op = "=="; break;
-    case Op::Ne: op = "!="; break;
+    case Op::Lt:
+      op = "<";
+      break;
+    case Op::Gt:
+      op = ">";
+      break;
+    case Op::Le:
+      op = "<=";
+      break;
+    case Op::Ge:
+      op = ">=";
+      break;
+    case Op::Eq:
+      op = "==";
+      break;
+    case Op::Ne:
+      op = "!=";
+      break;
   }
   return "(" + _left->toString() + " " + op + " " + _right->toString() + ")";
 }
@@ -319,7 +388,8 @@ std::string Comparison::toString() const
 // LogicalOp implementation
 //=============================================================================
 
-ExprPtr LogicalOp::simplify() const
+ExprPtr
+LogicalOp::simplify() const
 {
   auto left = _left->simplify();
   auto right = _right->simplify();
@@ -334,8 +404,12 @@ ExprPtr LogicalOp::simplify() const
     bool result = false;
     switch (_op)
     {
-      case Op::And: result = lv && rv; break;
-      case Op::Or: result = lv || rv; break;
+      case Op::And:
+        result = lv && rv;
+        break;
+      case Op::Or:
+        result = lv || rv;
+        break;
     }
     return std::make_shared<Constant>(result ? 1.0 : 0.0);
   }
@@ -344,40 +418,48 @@ ExprPtr LogicalOp::simplify() const
   switch (_op)
   {
     case Op::And:
-      if (lc && lc->value() == 0.0) return std::make_shared<Constant>(0.0);
-      if (rc && rc->value() == 0.0) return std::make_shared<Constant>(0.0);
+      if (lc && lc->value() == 0.0)
+        return std::make_shared<Constant>(0.0);
+      if (rc && rc->value() == 0.0)
+        return std::make_shared<Constant>(0.0);
       break;
     case Op::Or:
-      if (lc && lc->value() != 0.0) return std::make_shared<Constant>(1.0);
-      if (rc && rc->value() != 0.0) return std::make_shared<Constant>(1.0);
+      if (lc && lc->value() != 0.0)
+        return std::make_shared<Constant>(1.0);
+      if (rc && rc->value() != 0.0)
+        return std::make_shared<Constant>(1.0);
       break;
   }
 
   return std::make_shared<LogicalOp>(_op, left, right);
 }
 
-ExprPtr LogicalOp::differentiate(const std::string &) const
+ExprPtr
+LogicalOp::differentiate(const std::string &) const
 {
   // Derivative of logical operations is zero
   return std::make_shared<Constant>(0.0);
 }
 
-torch::jit::Value * LogicalOp::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+LogicalOp::buildGraph(torch::jit::Graph & graph,
+                      std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   auto left = _left->buildGraph(graph, vars);
   auto right = _right->buildGraph(graph, vars);
 
   switch (_op)
   {
-    case Op::And: return graph.insert(torch::jit::aten::logical_and, {left, right});
-    case Op::Or: return graph.insert(torch::jit::aten::logical_or, {left, right});
+    case Op::And:
+      return graph.insert(torch::jit::aten::logical_and, {left, right});
+    case Op::Or:
+      return graph.insert(torch::jit::aten::logical_or, {left, right});
   }
   throw std::runtime_error("Invalid logical operator");
 }
 
-std::string LogicalOp::toString() const
+std::string
+LogicalOp::toString() const
 {
   const char * op = (_op == Op::And) ? "&" : "|";
   return "(" + _left->toString() + " " + op + " " + _right->toString() + ")";
@@ -387,7 +469,8 @@ std::string LogicalOp::toString() const
 // FunctionCall implementation
 //=============================================================================
 
-ExprPtr FunctionCall::simplify() const
+ExprPtr
+FunctionCall::simplify() const
 {
   // Simplify all arguments
   std::vector<ExprPtr> simplified_args;
@@ -473,7 +556,8 @@ ExprPtr FunctionCall::simplify() const
   return std::make_shared<FunctionCall>(_name, simplified_args);
 }
 
-ExprPtr FunctionCall::differentiate(const std::string & var) const
+ExprPtr
+FunctionCall::differentiate(const std::string & var) const
 {
   if (_args.empty())
     return std::make_shared<Constant>(0.0);
@@ -484,47 +568,34 @@ ExprPtr FunctionCall::differentiate(const std::string & var) const
   // Chain rule for single-argument functions
   if (_name == "sin")
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Mul,
-        std::make_shared<FunctionCall>("cos", std::vector<ExprPtr>{arg}),
-        darg);
+        BinaryOp::Op::Mul, std::make_shared<FunctionCall>("cos", std::vector<ExprPtr>{arg}), darg);
   else if (_name == "cos")
     return std::make_shared<BinaryOp>(
         BinaryOp::Op::Mul,
-        std::make_shared<UnaryOp>(
-            UnaryOp::Op::Neg,
-            std::make_shared<FunctionCall>("sin", std::vector<ExprPtr>{arg})),
+        std::make_shared<UnaryOp>(UnaryOp::Op::Neg,
+                                  std::make_shared<FunctionCall>("sin", std::vector<ExprPtr>{arg})),
         darg);
   else if (_name == "tan")
   {
     auto cos_arg = std::make_shared<FunctionCall>("cos", std::vector<ExprPtr>{arg});
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Div,
-        darg,
-        std::make_shared<BinaryOp>(BinaryOp::Op::Mul, cos_arg, cos_arg));
+        BinaryOp::Op::Div, darg, std::make_shared<BinaryOp>(BinaryOp::Op::Mul, cos_arg, cos_arg));
   }
   else if (_name == "sinh")
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Mul,
-        std::make_shared<FunctionCall>("cosh", std::vector<ExprPtr>{arg}),
-        darg);
+        BinaryOp::Op::Mul, std::make_shared<FunctionCall>("cosh", std::vector<ExprPtr>{arg}), darg);
   else if (_name == "cosh")
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Mul,
-        std::make_shared<FunctionCall>("sinh", std::vector<ExprPtr>{arg}),
-        darg);
+        BinaryOp::Op::Mul, std::make_shared<FunctionCall>("sinh", std::vector<ExprPtr>{arg}), darg);
   else if (_name == "tanh")
   {
     auto cosh_arg = std::make_shared<FunctionCall>("cosh", std::vector<ExprPtr>{arg});
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Div,
-        darg,
-        std::make_shared<BinaryOp>(BinaryOp::Op::Mul, cosh_arg, cosh_arg));
+        BinaryOp::Op::Div, darg, std::make_shared<BinaryOp>(BinaryOp::Op::Mul, cosh_arg, cosh_arg));
   }
   else if (_name == "exp")
     return std::make_shared<BinaryOp>(
-        BinaryOp::Op::Mul,
-        std::make_shared<FunctionCall>("exp", std::vector<ExprPtr>{arg}),
-        darg);
+        BinaryOp::Op::Mul, std::make_shared<FunctionCall>("exp", std::vector<ExprPtr>{arg}), darg);
   else if (_name == "log")
     return std::make_shared<BinaryOp>(BinaryOp::Op::Div, darg, arg);
   else if (_name == "log10")
@@ -534,7 +605,8 @@ ExprPtr FunctionCall::differentiate(const std::string & var) const
         std::make_shared<BinaryOp>(
             BinaryOp::Op::Mul,
             arg,
-            std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{std::make_shared<Constant>(10.0)})));
+            std::make_shared<FunctionCall>(
+                "log", std::vector<ExprPtr>{std::make_shared<Constant>(10.0)})));
   else if (_name == "log2")
     return std::make_shared<BinaryOp>(
         BinaryOp::Op::Div,
@@ -542,7 +614,8 @@ ExprPtr FunctionCall::differentiate(const std::string & var) const
         std::make_shared<BinaryOp>(
             BinaryOp::Op::Mul,
             arg,
-            std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{std::make_shared<Constant>(2.0)})));
+            std::make_shared<FunctionCall>("log",
+                                           std::vector<ExprPtr>{std::make_shared<Constant>(2.0)})));
   else if (_name == "sqrt")
     return std::make_shared<BinaryOp>(
         BinaryOp::Op::Div,
@@ -556,18 +629,16 @@ ExprPtr FunctionCall::differentiate(const std::string & var) const
     // Derivative of if(c, t, f) w.r.t. var is if(c, dt/dvar, df/dvar)
     return std::make_shared<FunctionCall>(
         "if",
-        std::vector<ExprPtr>{_args[0],
-                             _args[1]->differentiate(var),
-                             _args[2]->differentiate(var)});
+        std::vector<ExprPtr>{_args[0], _args[1]->differentiate(var), _args[2]->differentiate(var)});
   }
 
   // For other functions, return zero (not differentiable or not implemented)
   return std::make_shared<Constant>(0.0);
 }
 
-torch::jit::Value * FunctionCall::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+FunctionCall::buildGraph(torch::jit::Graph & graph,
+                         std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   std::vector<torch::jit::Value *> arg_vals;
   for (const auto & arg : _args)
@@ -652,12 +723,14 @@ torch::jit::Value * FunctionCall::buildGraph(
   throw std::runtime_error("Unknown or unsupported function: " + _name);
 }
 
-std::string FunctionCall::toString() const
+std::string
+FunctionCall::toString() const
 {
   std::string result = _name + "(";
   for (size_t i = 0; i < _args.size(); ++i)
   {
-    if (i > 0) result += ", ";
+    if (i > 0)
+      result += ", ";
     result += _args[i]->toString();
   }
   result += ")";
@@ -668,7 +741,8 @@ std::string FunctionCall::toString() const
 // LetExpression implementation
 //=============================================================================
 
-ExprPtr LetExpression::simplify() const
+ExprPtr
+LetExpression::simplify() const
 {
   // Simplify all bindings and the body
   std::vector<std::pair<std::string, ExprPtr>> simplified_bindings;
@@ -684,7 +758,8 @@ ExprPtr LetExpression::simplify() const
   return std::make_shared<LetExpression>(std::move(simplified_bindings), simplified_body);
 }
 
-ExprPtr LetExpression::differentiate(const std::string & var) const
+ExprPtr
+LetExpression::differentiate(const std::string & var) const
 {
   // To differentiate (let x1=e1, x2=e2, ... in body) w.r.t. var:
   // We use the chain rule: d/dvar(body) = ∂body/∂var + Σ(∂body/∂xi * dxi/dvar)
@@ -722,9 +797,9 @@ ExprPtr LetExpression::differentiate(const std::string & var) const
   return std::make_shared<LetExpression>(std::move(new_bindings), dbody);
 }
 
-torch::jit::Value * LetExpression::buildGraph(
-    torch::jit::Graph & graph,
-    std::unordered_map<std::string, torch::jit::Value *> & vars) const
+torch::jit::Value *
+LetExpression::buildGraph(torch::jit::Graph & graph,
+                          std::unordered_map<std::string, torch::jit::Value *> & vars) const
 {
   // Create a scoped copy of vars
   auto scoped_vars = vars;
@@ -740,7 +815,8 @@ torch::jit::Value * LetExpression::buildGraph(
   return _body->buildGraph(graph, scoped_vars);
 }
 
-std::string LetExpression::toString() const
+std::string
+LetExpression::toString() const
 {
   std::string result;
   for (const auto & [name, expr] : _bindings)
@@ -759,11 +835,11 @@ Parser::Parser()
     throw std::runtime_error("Failed to load expression grammar");
 
   // Set up semantic actions to build AST
-  _parser["NUMBER"] = [](const peg::SemanticValues & sv) -> ExprPtr {
-    return std::make_shared<Constant>(std::stod(sv.token_to_string()));
-  };
+  _parser["NUMBER"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  { return std::make_shared<Constant>(std::stod(sv.token_to_string())); };
 
-  _parser["VARIABLE"] = [this](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["VARIABLE"] = [this](const peg::SemanticValues & sv) -> ExprPtr
+  {
     std::string name = sv.token_to_string();
     // Trim whitespace
     name.erase(0, name.find_first_not_of(" \t\r\n"));
@@ -776,7 +852,8 @@ Parser::Parser()
     return std::make_shared<Variable>(name);
   };
 
-  _parser["IDENTIFIER"] = [](const peg::SemanticValues & sv) {
+  _parser["IDENTIFIER"] = [](const peg::SemanticValues & sv)
+  {
     std::string name = sv.token_to_string();
     // Trim whitespace
     name.erase(0, name.find_first_not_of(" \t\r\n"));
@@ -784,22 +861,21 @@ Parser::Parser()
     return name;
   };
 
-  _parser["PRIMARY"] = [](const peg::SemanticValues & sv) -> ExprPtr {
-    return std::any_cast<ExprPtr>(sv[0]);
-  };
+  _parser["PRIMARY"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  { return std::any_cast<ExprPtr>(sv[0]); };
 
-  _parser["POWER"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["POWER"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     ExprPtr result = std::any_cast<ExprPtr>(sv[0]);
     if (sv.size() > 1)
       result = std::make_shared<BinaryOp>(BinaryOp::Op::Pow, result, std::any_cast<ExprPtr>(sv[1]));
     return result;
   };
 
-  _parser["UNARY_OP"] = [](const peg::SemanticValues & sv) {
-    return sv.token_to_string();
-  };
+  _parser["UNARY_OP"] = [](const peg::SemanticValues & sv) { return sv.token_to_string(); };
 
-  _parser["UNARY"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["UNARY"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     if (sv.size() == 1)
       return std::any_cast<ExprPtr>(sv[0]);
 
@@ -814,11 +890,10 @@ Parser::Parser()
     throw std::runtime_error("Unknown unary operator: " + op);
   };
 
-  _parser["MUL_OP"] = [](const peg::SemanticValues & sv) {
-    return sv.token_to_string();
-  };
+  _parser["MUL_OP"] = [](const peg::SemanticValues & sv) { return sv.token_to_string(); };
 
-  _parser["MULTITIVE"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["MULTITIVE"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     ExprPtr result = std::any_cast<ExprPtr>(sv[0]);
     for (size_t i = 1; i < sv.size(); i += 2)
     {
@@ -833,11 +908,10 @@ Parser::Parser()
     return result;
   };
 
-  _parser["ADD_OP"] = [](const peg::SemanticValues & sv) {
-    return sv.token_to_string();
-  };
+  _parser["ADD_OP"] = [](const peg::SemanticValues & sv) { return sv.token_to_string(); };
 
-  _parser["ADDITIVE"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["ADDITIVE"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     ExprPtr result = std::any_cast<ExprPtr>(sv[0]);
     for (size_t i = 1; i < sv.size(); i += 2)
     {
@@ -852,11 +926,10 @@ Parser::Parser()
     return result;
   };
 
-  _parser["COMP_OP"] = [](const peg::SemanticValues & sv) {
-    return sv.token_to_string();
-  };
+  _parser["COMP_OP"] = [](const peg::SemanticValues & sv) { return sv.token_to_string(); };
 
-  _parser["COMPARISON"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["COMPARISON"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     if (sv.size() == 1)
       return std::any_cast<ExprPtr>(sv[0]);
 
@@ -883,11 +956,10 @@ Parser::Parser()
     return std::make_shared<Comparison>(cmp_op, left, right);
   };
 
-  _parser["LOGICAL_OP"] = [](const peg::SemanticValues & sv) {
-    return sv.token_to_string();
-  };
+  _parser["LOGICAL_OP"] = [](const peg::SemanticValues & sv) { return sv.token_to_string(); };
 
-  _parser["LOGICAL"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["LOGICAL"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     ExprPtr result = std::any_cast<ExprPtr>(sv[0]);
     for (size_t i = 1; i < sv.size(); i += 2)
     {
@@ -902,14 +974,16 @@ Parser::Parser()
     return result;
   };
 
-  _parser["ARGS"] = [](const peg::SemanticValues & sv) {
+  _parser["ARGS"] = [](const peg::SemanticValues & sv)
+  {
     std::vector<ExprPtr> args;
     for (const auto & v : sv)
       args.push_back(std::any_cast<ExprPtr>(v));
     return args;
   };
 
-  _parser["FUNCTION"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["FUNCTION"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     std::string name = std::any_cast<std::string>(sv[0]);
     std::vector<ExprPtr> args;
     if (sv.size() > 1)
@@ -917,13 +991,15 @@ Parser::Parser()
     return std::make_shared<FunctionCall>(name, args);
   };
 
-  _parser["ASSIGNMENT"] = [](const peg::SemanticValues & sv) {
+  _parser["ASSIGNMENT"] = [](const peg::SemanticValues & sv)
+  {
     std::string name = std::any_cast<std::string>(sv[0]);
     ExprPtr expr = std::any_cast<ExprPtr>(sv[1]);
     return std::make_pair(name, expr);
   };
 
-  _parser["STATEMENTS"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["STATEMENTS"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  {
     // sv contains: [assignment1, assignment2, ..., body_expr]
     // All but the last element are assignments
 
@@ -944,20 +1020,20 @@ Parser::Parser()
     return std::make_shared<LetExpression>(std::move(bindings), body);
   };
 
-  _parser["EXPRESSION"] = [](const peg::SemanticValues & sv) -> ExprPtr {
-    return std::any_cast<ExprPtr>(sv[0]);
-  };
+  _parser["EXPRESSION"] = [](const peg::SemanticValues & sv) -> ExprPtr
+  { return std::any_cast<ExprPtr>(sv[0]); };
 }
 
-ExprPtr Parser::parse(const std::string & expr, const std::unordered_set<std::string> & constants)
+ExprPtr
+Parser::parse(const std::string & expr, const std::unordered_set<std::string> & constants)
 {
   _constants = constants;
   ExprPtr result;
   _error.clear();
 
-  _parser.set_logger([this](size_t line, size_t col, const std::string & msg, const std::string &) {
-    _error = "Line " + std::to_string(line) + ":" + std::to_string(col) + ": " + msg;
-  });
+  _parser.set_logger(
+      [this](size_t line, size_t col, const std::string & msg, const std::string &)
+      { _error = "Line " + std::to_string(line) + ":" + std::to_string(col) + ": " + msg; });
 
   if (!_parser.parse(expr, result))
   {
