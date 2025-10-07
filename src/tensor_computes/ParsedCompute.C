@@ -98,10 +98,7 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
                nconst,
                ") must have equal length.");
 
-  // Build the expression with constants substituted
-  std::string processed_expr = expression;
-
-  // Evaluate constants
+  // Evaluate user-provided constants
   std::vector<Real> constant_values(nconst);
   for (unsigned int i = 0; i < nconst; ++i)
   {
@@ -123,131 +120,40 @@ ParsedCompute::ParsedCompute(const InputParameters & parameters)
     constant_values[i] = expr->Eval(nullptr);
   }
 
-  // Pre-substitute pi and e in the expression (they are mathematical constants, not variables)
-  if (_extra_symbols)
-  {
-    // Replace 'pi' with its numeric value
-    {
-      std::string pi_str = std::to_string(libMesh::pi);
-      size_t pos = 0;
-      while ((pos = processed_expr.find("pi", pos)) != std::string::npos)
-      {
-        // Check if this is a complete identifier
-        bool is_complete = true;
-        if (pos > 0)
-        {
-          char prev = processed_expr[pos - 1];
-          if (std::isalnum(prev) || prev == '_')
-            is_complete = false;
-        }
-        if (pos + 2 < processed_expr.length())
-        {
-          char next = processed_expr[pos + 2];
-          if (std::isalnum(next) || next == '_')
-            is_complete = false;
-        }
-
-        if (is_complete)
-        {
-          processed_expr.replace(pos, 2, "(" + pi_str + ")");
-          pos += pi_str.length() + 2;
-        }
-        else
-          pos += 2;
-      }
-    }
-
-    // Replace standalone 'e' (but not in scientific notation like 1e-5)
-    {
-      std::string e_str = std::to_string(std::exp(Real(1.0)));
-      size_t pos = 0;
-      while ((pos = processed_expr.find("e", pos)) != std::string::npos)
-      {
-        // Check if this is a complete identifier (not part of scientific notation)
-        bool is_complete = true;
-        if (pos > 0)
-        {
-          char prev = processed_expr[pos - 1];
-          // If previous char is a digit, this might be scientific notation
-          if (std::isalnum(prev) || prev == '_')
-            is_complete = false;
-        }
-        if (pos + 1 < processed_expr.length())
-        {
-          char next = processed_expr[pos + 1];
-          // If next char is +, -, or digit, this is scientific notation
-          if (std::isalnum(next) || next == '_' || next == '+' || next == '-')
-            is_complete = false;
-        }
-
-        if (is_complete)
-        {
-          processed_expr.replace(pos, 1, "(" + e_str + ")");
-          pos += e_str.length() + 2;
-        }
-        else
-          pos += 1;
-      }
-    }
-  }
-
-  // Build list of variables (excluding pi and e which are now substituted)
+  // Build list of variables
   std::vector<std::string> variables_vec = names;
 
-  // add extra symbols (but not pi and e)
+  // Build constants map for mathematical constants and user constants
+  std::unordered_map<std::string, torch::Tensor> constants_map;
+
+  // Add user-provided constants as scalar tensors
+  for (unsigned int i = 0; i < nconst; ++i)
+    constants_map[constant_names[i]] = torch::tensor(constant_values[i], MooseTensor::floatTensorOptions());
+
+  // Add extra symbols if requested
   if (_extra_symbols)
   {
-    // Only include the actual tensor variables, not mathematical constants
-    static const std::vector<std::string> tensor_symbols = {"i", "x", "kx", "y", "ky", "z", "kz", "k2", "t"};
+    // Add mathematical constants (pi, e, i) to the constants map
+    constants_map["pi"] = torch::tensor(libMesh::pi, MooseTensor::floatTensorOptions());
+    constants_map["e"] = torch::tensor(std::exp(Real(1.0)), MooseTensor::floatTensorOptions());
+    constants_map["i"] = torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions());
+
+    // Add tensor variables (x, kx, y, ky, z, kz, k2, t) to variables list
+    static const std::vector<std::string> tensor_symbols = {"x", "kx", "y", "ky", "z", "kz", "k2", "t"};
     variables_vec.insert(variables_vec.end(), tensor_symbols.begin(), tensor_symbols.end());
 
-    _constant_tensors.push_back(
-        torch::tensor(c10::complex<double>(0.0, 1.0), MooseTensor::complexFloatTensorOptions()));
-    _params.push_back(&_constant_tensors[0]);
-
+    // Add tensor variable parameters
     for (const auto dim : make_range(3u))
     {
       _params.push_back(&_domain.getAxis(dim));
       _params.push_back(&_domain.getReciprocalAxis(dim));
     }
-
     _params.push_back(&_domain.getKSquare());
     _params.push_back(&_time_tensor);
   }
 
-  // Substitute constants in expression
-  for (unsigned int i = 0; i < nconst; ++i)
-  {
-    std::string placeholder = constant_names[i];
-    std::string value = std::to_string(constant_values[i]);
-
-    size_t pos = 0;
-    while ((pos = processed_expr.find(placeholder, pos)) != std::string::npos)
-    {
-      // Check if this is a complete identifier (not part of a larger identifier)
-      bool is_complete = true;
-      if (pos > 0)
-      {
-        char prev = processed_expr[pos - 1];
-        if (std::isalnum(prev) || prev == '_')
-          is_complete = false;
-      }
-      if (pos + placeholder.length() < processed_expr.length())
-      {
-        char next = processed_expr[pos + placeholder.length()];
-        if (std::isalnum(next) || next == '_')
-          is_complete = false;
-      }
-
-      if (is_complete)
-        processed_expr.replace(pos, placeholder.length(), value);
-      else
-        pos += placeholder.length();
-    }
-  }
-
-  // Parse the expression
-  if (!_parser.parse(processed_expr, variables_vec))
+  // Parse the expression with variables and constants
+  if (!_parser.parse(expression, variables_vec, constants_map))
     paramError("expression", "Invalid function: ", _parser.errorMessage());
 
   // Take derivatives
@@ -271,13 +177,7 @@ void
 ParsedCompute::computeBuffer()
 {
   if (_extra_symbols)
-  {
     _time_tensor = torch::tensor(_time, MooseTensor::floatTensorOptions());
-
-    // Update constants
-    _constant_tensors[0] = torch::tensor(c10::complex<double>(0.0, 1.0),
-                                         MooseTensor::complexFloatTensorOptions());
-  }
 
   // Evaluate using JIT-compiled graph
   _u = _parser.eval(_params);

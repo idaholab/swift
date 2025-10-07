@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <cmath>
 #include <torch/torch.h>
@@ -118,6 +119,38 @@ public:
     auto it = vars.find(_name);
     if (it == vars.end())
       throw std::runtime_error("Variable '" + _name + "' not found in variable list");
+    return it->second;
+  }
+
+  std::string toString() const override { return _name; }
+
+private:
+  std::string _name;
+};
+
+/**
+ * Constant tensor (for predefined constants like pi, e, i)
+ */
+class ConstantTensor : public Expr
+{
+public:
+  explicit ConstantTensor(const std::string & name) : _name(name) {}
+
+  const std::string & name() const { return _name; }
+
+  ExprPtr simplify() const override { return std::make_shared<ConstantTensor>(_name); }
+
+  ExprPtr differentiate(const std::string &) const override
+  {
+    return std::make_shared<Constant>(0.0);
+  }
+
+  torch::jit::Value * buildGraph(torch::jit::Graph &,
+                                std::unordered_map<std::string, torch::jit::Value *> & vars) const override
+  {
+    auto it = vars.find(_name);
+    if (it == vars.end())
+      throw std::runtime_error("Constant '" + _name + "' not found in constants map");
     return it->second;
   }
 
@@ -247,8 +280,8 @@ class Parser
 public:
   Parser();
 
-  /// Parse an expression string
-  ExprPtr parse(const std::string & expr);
+  /// Parse an expression string with optional set of constant names
+  ExprPtr parse(const std::string & expr, const std::unordered_set<std::string> & constants = {});
 
   /// Get last error message
   const std::string & errorMessage() const { return _error; }
@@ -256,6 +289,7 @@ public:
 private:
   peg::parser _parser;
   std::string _error;
+  std::unordered_set<std::string> _constants;
 
   static constexpr const char * grammar = R"(
     # Top-level expression

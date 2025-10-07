@@ -33,8 +33,10 @@ class ParsedJITTensor
 public:
   ParsedJITTensor();
 
-  /// Parse an expression with given variable names
-  bool parse(const std::string & expression, const std::vector<std::string> & variables);
+  /// Parse an expression with given variable names and optional constants
+  bool parse(const std::string & expression,
+             const std::vector<std::string> & variables,
+             const std::unordered_map<std::string, torch::Tensor> & constants = {});
 
   /// Take derivative with respect to a variable
   void differentiate(const std::string & var);
@@ -58,6 +60,7 @@ protected:
   SwiftExpressionParser::Parser _parser;
   SwiftExpressionParser::ExprPtr _ast;
   std::vector<std::string> _variables;
+  std::unordered_map<std::string, torch::Tensor> _constants;
   std::string _error;
 
   /// Compiled graph

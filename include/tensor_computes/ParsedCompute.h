@@ -30,7 +30,6 @@ public:
 
 protected:
   const bool _extra_symbols;
-  std::vector<torch::Tensor> _constant_tensors;
 
   ParsedJITTensor _parser;
 

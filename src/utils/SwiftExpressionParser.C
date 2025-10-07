@@ -678,11 +678,16 @@ Parser::Parser()
     return std::make_shared<Constant>(std::stod(sv.token_to_string()));
   };
 
-  _parser["VARIABLE"] = [](const peg::SemanticValues & sv) -> ExprPtr {
+  _parser["VARIABLE"] = [this](const peg::SemanticValues & sv) -> ExprPtr {
     std::string name = sv.token_to_string();
     // Trim whitespace
     name.erase(0, name.find_first_not_of(" \t\r\n"));
     name.erase(name.find_last_not_of(" \t\r\n") + 1);
+
+    // Check if this is a constant
+    if (_constants.count(name))
+      return std::make_shared<ConstantTensor>(name);
+
     return std::make_shared<Variable>(name);
   };
 
@@ -832,8 +837,9 @@ Parser::Parser()
   };
 }
 
-ExprPtr Parser::parse(const std::string & expr)
+ExprPtr Parser::parse(const std::string & expr, const std::unordered_set<std::string> & constants)
 {
+  _constants = constants;
   ExprPtr result;
   _error.clear();
 

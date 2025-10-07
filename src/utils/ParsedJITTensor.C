@@ -18,14 +18,22 @@ ParsedJITTensor::ParsedJITTensor()
 {
 }
 
-bool ParsedJITTensor::parse(const std::string & expression, const std::vector<std::string> & variables)
+bool ParsedJITTensor::parse(const std::string & expression,
+                            const std::vector<std::string> & variables,
+                            const std::unordered_map<std::string, torch::Tensor> & constants)
 {
   _variables = variables;
+  _constants = constants;
   _error.clear();
   _graph.reset();
   _executor.reset();
 
-  _ast = _parser.parse(expression);
+  // Extract constant names for the parser
+  std::unordered_set<std::string> constant_names;
+  for (const auto & kv : constants)
+    constant_names.insert(kv.first);
+
+  _ast = _parser.parse(expression, constant_names);
   if (!_ast)
   {
     _error = _parser.errorMessage();
@@ -63,11 +71,18 @@ void ParsedJITTensor::compile()
   _graph = std::make_shared<torch::jit::Graph>();
   std::unordered_map<std::string, torch::jit::Value *> var_map;
 
-  // Create input nodes
+  // Create input nodes for variables
   for (const auto & var : _variables)
   {
     auto input = _graph->addInput();
     var_map[var] = input;
+  }
+
+  // Add constants as graph inputs
+  for (const auto & kv : _constants)
+  {
+    auto input = _graph->addInput();
+    var_map[kv.first] = input;
   }
 
   // Build the graph from AST
@@ -103,10 +118,14 @@ torch::Tensor ParsedJITTensor::eval(const std::vector<const torch::Tensor *> & p
   if (!_executor)
     compile();
 
-  // Build stack
+  // Build stack: first variables, then constants
   torch::jit::Stack stack;
   for (const auto & p : params)
     stack.push_back(*p);
+
+  // Add constants to the stack
+  for (const auto & kv : _constants)
+    stack.push_back(kv.second);
 
   // Execute
   torch::NoGradGuard no_grad;
