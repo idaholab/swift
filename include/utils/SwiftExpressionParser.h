@@ -179,7 +179,8 @@ public:
     Sub,
     Mul,
     Div,
-    Pow
+    Pow,
+    Mod
   };
 
   BinaryOp(Op op, ExprPtr left, ExprPtr right) : _op(op), _left(left), _right(right) {}
@@ -375,9 +376,9 @@ private:
     ADDITIVE    <- MULTITIVE (ADD_OP MULTITIVE)*
     ADD_OP      <- '+' / '-'
 
-    # Multiplication and division
+    # Multiplication, division, and modulo
     MULTITIVE   <- UNARY (MUL_OP UNARY)*
-    MUL_OP      <- '*' / '/'
+    MUL_OP      <- '*' / '/' / '%'
 
     # Unary operators
     UNARY       <- (UNARY_OP UNARY) / POWER

@@ -41,6 +41,8 @@ BinaryOp::opString(Op op)
       return "/";
     case Op::Pow:
       return "^";
+    case Op::Mod:
+      return "%";
   }
   return "?";
 }
@@ -74,6 +76,9 @@ BinaryOp::simplify() const
         break;
       case Op::Pow:
         result = std::pow(lc->value(), rc->value());
+        break;
+      case Op::Mod:
+        result = std::fmod(lc->value(), rc->value());
         break;
     }
     return std::make_shared<Constant>(result);
@@ -125,6 +130,10 @@ BinaryOp::simplify() const
         return left;
       if (lc && lc->value() == 1.0)
         return std::make_shared<Constant>(1.0);
+      break;
+
+    case Op::Mod:
+      // No common algebraic simplifications for modulo
       break;
   }
 
@@ -183,6 +192,12 @@ BinaryOp::differentiate(const std::string & var) const
                   Op::Mul, dr, std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{_left})),
               std::make_shared<BinaryOp>(
                   Op::Mul, _right, std::make_shared<BinaryOp>(Op::Div, dl, _left))));
+
+    case Op::Mod:
+      // d/dvar[x % y] = dx (treating y as constant for now)
+      // Note: Full derivative would be dx - y*d/dvar[floor(x/y)] which is discontinuous
+      // For practical purposes, the derivative w.r.t. x is dx almost everywhere
+      return dl;
   }
   throw std::runtime_error("Invalid binary operator");
 }
@@ -206,6 +221,8 @@ BinaryOp::buildGraph(torch::jit::Graph & graph,
       return graph.insert(torch::jit::aten::div, {left, right});
     case Op::Pow:
       return graph.insert(torch::jit::aten::pow, {left, right});
+    case Op::Mod:
+      return graph.insert(torch::jit::aten::remainder, {left, right});
   }
   throw std::runtime_error("Invalid binary operator");
 }
@@ -596,6 +613,18 @@ FunctionCall::differentiate(const std::string & var) const
   else if (_name == "exp")
     return std::make_shared<BinaryOp>(
         BinaryOp::Op::Mul, std::make_shared<FunctionCall>("exp", std::vector<ExprPtr>{arg}), darg);
+  else if (_name == "exp2")
+  {
+    // d/dx[2^x] = 2^x * ln(2) * dx
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul,
+        std::make_shared<BinaryOp>(
+            BinaryOp::Op::Mul,
+            std::make_shared<FunctionCall>("exp2", std::vector<ExprPtr>{arg}),
+            std::make_shared<FunctionCall>("log",
+                                           std::vector<ExprPtr>{std::make_shared<Constant>(2.0)})),
+        darg);
+  }
   else if (_name == "log")
     return std::make_shared<BinaryOp>(BinaryOp::Op::Div, darg, arg);
   else if (_name == "log10")
@@ -624,6 +653,163 @@ FunctionCall::differentiate(const std::string & var) const
             BinaryOp::Op::Mul,
             std::make_shared<Constant>(2.0),
             std::make_shared<FunctionCall>("sqrt", std::vector<ExprPtr>{arg})));
+  else if (_name == "rsqrt")
+  {
+    // d/dx[1/sqrt(x)] = -1/(2*x^(3/2)) * dx = -rsqrt(x)/(2*x) * dx
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul,
+        std::make_shared<UnaryOp>(
+            UnaryOp::Op::Neg,
+            std::make_shared<BinaryOp>(
+                BinaryOp::Op::Div,
+                std::make_shared<FunctionCall>("rsqrt", std::vector<ExprPtr>{arg}),
+                std::make_shared<BinaryOp>(
+                    BinaryOp::Op::Mul, std::make_shared<Constant>(2.0), arg))),
+        darg);
+  }
+  else if (_name == "asin")
+  {
+    // d/dx[asin(x)] = 1/sqrt(1-x^2) * dx
+    auto one_minus_x2 =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Sub,
+                                   std::make_shared<Constant>(1.0),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg));
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Div,
+        darg,
+        std::make_shared<FunctionCall>("sqrt", std::vector<ExprPtr>{one_minus_x2}));
+  }
+  else if (_name == "acos")
+  {
+    // d/dx[acos(x)] = -1/sqrt(1-x^2) * dx
+    auto one_minus_x2 =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Sub,
+                                   std::make_shared<Constant>(1.0),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg));
+    return std::make_shared<UnaryOp>(
+        UnaryOp::Op::Neg,
+        std::make_shared<BinaryOp>(
+            BinaryOp::Op::Div,
+            darg,
+            std::make_shared<FunctionCall>("sqrt", std::vector<ExprPtr>{one_minus_x2})));
+  }
+  else if (_name == "atan")
+  {
+    // d/dx[atan(x)] = 1/(1+x^2) * dx
+    auto one_plus_x2 =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Add,
+                                   std::make_shared<Constant>(1.0),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg));
+    return std::make_shared<BinaryOp>(BinaryOp::Op::Div, darg, one_plus_x2);
+  }
+  else if (_name == "asinh")
+  {
+    // d/dx[asinh(x)] = 1/sqrt(x^2+1) * dx
+    auto x2_plus_one =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Add,
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg),
+                                   std::make_shared<Constant>(1.0));
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Div,
+        darg,
+        std::make_shared<FunctionCall>("sqrt", std::vector<ExprPtr>{x2_plus_one}));
+  }
+  else if (_name == "acosh")
+  {
+    // d/dx[acosh(x)] = 1/sqrt(x^2-1) * dx
+    auto x2_minus_one =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Sub,
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg),
+                                   std::make_shared<Constant>(1.0));
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Div,
+        darg,
+        std::make_shared<FunctionCall>("sqrt", std::vector<ExprPtr>{x2_minus_one}));
+  }
+  else if (_name == "atanh")
+  {
+    // d/dx[atanh(x)] = 1/(1-x^2) * dx
+    auto one_minus_x2 =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Sub,
+                                   std::make_shared<Constant>(1.0),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, arg, arg));
+    return std::make_shared<BinaryOp>(BinaryOp::Op::Div, darg, one_minus_x2);
+  }
+  else if (_name == "abs")
+  {
+    // d/dx[abs(x)] = sign(x) * dx, but sign is discontinuous at 0
+    // We use x/abs(x) which is undefined at 0 but gives correct derivatives elsewhere
+    auto abs_val = std::make_shared<FunctionCall>(_name, _args);
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul, std::make_shared<BinaryOp>(BinaryOp::Op::Div, arg, abs_val), darg);
+  }
+  else if (_name == "hypot" && _args.size() == 2)
+  {
+    // d/dx[hypot(x,y)] = x/hypot(x,y) * dx + y/hypot(x,y) * dy
+    auto arg2 = _args[1];
+    auto darg2 = arg2->differentiate(var);
+    auto hypot_val = std::make_shared<FunctionCall>(_name, _args);
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Add,
+        std::make_shared<BinaryOp>(
+            BinaryOp::Op::Mul, std::make_shared<BinaryOp>(BinaryOp::Op::Div, arg, hypot_val), darg),
+        std::make_shared<BinaryOp>(BinaryOp::Op::Mul,
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Div, arg2, hypot_val),
+                                   darg2));
+  }
+  else if (_name == "atan2" && _args.size() == 2)
+  {
+    // d/dvar[atan2(y,x)] = (x*dy - y*dx)/(x^2+y^2)
+    auto y = arg;
+    auto x = _args[1];
+    auto dy = darg;
+    auto dx = _args[1]->differentiate(var);
+    auto numerator =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Sub,
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, x, dy),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, y, dx));
+    auto denominator =
+        std::make_shared<BinaryOp>(BinaryOp::Op::Add,
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, x, x),
+                                   std::make_shared<BinaryOp>(BinaryOp::Op::Mul, y, y));
+    return std::make_shared<BinaryOp>(BinaryOp::Op::Div, numerator, denominator);
+  }
+  else if (_name == "pow" && _args.size() == 2)
+  {
+    // d/dvar[x^y] = x^y * (y*dx/x + ln(x)*dy)
+    // This is the full derivative accounting for both x and y being functions of var
+    auto x = arg;
+    auto y = _args[1];
+    auto dx = darg;
+    auto dy = _args[1]->differentiate(var);
+    auto pow_val = std::make_shared<FunctionCall>(_name, _args);
+    auto term1 = std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul, y, std::make_shared<BinaryOp>(BinaryOp::Op::Div, dx, x));
+    auto term2 = std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul, std::make_shared<FunctionCall>("log", std::vector<ExprPtr>{x}), dy);
+    return std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul, pow_val, std::make_shared<BinaryOp>(BinaryOp::Op::Add, term1, term2));
+  }
+  else if (_name == "min" && _args.size() == 2)
+  {
+    // d/dvar[min(x,y)] = if(x<y, dx, dy)
+    auto x = arg;
+    auto y = _args[1];
+    auto dx = darg;
+    auto dy = _args[1]->differentiate(var);
+    auto condition = std::make_shared<Comparison>(Comparison::Op::Lt, x, y);
+    return std::make_shared<FunctionCall>("if", std::vector<ExprPtr>{condition, dx, dy});
+  }
+  else if (_name == "max" && _args.size() == 2)
+  {
+    // d/dvar[max(x,y)] = if(x>y, dx, dy)
+    auto x = arg;
+    auto y = _args[1];
+    auto dx = darg;
+    auto dy = _args[1]->differentiate(var);
+    auto condition = std::make_shared<Comparison>(Comparison::Op::Gt, x, y);
+    return std::make_shared<FunctionCall>("if", std::vector<ExprPtr>{condition, dx, dy});
+  }
   else if (_name == "if" && _args.size() == 3)
   {
     // Derivative of if(c, t, f) w.r.t. var is if(c, dt/dvar, df/dvar)
@@ -632,9 +818,18 @@ FunctionCall::differentiate(const std::string & var) const
         std::vector<ExprPtr>{_args[0], _args[1]->differentiate(var), _args[2]->differentiate(var)});
   }
 
-  // For other functions, return zero (not differentiable or not implemented)
-  // TODO: whitelist zero derivative functions (round, ceil, floor, trunc) error for not implemented!
-  return std::make_shared<Constant>(0.0);
+  // Functions with zero derivatives (discontinuous or constant on intervals)
+  else if (_name == "round")
+    return std::make_shared<Constant>(0.0); // d/dx[round(x)] = 0 almost everywhere
+  else if (_name == "ceil")
+    return std::make_shared<Constant>(0.0); // d/dx[ceil(x)] = 0 almost everywhere
+  else if (_name == "floor")
+    return std::make_shared<Constant>(0.0); // d/dx[floor(x)] = 0 almost everywhere
+  else if (_name == "trunc")
+    return std::make_shared<Constant>(0.0); // d/dx[trunc(x)] = 0 almost everywhere
+
+  // If we reach here, derivative is not implemented for this function
+  throw std::runtime_error("Derivative not implemented for function: " + _name);
 }
 
 torch::jit::Value *
@@ -704,8 +899,6 @@ FunctionCall::buildGraph(torch::jit::Graph & graph,
     return graph.insert(torch::jit::aten::hypot, {arg_vals[0], arg_vals[1]});
   else if (_name == "pow" && arg_vals.size() == 2)
     return graph.insert(torch::jit::aten::pow, {arg_vals[0], arg_vals[1]});
-  else if (_name == "fmod" && arg_vals.size() == 2)
-    return graph.insert(torch::jit::aten::fmod, {arg_vals[0], arg_vals[1]});
   else if (_name == "if" && arg_vals.size() == 3)
     return graph.insert(torch::jit::aten::where, {arg_vals[0], arg_vals[1], arg_vals[2]});
   else if (_name == "FFT" && arg_vals.size() == 1)
@@ -905,6 +1098,8 @@ Parser::Parser()
         result = std::make_shared<BinaryOp>(BinaryOp::Op::Mul, result, right);
       else if (op == "/")
         result = std::make_shared<BinaryOp>(BinaryOp::Op::Div, result, right);
+      else if (op == "%")
+        result = std::make_shared<BinaryOp>(BinaryOp::Op::Mod, result, right);
     }
     return result;
   };

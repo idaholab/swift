@@ -7,6 +7,7 @@
 /**********************************************************************/
 
 #include "ParsedJITTensor.h"
+#include "SwiftUtils.h"
 
 #include <torch/csrc/jit/passes/constant_propagation.h>
 #include <torch/csrc/jit/passes/dead_code_elimination.h>
@@ -89,10 +90,8 @@ ParsedJITTensor::compile()
   // Build the graph from AST
   auto output = _ast->buildGraph(*_graph, var_map);
 
-  // Register outputs
-  auto outputs = output->node()->outputs();
-  for (auto out : outputs)
-    _graph->registerOutput(out);
+  // Register the single output value
+  _graph->registerOutput(output);
 
   // Lint and optimize graph
   _graph->lint();
@@ -134,9 +133,22 @@ ParsedJITTensor::eval(const std::vector<const torch::Tensor *> & params)
   _executor->run(stack);
 
   if (stack.size() != 1)
-    throw std::runtime_error("Unexpected number of outputs");
+  {
+    std::string msg = "Unexpected number of outputs: " + std::to_string(stack.size());
+    for (size_t i = 0; i < stack.size(); ++i)
+      msg += "\n  [" + std::to_string(i) + "]: " + stack[i].tagKind();
+    throw std::runtime_error(msg);
+  }
 
-  return stack[0].toTensor();
+  // Handle case where JIT optimization collapsed expression to a scalar constant
+  if (stack[0].isTensor())
+    return stack[0].toTensor();
+  else if (stack[0].isDouble())
+    return torch::tensor(stack[0].toDouble(), MooseTensor::floatTensorOptions());
+  else if (stack[0].isInt())
+    return torch::tensor(stack[0].toInt(), MooseTensor::floatTensorOptions());
+  else
+    throw std::runtime_error("Unexpected output type from JIT executor");
 }
 
 void
