@@ -633,6 +633,7 @@ FunctionCall::differentiate(const std::string & var) const
   }
 
   // For other functions, return zero (not differentiable or not implemented)
+  // TODO: whitelist zero derivative functions (round, ceil, floor, trunc) error for not implemented!
   return std::make_shared<Constant>(0.0);
 }
 

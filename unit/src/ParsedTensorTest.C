@@ -44,12 +44,16 @@ TEST(ParsedTensorTest, Parse)
 
     const auto result_opt = fp_jit_opt.eval(params);
 
-    EXPECT_NEAR((result_no_opt - result_opt).abs().max().template item<double>(), 0.0, 1e-12);
-    EXPECT_NEAR((result_opt - gold).abs().max().template item<double>(), 0.0, 1e-12);
+    const Real epsilon =
+        MooseTensor::floatTensorOptions().dtype() == torch::kFloat64 ? 1e-12 : 1e-6;
+    EXPECT_NEAR((result_no_opt - result_opt).abs().max().template item<double>(), 0.0, epsilon);
+    EXPECT_NEAR((result_opt - gold).abs().max().template item<double>(), 0.0, epsilon);
   };
 
   // check hypot
+  check("hypot(x,y)", torch::hypot(x, y));
   check("sqrt(x^2+y^2)", torch::sqrt(x * x + y * y));
+  check("sqrt(x*x+y*y)", torch::sqrt(x * x + y * y));
 
   // trig functions
   check("cos(y)", torch::cos(y));
@@ -74,10 +78,19 @@ TEST(ParsedTensorTest, Parse)
   check("y/x", y / x);
   check("-x", -x);
   check("log(x)", torch::log(x));
+  check("log10(x)", torch::log10(x));
+  check("log2(x)", torch::log2(x));
   check("pow(y, x)", torch::pow(y, x));
   check("abs(y-x)", torch::abs(y - x));
+  check("floor(x-y)", torch::floor(x - y));
+  check("ceil(x-y)", torch::ceil(x - y));
+  check("round(x-y)", torch::round(x - y));
+  check("trunc(x-y)", torch::trunc(x - y));
   check("min(x,y)", torch::minimum(x, y));
   check("max(x,y)", torch::maximum(x, y));
   check("pow(2, x)", torch::pow(2, x));
   check("pow(x, 1.0/3.0)", torch::pow(x, 1.0 / 3.0));
+  // check("cbrt(x)", torch::pow(x, 1.0 / 3.0));
+  check("if(x<1 | y>=2, x, y)", torch::where(torch::logical_or(x < 1, y >= 2), x, y));
+  check("if(x<=2 & y>1, x*x, 3*y)", torch::where(torch::logical_and(x <= 2, y > 1), x*x, y*3));
 }
