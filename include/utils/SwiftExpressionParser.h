@@ -62,6 +62,9 @@ public:
   /// Differentiate with respect to a variable
   virtual ExprPtr differentiate(const std::string & var) const = 0;
 
+  /// Substitute a variable with an expression
+  virtual ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const = 0;
+
   /// Build a torch JIT graph node
   virtual torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
@@ -86,6 +89,11 @@ public:
   ExprPtr differentiate(const std::string &) const override
   {
     return std::make_shared<Constant>(0.0);
+  }
+
+  ExprPtr substitute(const std::string &, const ExprPtr &) const override
+  {
+    return std::make_shared<Constant>(_value);
   }
 
   torch::jit::Value *
@@ -116,6 +124,11 @@ public:
   ExprPtr differentiate(const std::string & var) const override
   {
     return std::make_shared<Constant>(var == _name ? 1.0 : 0.0);
+  }
+
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override
+  {
+    return (var == _name) ? replacement : std::make_shared<Variable>(_name);
   }
 
   torch::jit::Value *
@@ -149,6 +162,11 @@ public:
   ExprPtr differentiate(const std::string &) const override
   {
     return std::make_shared<Constant>(0.0);
+  }
+
+  ExprPtr substitute(const std::string &, const ExprPtr &) const override
+  {
+    return std::make_shared<ConstantTensor>(_name);
   }
 
   torch::jit::Value *
@@ -187,6 +205,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
@@ -216,6 +235,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
@@ -246,6 +266,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
@@ -273,6 +294,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
@@ -300,6 +322,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;
@@ -327,6 +350,7 @@ public:
 
   ExprPtr simplify() const override;
   ExprPtr differentiate(const std::string & var) const override;
+  ExprPtr substitute(const std::string & var, const ExprPtr & replacement) const override;
   torch::jit::Value *
   buildGraph(torch::jit::Graph & graph,
              std::unordered_map<std::string, torch::jit::Value *> & vars) const override;

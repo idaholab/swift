@@ -202,6 +202,13 @@ BinaryOp::differentiate(const std::string & var) const
   throw std::runtime_error("Invalid binary operator");
 }
 
+ExprPtr
+BinaryOp::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  return std::make_shared<BinaryOp>(
+      _op, _left->substitute(var, replacement), _right->substitute(var, replacement));
+}
+
 torch::jit::Value *
 BinaryOp::buildGraph(torch::jit::Graph & graph,
                      std::unordered_map<std::string, torch::jit::Value *> & vars) const
@@ -267,6 +274,12 @@ UnaryOp::differentiate(const std::string & var) const
       return std::make_shared<Constant>(0.0); // Derivative of logical not is zero
   }
   throw std::runtime_error("Invalid unary operator");
+}
+
+ExprPtr
+UnaryOp::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  return std::make_shared<UnaryOp>(_op, _operand->substitute(var, replacement));
 }
 
 torch::jit::Value *
@@ -346,6 +359,13 @@ Comparison::differentiate(const std::string &) const
 {
   // Derivative of comparison is zero (not differentiable in classical sense)
   return std::make_shared<Constant>(0.0);
+}
+
+ExprPtr
+Comparison::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  return std::make_shared<Comparison>(
+      _op, _left->substitute(var, replacement), _right->substitute(var, replacement));
 }
 
 torch::jit::Value *
@@ -456,6 +476,13 @@ LogicalOp::differentiate(const std::string &) const
 {
   // Derivative of logical operations is zero
   return std::make_shared<Constant>(0.0);
+}
+
+ExprPtr
+LogicalOp::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  return std::make_shared<LogicalOp>(
+      _op, _left->substitute(var, replacement), _right->substitute(var, replacement));
 }
 
 torch::jit::Value *
@@ -832,6 +859,15 @@ FunctionCall::differentiate(const std::string & var) const
   throw std::runtime_error("Derivative not implemented for function: " + _name);
 }
 
+ExprPtr
+FunctionCall::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  std::vector<ExprPtr> substituted_args;
+  for (const auto & arg : _args)
+    substituted_args.push_back(arg->substitute(var, replacement));
+  return std::make_shared<FunctionCall>(_name, substituted_args);
+}
+
 torch::jit::Value *
 FunctionCall::buildGraph(torch::jit::Graph & graph,
                          std::unordered_map<std::string, torch::jit::Value *> & vars) const
@@ -953,41 +989,117 @@ LetExpression::simplify() const
 }
 
 ExprPtr
+LetExpression::substitute(const std::string & var, const ExprPtr & replacement) const
+{
+  // Check if var is shadowed by any binding
+  for (const auto & [name, _] : _bindings)
+  {
+    if (name == var)
+    {
+      // Variable is shadowed, don't substitute in the body
+      // But we still need to substitute in the binding expressions
+      std::vector<std::pair<std::string, ExprPtr>> new_bindings;
+      for (const auto & [bind_name, bind_expr] : _bindings)
+        new_bindings.push_back({bind_name, bind_expr->substitute(var, replacement)});
+      return std::make_shared<LetExpression>(std::move(new_bindings), _body);
+    }
+  }
+
+  // Variable is not shadowed, substitute everywhere
+  std::vector<std::pair<std::string, ExprPtr>> new_bindings;
+  for (const auto & [name, expr] : _bindings)
+    new_bindings.push_back({name, expr->substitute(var, replacement)});
+
+  return std::make_shared<LetExpression>(std::move(new_bindings),
+                                         _body->substitute(var, replacement));
+}
+
+ExprPtr
 LetExpression::differentiate(const std::string & var) const
 {
   // To differentiate (let x1=e1, x2=e2, ... in body) w.r.t. var:
-  // We use the chain rule: d/dvar(body) = ∂body/∂var + Σ(∂body/∂xi * dxi/dvar)
+  // Use the chain rule: d/dvar[body(x1, x2, ...)] = ∂body/∂var + Σ(∂body/∂xi * dxi/dvar)
   //
-  // But this is complex. Instead, we use substitution:
-  // 1. Keep all bindings
-  // 2. Differentiate the body with respect to var
-  // 3. Add derivative bindings for each local variable
+  // We create a new LetExpression with:
+  // 1. Original bindings: x1=e1, x2=e2, ...
+  // 2. Derivative bindings: dx1=d/dvar[e1], dx2=d/dvar[e2], ...
+  // 3. Body derivative using chain rule
   //
-  // For simplicity, we'll inline-expand and differentiate:
-  // This creates: let x1=e1, x2=e2, dx1=d(e1)/dvar, dx2=d(e2)/dvar in d(body)/dvar
-  // where the body derivative is computed treating local vars as functions of var
+  // This preserves common subexpressions and avoids exponential expansion.
+  //
+  // Important: Bindings can reference earlier bindings (e.g., x2:=x^2; sinx2:=sin(x2))
+  // So when computing derivatives of bindings, we must apply the chain rule for
+  // dependencies on earlier local variables.
 
-  // Build new bindings with derivatives
+  // Build new bindings with both original and derivative bindings
   std::vector<std::pair<std::string, ExprPtr>> new_bindings;
+  std::vector<std::string> binding_names; // Track binding names for chain rule
 
-  // Copy original bindings
   for (const auto & [name, expr] : _bindings)
   {
+    // Keep original binding
     new_bindings.push_back({name, expr});
-    // Add derivative binding for each local variable
-    new_bindings.push_back({"d" + name, expr->differentiate(var)});
+
+    // Compute derivative: d/dvar[expr]
+    // Start with partial derivative w.r.t. var
+    ExprPtr derivative_expr = expr->differentiate(var);
+
+    // Apply chain rule for dependencies on earlier local variables
+    // For each earlier binding xi, add: ∂expr/∂xi * dxi
+    for (const auto & earlier_name : binding_names)
+    {
+      ExprPtr partial_expr_xi = expr->differentiate(earlier_name);
+
+      // Check if this partial is non-zero (optimization)
+      if (auto c = asConstant(partial_expr_xi))
+      {
+        if (c->value() == 0.0)
+          continue; // Skip if partial derivative is zero
+      }
+
+      // Add chain rule term: ∂expr/∂xi * dxi
+      std::string earlier_derivative_name = "d" + earlier_name;
+      ExprPtr chain_term = std::make_shared<BinaryOp>(
+          BinaryOp::Op::Mul, partial_expr_xi, std::make_shared<Variable>(earlier_derivative_name));
+
+      // Accumulate: derivative_expr = derivative_expr + chain_term
+      derivative_expr = std::make_shared<BinaryOp>(BinaryOp::Op::Add, derivative_expr, chain_term);
+    }
+
+    // Add derivative binding
+    std::string derivative_name = "d" + name;
+    new_bindings.push_back({derivative_name, derivative_expr});
+
+    // Track this binding name for future chain rule applications
+    binding_names.push_back(name);
   }
 
-  // Differentiate the body
-  // The body differentiation needs to account for local variables being functions of var
-  // We create a new body that includes the chain rule terms
+  // Compute the partial derivative of body w.r.t. var (treating local variables as constants)
   ExprPtr dbody = _body->differentiate(var);
 
-  // For each binding xi := ei, add chain rule term: ∂body/∂xi * dei/dvar
-  // But ∂body/∂xi requires symbolic differentiation of body w.r.t. local var
-  // For now, use a simpler approach: just differentiate body treating locals as constants initially
-  // TODO: Full chain rule implementation would require computing ∂body/∂xi symbolically
+  // Apply chain rule: for each local variable xi, add ∂body/∂xi * dxi
+  for (const auto & [name, expr] : _bindings)
+  {
+    // Compute ∂body/∂xi (partial derivative w.r.t. local variable xi)
+    ExprPtr partial_body_xi = _body->differentiate(name);
 
+    // Check if this partial is non-zero (optimization)
+    if (auto c = asConstant(partial_body_xi))
+    {
+      if (c->value() == 0.0)
+        continue; // Skip if partial derivative is zero
+    }
+
+    // Add chain rule term: ∂body/∂xi * dxi
+    std::string derivative_name = "d" + name;
+    ExprPtr chain_term = std::make_shared<BinaryOp>(
+        BinaryOp::Op::Mul, partial_body_xi, std::make_shared<Variable>(derivative_name));
+
+    // Accumulate: dbody = dbody + chain_term
+    dbody = std::make_shared<BinaryOp>(BinaryOp::Op::Add, dbody, chain_term);
+  }
+
+  // Return new LetExpression with all bindings and the chain-rule derivative
   return std::make_shared<LetExpression>(std::move(new_bindings), dbody);
 }
 

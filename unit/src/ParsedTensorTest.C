@@ -194,4 +194,10 @@ TEST(ParsedTensorTest, Parse)
   // check("cbrt(x)", torch::pow(x, 1.0 / 3.0));
   check("if(x<1 | y>=2, x, y)", torch::where(torch::logical_or(x < 1, y >= 2), x, y));
   check("if(x<=1 & y>2, x*x, 3*y)", torch::where(torch::logical_and(x <= 1, y > 2), x * x, y * 3));
+
+  // local variables
+  check("r2:=x^2+y^2; sqrt(r2)", torch::sqrt(x * x + y * y));
+  check2("x2:=x^2; sinx2:=sin(x2); 4*sinx2", "x", "8*x*cos(x*x)", true);
+  check2("a:=sin(x^2); a + 2*a + 3*a", "x", "12*x*cos(x^2)", true);
+  check2("a:=sin(x^2); a + 2*a + 3*a", "x", "12*x*cos(x^2)", false);
 }
