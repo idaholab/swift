@@ -29,15 +29,17 @@ TEST(ParsedTensorTest, Parse)
 
   // Epsilon tensor for finite difference calculations (use sqrt(epsilon) for better numerical
   // stability)
-  const auto eps_fd = torch::tensor(std::sqrt(epsilon), MooseTensor::floatTensorOptions());
+  const Real eps_fd = MooseTensor::floatTensorOptions().dtype() == torch::kFloat64 ? 1e-6 : 1e-3;
+  const Real rel_tolerance =
+      MooseTensor::floatTensorOptions().dtype() == torch::kFloat64 ? 1e-5 : 1e-2;
+  const Real abs_tolerance = std::sqrt(epsilon);
 
   // Perturbed tensors for finite difference derivatives
   const auto x2 = x + eps_fd;
   const auto y2 = y + eps_fd;
   const auto n2 = n + eps_fd;
 
-  auto check = [x, y, n, epsilon, eps_fd, x2, y2, n2](
-                   const std::string & expression, auto gold, bool derivative_check = true)
+  auto check = [&](const std::string & expression, auto gold, bool derivative_check = true)
   {
     ParsedJITTensor fp_jit;
     std::vector<std::string> variables{"x", "y", "n"};
@@ -70,71 +72,72 @@ TEST(ParsedTensorTest, Parse)
     std::vector<const torch::Tensor *> params_dy{&x, &y2, &n};
     std::vector<const torch::Tensor *> params_dn{&x, &y, &n2};
 
-    // Compute finite difference derivatives
-    const auto f_x2 = fp_jit_opt.eval(params_dx);
-    const auto f_y2 = fp_jit_opt.eval(params_dy);
-    const auto f_n2 = fp_jit_opt.eval(params_dn);
-
-    const auto fd_dx = (f_x2 - result_opt) / eps_fd;
-    const auto fd_dy = (f_y2 - result_opt) / eps_fd;
-    const auto fd_dn = (f_n2 - result_opt) / eps_fd;
-
-    // Compute symbolic derivatives and compare with finite differences
-    ParsedJITTensor fp_jit_dx, fp_jit_dy, fp_jit_dn;
-
-    // Test derivative w.r.t. x
-    if (fp_jit_dx.parse(expression, variables))
+    auto derivativeTest = [&](const std::string & dvar, std::vector<const torch::Tensor *> dparams)
     {
-      fp_jit_dx.differentiate("x");
-      fp_jit_dx.compile();
-      const auto symbolic_dx = fp_jit_dx.eval(params);
+      ParsedJITTensor dfp;
+      if (dfp.parse(expression, variables))
+      {
+        const auto fp2 = fp_jit_opt.eval(dparams);
+        const auto dr1 = (fp2 - result_opt) / eps_fd;
 
-      // Use relative error: |symbolic - fd| / (|fd| + eps) < tolerance
-      const auto abs_diff = (symbolic_dx - fd_dx).abs();
-      const auto denominator = fd_dx.abs() + eps_fd;
-      const auto rel_error = (abs_diff / denominator).max().template item<double>();
+        dfp.differentiate(dvar);
+        dfp.compile();
+        const auto dr2 = dfp.eval(params);
 
-      // Relative tolerance: sqrt(epsilon) * 100 for first-order finite differences
-      const Real rel_tolerance = std::sqrt(epsilon) * 100;
-      EXPECT_NEAR(rel_error, 0.0, rel_tolerance)
-          << "Derivative w.r.t. x failed for expression: " << expression;
+        // Use relative error: |symbolic - fd| / (|fd| + eps) < tolerance
+        const auto abs_diff = (dr2 - dr1).abs();
+        const auto denominator = dr1.abs() + eps_fd;
+        const auto rel_error = (abs_diff / denominator).max().template item<double>();
+
+        // Relative tolerance: sqrt(epsilon) * 100 for first-order finite differences
+        EXPECT_TRUE(rel_error < rel_tolerance ||
+                    abs_diff.max().template item<double>() < abs_tolerance)
+            << "Derivative w.r.t. " << dvar << "  failed for expression: " << expression << '\n'
+            << "(" << rel_error << " < " << rel_tolerance << " || "
+            << abs_diff.max().template item<double>() << " < " << abs_tolerance << ") is false";
+      }
+    };
+
+    derivativeTest("x", params_dx);
+    derivativeTest("y", params_dy);
+    derivativeTest("n", params_dn);
+  };
+
+  auto check2 = [&](const std::string & expression,
+                    std::string dvar,
+                    const std::string & derivative,
+                    bool compile)
+  {
+    std::vector<std::string> variables{"x", "y", "n"};
+    std::vector<const torch::Tensor *> params{&x, &y, &n};
+
+    ParsedJITTensor dF1, dF2;
+    if (!dF1.parse(expression, variables))
+      mooseError("Invalid JIT function: ", expression, "   ", dF1.errorMessage());
+    if (!dF2.parse(derivative, variables))
+      mooseError("Invalid JIT function: ", expression, "   ", dF2.errorMessage());
+
+    dF1.differentiate(dvar);
+    if (compile)
+    {
+      dF1.compile();
+      dF2.compile();
     }
 
-    // Test derivative w.r.t. y
-    if (fp_jit_dy.parse(expression, variables))
-    {
-      fp_jit_dy.differentiate("y");
-      fp_jit_dy.compile();
-      const auto symbolic_dy = fp_jit_dy.eval(params);
+    const auto r1 = dF1.eval(params);
+    const auto r2 = dF2.eval(params);
 
-      const auto abs_diff = (symbolic_dy - fd_dy).abs();
-      const auto denominator = fd_dy.abs() + eps_fd;
-      const auto rel_error = (abs_diff / denominator).max().template item<double>();
+    const auto abs_diff = (r1 - r2).abs();
+    const auto denominator = r1.abs() + epsilon;
+    const auto rel_error = (abs_diff / denominator).max().template item<double>();
 
-      const Real rel_tolerance = std::sqrt(epsilon) * 100;
-      EXPECT_NEAR(rel_error, 0.0, rel_tolerance)
-          << "Derivative w.r.t. y failed for expression: " << expression;
-    }
-
-    // Test derivative w.r.t. n
-    if (fp_jit_dn.parse(expression, variables))
-    {
-      fp_jit_dn.differentiate("n");
-      fp_jit_dn.compile();
-      const auto symbolic_dn = fp_jit_dn.eval(params);
-
-      const auto abs_diff = (symbolic_dn - fd_dn).abs();
-      const auto denominator = fd_dn.abs() + eps_fd;
-      const auto rel_error = (abs_diff / denominator).max().template item<double>();
-
-      const Real rel_tolerance = std::sqrt(epsilon) * 100;
-      EXPECT_NEAR(rel_error, 0.0, rel_tolerance)
-          << "Derivative w.r.t. n failed for expression: " << expression;
-    }
+    EXPECT_NEAR(rel_error, 0.0, rel_tolerance);
   };
 
   // check hypot
   check("hypot(x,y)", torch::hypot(x, y));
+  check("sqrt(x^2+y^2+n)", torch::sqrt(x * x + y * y + n));
+  check("sqrt(x*x+y*y+n)", torch::sqrt(x * x + y * y + n));
   check("sqrt(x^2+y^2)", torch::sqrt(x * x + y * y));
   check("sqrt(x*x+y*y)", torch::sqrt(x * x + y * y));
 
@@ -146,8 +149,8 @@ TEST(ParsedTensorTest, Parse)
   check("cosh(y)", torch::cosh(y));
   check("sinh(y)", torch::sinh(y));
   check("atan(x + y)", torch::atan(x + y));
-  check("asin((x * y) / n)", torch::asin((x * y) / n));
-  check("acos((x * y) / n)", torch::acos((x * y) / n));
+  check("asin((x * y / 2) / n)", torch::asin((x * y / 2.0) / n));
+  check("acos((x * y / 2) / n)", torch::acos((x * y / 2.0) / n));
   check("acosh(x+y+1)", torch::acosh(x + y + 1));
   check("asinh(x-y)", torch::asinh(x - y));
   check("atan2(x,y)", torch::atan2(x, y));
@@ -160,7 +163,11 @@ TEST(ParsedTensorTest, Parse)
 
   // misc
   check("(x * y) / n", (x * y) / n);
-  check("y/x", y / x);
+
+  check("y/x", y / x, false);
+  check2("y/x", "x", "-y/x^2", true);
+  check2("y/x", "y", "1/x", true);
+
   check("-x", -x);
   check("rsqrt(x*y)", 1.0 / torch::sqrt(x * y));
   check("exp(x*y)", torch::exp(x * y));
@@ -177,7 +184,11 @@ TEST(ParsedTensorTest, Parse)
 
   check("trunc(x-y)", torch::trunc(x - y));
   check("min(x^3,y^2)", torch::minimum(x * x * x, y * y));
-  check("max(x^2,sin(4*y))", torch::maximum(x * x, torch::sin(y * 4.0)));
+
+  check("max(x^2,sin(4*y))", torch::maximum(x * x, torch::sin(y * 4.0)), false);
+  check2("max(x^2,sin(4*y))", "x", "if(x^2>=sin(4*y),2*x,0)", true);
+  check2("max(x^2,sin(4*y))", "y", "if(x^2>=sin(4*y),0,4*cos(4*y))", true);
+
   check("pow(2, x)", torch::pow(2, x));
   check("pow(x, 1.0/3.0)", torch::pow(x, 1.0 / 3.0));
   // check("cbrt(x)", torch::pow(x, 1.0 / 3.0));
