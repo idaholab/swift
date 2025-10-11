@@ -7,6 +7,7 @@
 /**********************************************************************/
 
 #include "ParsedJITTensor.h"
+#include "SwiftExpressionParser.h"
 #include "SwiftUtils.h"
 #include "MooseError.h"
 #include "gtest/gtest.h"
@@ -200,4 +201,110 @@ TEST(ParsedTensorTest, Parse)
   check2("x2:=x^2; sinx2:=sin(x2); 4*sinx2", "x", "8*x*cos(x*x)", true);
   check2("a:=sin(x^2); a + 2*a + 3*a", "x", "12*x*cos(x^2)", true);
   check2("a:=sin(x^2); a + 2*a + 3*a", "x", "12*x*cos(x^2)", false);
+}
+
+TEST(ParsedTensorTest, Substitute)
+{
+  SwiftExpressionParser::Parser parser;
+
+  // Test basic variable substitution
+  {
+    auto expr = parser.parse("x + y");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("2*z");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    EXPECT_EQ(substituted->toString(), "((2.000000 * z) + y)");
+  }
+  {
+    auto expr = parser.parse("x * y");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("2+z");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    EXPECT_EQ(substituted->toString(), "((2.000000 + z) * y)");
+  }
+
+  // Test substitution in nested expressions
+  {
+    auto expr = parser.parse("sin(x) + cos(x) * x");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("y^2");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    EXPECT_EQ(substituted->toString(),
+              "(sin((y ^ 2.000000)) + (cos((y ^ 2.000000)) * (y ^ 2.000000)))");
+  }
+
+  // Test substitution in let expressions without shadowing
+  {
+    auto expr = parser.parse("a := x + 1; a * x");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("y + z");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    // Should substitute x in both the binding and the body
+    EXPECT_EQ(substituted->toString(), "a:=((y + z) + 1.000000); (a * (y + z))");
+  }
+
+  // Test substitution with variable shadowing
+  {
+    auto expr = parser.parse("a := x + 1; a * x");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("y + z");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("a", replacement);
+    // Should NOT substitute 'a' anywhere because the binding defines 'a' (shadowing)
+    EXPECT_EQ(substituted->toString(), "a:=(x + 1.000000); (a * x)");
+  }
+
+  // Test that substitution doesn't affect unrelated variables
+  {
+    auto expr = parser.parse("x + y + z");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("42");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("y", replacement);
+    EXPECT_EQ(substituted->toString(), "((x + 42.000000) + z)");
+  }
+
+  // Test substitution in complex let expressions with multiple bindings
+  {
+    auto expr = parser.parse("a := x; b := a + 1; b * x");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("2*z");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    // x should be substituted in first binding and in body, but not in second binding (uses 'a')
+    EXPECT_EQ(substituted->toString(),
+              "a:=(2.000000 * z); b:=(a + 1.000000); (b * (2.000000 * z))");
+  }
+
+  // Test substitution preserves expression structure
+  {
+    auto expr = parser.parse("r := x^2 + y^2; sqrt(r) + r");
+    ASSERT_TRUE(expr != nullptr);
+
+    auto replacement = parser.parse("t + 1");
+    ASSERT_TRUE(replacement != nullptr);
+
+    auto substituted = expr->substitute("x", replacement);
+    // x should be substituted but local variable r should still be referenced
+    EXPECT_EQ(substituted->toString(),
+              "r:=(((t + 1.000000) ^ 2.000000) + (y ^ 2.000000)); (sqrt(r) + r)");
+  }
 }
