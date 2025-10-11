@@ -51,7 +51,7 @@ using ExprPtr = std::shared_ptr<Expr>;
 /**
  * Base class for all expression AST nodes
  */
-class Expr : public std::enable_shared_from_this<Expr>
+class Expr
 {
 public:
   virtual ~Expr() = default;
